@@ -1,4 +1,4 @@
-<nav class="light-blue lighten-1" role="navigation">
+<nav role="navigation">
     <div class="nav-wrapper container"><a id="logo-container" class="brand-logo" href="{{ "/" | relative_url }}">Logo</a>
     {% assign default_paths = site.pages | map: "path" %}
     {% assign page_paths = site.header_pages | default: default_paths %}
@@ -16,7 +16,7 @@
           </ul>
 
           <ul id="nav-mobile" class="side-nav">
-            <li><a href="#">Home</a></li>
+            <li><a href="/">Home</a></li>
                             {% if page_paths %}
                 {% for path in page_paths %}
                     {% assign my_page = site.pages | where: "path", path | first %}

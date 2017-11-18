@@ -1,0 +1,24 @@
+$theme: (
+    primary: #009688,
+    primary-dark: #00796B,
+    primary-light: #B2DFDB,
+    accent: #7C4DFF
+);
+
+$primary-color-dark:   map-get($theme, primary-dark);
+$primary-color:        map-get($theme, primary);
+$primary-color-light:  map-get($theme, primary-light);
+$primary-color-text:   #FFFFFF;
+$accent-color:         map-get($theme, accent);
+$primary-text-color:   #212121;
+$secondary-text-color: #757575;
+$divider-color:        #BDBDBD;
+
+@each $color_name, $color in $theme {
+    .#{$color_name}-color {
+        background-color: $color !important;
+    }
+    .#{$color_name}-color-text {
+        color: $color !important;
+    }
+  }

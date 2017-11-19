@@ -1,0 +1,20 @@
+{
+  "name": "axle-h.github.io",
+  "version": "1.0.0",
+  "description": "Jekyll static website hosted on ax-h.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/axle-h/axle-h.github.io.git"
+  },
+  "author": "Alex Haslehurst",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/axle-h/axle-h.github.io/issues"
+  },
+  "homepage": "https://github.com/axle-h/axle-h.github.io#readme",
+  "dependencies": {
+    "font-awesome": "^4.7.0",
+    "jquery": "^3.2.1",
+    "materialize-css": "^1.0.0-alpha.1"
+  }
+}

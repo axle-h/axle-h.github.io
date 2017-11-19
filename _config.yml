@@ -5,10 +5,12 @@ description: >-
 baseurl: ""
 url: "http://ax-h.com"
 twitter_username: axle_h
-github_username:  axle-h
+github_username: axle-h
+github_url: https://github.com/axle-h/axle-h.github.io
 
 sass:
     style: compressed
+    sass_dir: _sass
 
 # Build settings
 markdown: kramdown

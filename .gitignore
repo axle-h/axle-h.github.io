@@ -7,6 +7,7 @@ _site/
 .ruby-version
 .bundle
 vendor
+dist
 
 # npm
 node_modules

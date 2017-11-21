@@ -4,8 +4,8 @@ $roboto-font-path: "/assets/fonts";
 $fa-font-path: "/assets/fonts";
 
 @import "palette";
-@import "materialize/materialize.scss";
-@import "font-awesome/font-awesome.scss";
+@import "~materialize-css/sass/materialize.scss";
+@import "~font-awesome/scss/font-awesome.scss";
 
 /****** Nav ******/
 nav a {
@@ -44,7 +44,7 @@ nav a {
 
 .material-icons {
     font-size: inherit;
-}
+} 
 
 .icon-block {
     padding: 0 15px;

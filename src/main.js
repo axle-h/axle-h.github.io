@@ -12,7 +12,7 @@ function ready(fn) {
   }
   
   ready(function() {
-
+    var x = 2;
     // Nav.
     new M.Sidenav(document.getElementById("nav-mobile"));
 

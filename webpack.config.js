@@ -1,11 +1,33 @@
-const webpack = require('webpack');
-const path = require('path');
+const webpack = require("webpack");
+const path = require("path");
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const CleanWebpackPlugin = require("clean-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+
+const html = new HtmlWebpackPlugin({ template: "./src/head.html", filename: "head.html", inject: "head" });
+
+const clean = new CleanWebpackPlugin([ "dist", "assets/javascript", "assets/css" ]);
+
+const extractSass = new ExtractTextPlugin({
+    filename: "assets/css/bundle.[contenthash].css"
+});
+
+const uglify = new webpack.optimize.UglifyJsPlugin({
+    output: {
+        comments: false
+    }
+});
+
+const runtimeChunk = new webpack.optimize.CommonsChunkPlugin({ name: "runtime" });
 
 module.exports = {
-    entry: "./src/main.js",
+    entry: {
+        main: ["./src/main.js", "./src/scss/main.scss"],
+        vendor: [ "materialize-css" ]
+    },
     output: {
-        path: path.resolve(__dirname, "assets/javascript"),
-        filename: "bundle.js"
+        path: path.resolve(__dirname, "dist"),
+        filename: "assets/javascript/[name].[chunkhash].js"
     },
     module: {
         rules: [
@@ -18,14 +40,17 @@ module.exports = {
                         presets: ["babel-preset-env"]
                     }
                 }
+            },
+            {
+                test: /\.(sass|scss)$/,
+                use: ExtractTextPlugin.extract({
+                    use: [
+                        { loader: "css-loader", options: { minimize: true } },
+                        { loader: "sass-loader" }
+                    ]
+                })
             }
         ]
     },
-    plugins: [
-        new webpack.optimize.UglifyJsPlugin({
-            output: {
-                comments: false
-            }
-        })
-    ]
+    plugins: [ clean, html, runtimeChunk, uglify, extractSass ]
 };

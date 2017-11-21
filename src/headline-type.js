@@ -3,6 +3,7 @@
 const headlineClass = "headline-word";
 const hideClass = "hide";
 const highlightClass = "highlight";
+const initialAnimationDelay = 3000;
 const longAnimationDelay = 1500;
 const shortAnimationDelay = 250;
 
@@ -28,7 +29,7 @@ export default class HeadlineType {
             word.show();
         }
 
-        setTimeout(() => this.animate(), longAnimationDelay);
+        setTimeout(() => this.animate(), initialAnimationDelay);
     }
 
     animate() {

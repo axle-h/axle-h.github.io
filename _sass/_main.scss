@@ -16,6 +16,9 @@ nav a {
     min-height: 380px;
     height: auto;
     display: flex;
+    background-image: url('/assets/images/hero.jpg');
+    background-size: cover;
+    background-position: 0% 0%;
 
     .section {
         margin-top: auto;
@@ -26,6 +29,10 @@ nav a {
 
     @extend .grey-text, .text-lighten-4;
     
+    @media #{$small-and-down} {
+        background-position: 40% 0%;
+    }
+
     @media #{$large-and-up} {
         min-height: 400px;
     }

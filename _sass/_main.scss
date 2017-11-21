@@ -7,55 +7,50 @@ $fa-font-path: "/assets/fonts";
 @import "materialize/materialize.scss";
 @import "font-awesome/font-awesome.scss";
 
-.vertical-align-center {
-    display: inline-flex;
-    vertical-align: middle;
-    align-items: center;
-}
-
 /****** Nav ******/
 nav a {
     @extend .primary-color-text, .text-darken-2;
 }
 
-.parallax-container {
+.index-banner {
     min-height: 380px;
-    line-height: 0;
     height: auto;
-    color: rgba(255,255,255,.9);
+    display: flex;
 
     .section {
+        margin-top: auto;
+        margin-bottom: auto;
+        height: 100%;
         width: 100%;
     }
+
+    @extend .grey-text, .text-lighten-4;
+    
+    @media #{$large-and-up} {
+        min-height: 400px;
+    }
+
+    @media #{$extra-large-and-up} {
+        min-height: 550px;
+    }
+}
+
+.material-icons {
+    font-size: inherit;
 }
 
 .icon-block {
     padding: 0 15px;
-    .material-icons {
-        font-size: inherit;
+}
+
+#headline-type {
+    min-height: 2em;
+    .headline-word {
+        &.highlight {
+            @extend .primary-color, .darken-2;
+        }
     }
 }
-
-h1.page-title {
-    font-weight: 500;
-    font-size: 2.3em;
-    text-align: center;
-    color: $primary-color-dark;
-}
-
-.txt-center {
-    text-align: center;
-}
-.post-header h1.post-title {
-    color: $primary-color-dark;
-    font-size: 2.8em;
-    font-weight: 800;
-}
-.post-header time {
-    color: #cacaca;
-    font-size: 0.9em;
-}
-
 
 /****** Footer ******/
 footer {

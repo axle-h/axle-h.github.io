@@ -21,9 +21,12 @@
     <meta name="msapplication-config" content="{{ "/assets/favicon/browserconfig.xml" | relative_url }}">
     <meta name="theme-color" content="#009688">
 
+    <!--
     <script src="{{ "assets/javascript/jquery.min.js" | relative_url }}"></script>
     <script src="{{ "assets/javascript/materialize.min.js" | relative_url }}"></script>
     <script src="{{ "assets/javascript/init.js" | relative_url }}"></script>
+    -->
+    <script src="{{ "assets/javascript/bundle.js" | relative_url }}"></script>
   
     {% if jekyll.environment == 'production' and site.google_analytics %}
         {% include google-analytics.html %}

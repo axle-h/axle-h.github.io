@@ -25,8 +25,10 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - node_modules
-  - vendor/bundle/
-  - vendor/cache/
-  - vendor/gems/
-  - vendor/ruby/
+  - vendor
+  - src
+  - webpack.config.js
+  - package.json
+  - package-lock.json
+  - build.sh
   - README.md

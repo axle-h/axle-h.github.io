@@ -1,36 +1,43 @@
 ---
-layout: default
+layout: no_nav
 ---
 
-<div class="index-banner">
-  <div class="section">
-    <div class="container">
-      <h1 class="header center">Hello I'm {{ site.title | split: ' ' | first }}</h1>
-      <h4 class="header center">A software developer with a passion for</h4>
-      <div class="row center">
-          <h4 id="headline-type" class="header center">
-              <strong class="headline-word">technology</strong>
-              <strong class="headline-word hide">.NET Core</strong>
-              <strong class="headline-word hide">machine learning</strong>
-              <strong class="headline-word hide">maths</strong>
-              <strong class="headline-word hide">Angular</strong>
-              <strong class="headline-word hide">big data</strong>
-              <strong class="headline-word hide">all cats</strong>
-              <strong class="headline-word hide">java</strong>
-              <strong class="headline-word hide">anything but JQuery</strong>
-              <strong class="headline-word hide">open source</strong>
-              <strong class="headline-word hide">my 10km time</strong>
-              <strong class="headline-word hide">coffee</strong>
-              <strong class="headline-word hide">retro gaming</strong>
-          </h4>
-      </div>
-      
-      <div class="row center">
-        <a href="{{ "/about" | relative_url }}" class="btn-large waves-effect waves-light">Who?</a>
-      </div>
+<nav role="navigation" class="index-banner">
+    <div class="row">
+        {% include nav.html %}
     </div>
-  </div>
-</div>
+    
+    <div class="row">
+      <div class="section">
+          <div class="container">
+            <h1 class="header center">Hi I'm {{ site.title | split: ' ' | first }}</h1>
+            <h4 class="header center">A software developer with a passion for</h4>
+            <div class="row center">
+                <h4 id="headline-type" class="header center">
+                    <strong class="headline-word">technology</strong>
+                    <strong class="headline-word hide">.NET Core</strong>
+                    <strong class="headline-word hide">machine learning</strong>
+                    <strong class="headline-word hide">maths</strong>
+                    <strong class="headline-word hide">Angular</strong>
+                    <strong class="headline-word hide">big data</strong>
+                    <strong class="headline-word hide">all cats</strong>
+                    <strong class="headline-word hide">java</strong>
+                    <strong class="headline-word hide">anything but JQuery</strong>
+                    <strong class="headline-word hide">open source</strong>
+                    <strong class="headline-word hide">my 10km time</strong>
+                    <strong class="headline-word hide">coffee</strong>
+                    <strong class="headline-word hide">retro gaming</strong>
+                </h4>
+            </div>
+            
+            <div class="row center">
+              <a href="{{ "/about" | relative_url }}" class="btn-large waves-effect waves-light">Who?</a>
+            </div>
+          </div>
+        </div>
+    </div>
+    
+</nav>
 
 <div class="container">
   <section>

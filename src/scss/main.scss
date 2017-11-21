@@ -15,10 +15,21 @@ nav a {
 .index-banner {
     min-height: 380px;
     height: auto;
-    display: flex;
     background-image: url('/assets/images/hero.jpg');
     background-size: cover;
     background-position: 0% 0%;
+
+    .nav-wrapper {
+        width: 100%;
+
+        a {
+            @extend .primary-dark-color-text;
+        }
+    }
+
+    .btn {
+        @extend .grey-text, .text-lighten-4;
+    }
 
     .section {
         margin-top: auto;

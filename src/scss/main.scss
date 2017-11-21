@@ -13,7 +13,7 @@ nav a {
 }
 
 .index-banner {
-    min-height: 380px;
+    min-height: 450px;
     height: auto;
     background-image: url('/assets/images/hero.jpg');
     background-size: cover;
@@ -42,10 +42,6 @@ nav a {
     
     @media #{$small-and-down} {
         background-position: 40% 0%;
-    }
-
-    @media #{$large-and-up} {
-        min-height: 400px;
     }
 
     @media #{$extra-large-and-up} {

@@ -27,6 +27,7 @@ exclude:
   - node_modules
   - vendor
   - src
+  - dist
   - webpack.config.js
   - package.json
   - package-lock.json

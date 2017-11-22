@@ -81,6 +81,10 @@ nav a {
             a {
                 @extend .grey-text, .text-lighten-4;
             }
+
+            .determinate {
+                @extend .orange, .lighten-3;
+            }
         }
     }
 

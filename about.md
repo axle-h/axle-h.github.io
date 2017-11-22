@@ -1,7 +1,5 @@
 ---
-layout: page
+layout: about
 title: About
 permalink: /about/
 ---
-
-TODO: Add CV

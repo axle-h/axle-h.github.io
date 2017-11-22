@@ -66,6 +66,38 @@ nav a {
     }
 }
 
+
+/****** CV ******/
+.cv {
+    hr {
+        margin-bottom: 1.5em;
+        margin-top: 1.5em;
+    }
+
+    aside {
+        .card {
+            background-color: $primary-color;
+            @extend .grey-text, .text-lighten-4;
+            a {
+                @extend .grey-text, .text-lighten-4;
+            }
+        }
+    }
+
+    @media #{$medium-and-down} {
+        width: 100%;
+    }
+
+    @media #{$large-and-up} {
+        width: 85%;
+    }
+
+    .icon {
+        @extend .center-align;
+    }
+}
+
+
 /****** Footer ******/
 footer {
     @extend .grey-text, .text-lighten-4;
@@ -80,16 +112,17 @@ footer {
                 float: right;
             }
         }
+    }
+}
 
-        .social {
-            @extend .fa-stack, .fa-lg;
-            .social-circle {
-                @extend .fa, .fa-circle, .fa-stack-2x, .grey-text, .text-lighten-3;
-            }
-        
-            .social-icon {
-                @extend .fa, .fa-stack-1x, .fa-inverse, .primary-color-text;
-            }
-        }
+/****** Social Icons ******/
+.social {
+    @extend .fa-stack, .fa-lg;
+    .social-circle {
+        @extend .fa, .fa-circle, .fa-stack-2x, .grey-text, .text-lighten-3;
+    }
+
+    .social-icon {
+        @extend .fa, .fa-stack-1x, .fa-inverse, .primary-color-text;
     }
 }

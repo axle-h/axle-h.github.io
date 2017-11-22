@@ -1,0 +1,160 @@
+---
+layout: default
+---
+
+<div class="container cv">
+    <div class="row">
+        <aside class="col s12 m12 l5">
+            <div class="card">
+                <div class="card-image">
+                    <img src="{{ '/assets/images/hero.jpg' | relative_url }}">
+                    <span class="card-title">
+                        <h5>Alex Haslehurst</h5>
+                        <h6>Software Developer</h6>
+                    </span>
+                </div>
+
+                <div class="card-content">
+                    <div class="row">                
+                        <div class="col s12 center-align">
+                            {% include social.html %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col m12 s12 l3 icon">
+                            <h5><i class="fa fa-user"></i></h5>
+                        </div>                                
+                        <div class="col m12 s12 l9">
+                            <p>
+                                I am a highly motivated, technically skilled and completely self-taught software developer with a
+                                strong background in mathematics.
+                            </p>
+                        </div>
+                    </div>
+        
+                    <div class="row">
+                        <div class="col m12 s12 l3 icon">
+                            <h5><i class="fa fa-desktop"></i></h5>
+                        </div>                                
+                        <div class="col m12 s12 l9">
+                            <p>
+                                I genuinely enjoy software development so to pursue it, I took a
+                                sideward step in my early career away from a more traditional mathematics graduate job at
+                                Experian. My mixture of skills quickly separated me from my peers, accelerating me past positions
+                                facing numerous day to day CRUD style projects and into data science type roles. I have been the
+                                senior developer on projects that have completely re-architected major back end systems and have
+                                positioned myself firmly in the big data developer niche. I am most proud of my experience
+                                deploying off-the-shelf as well as completely bespoke machine learning algorithms at scale with
+                                Spark and Cassandra.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col m12 s12 l3 icon">
+                                <h5><a href="https://github.com/axle-h" target="_blank"><i class="fa fa-code"></i></a></h5>
+                        </div>                                
+                        <div class="col m12 s12 l9">
+                            <p>
+                                Please see my <a href="https://github.com/axle-h" target="_blank">GitHub account</a> for an idea of what I like to develop in my spare time and a taste of
+                                my personal interests which tend to spill into my projects. The highlight of these projects is
+                                Retro.Net; a dynamically recompiling GameBoy emulator in .NET Core with an Angular front end
+                                over web sockets.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+        </aside>
+
+        <section class="col s12 m12 l7">
+            <div class="card">
+                <div class="card-content">
+                    <div class="row">
+                        <div class="col s12 m12 l2 icon hide-on-med-and-down">
+                            <h4><i class="fa fa-suitcase"></i></h4>
+                        </div>
+                        <div class="col s12 m12 l10">
+                            <h4><i class="fa fa-suitcase hide-on-large-only"></i> Work Experience</h4>
+                            <h5>Senior Software Developer <small class="blue-grey-text darken-4">@Utilitywise</small></h5>
+                            <span class="primary-color-text">NOV 2015 - PRESENT</span>
+                            <p>
+                                Utilitywise consumes approximately 100 million time series data observations per day, mainly from
+                                on-site proprietary equipment and automatic meter readings, attaches analytical insights and
+                                predictions to this data, presenting it back to customers in bespoke dashboards. I have worked with
+                                the Utilitywise data platform extensively, successfully porting the entire architecture from a legacy,
+                                relational backed system to a far more modern one based on the trending big data platform: Apache
+                                Cassandra, Spark and Kafka. I have focussed my efforts on producing quality software that maintains
+                                maximum up-time, whilst building efficiency that has been used to augment the system with new
+                                analytical and machine learning based features. I have also been a web developer, integrating new
+                                data platform features across the full MongoDB, ASP.NET Core micro service and Angular based
+                                stack. I had an extended streak of assuming a security speciality after replacing an aging and
+                                technically broken bespoke security system with a proper standards compliant one based on OAuth2
+                                bearer tokens. Again, software quality has been a top priority and I have ensured support for
+                                continuous integration with high unit test coverage and full suites of integration tests. I have been
+                                involved with projects from specification through to deployment.
+                            </p>
+
+                            <hr>
+
+                            <h5>Software Developer <small class="blue-grey-text darken-4">@Alpharooms</small></h5>
+                            <span class="primary-color-text">MAR 2014 - NOV 2015</span>
+                            <p>
+                                I was a software developer at Alpharooms, an e-commerce travel agent. I worked in the
+                                infrastructure of the fully responsive, SEO optimised consumer facing front end and back office
+                                systems. I worked full stack and became a leading producer in my team whilst also enjoying a more
+                                senior role towards the end of my stay. Whilst much of the technologies I used at Alpharooms are
+                                quickly becoming obsolete (monolithic MVC applications on the full-fat .NET Framework and
+                                Knockout on the client) the skills I picked up have been extremely valuable. Everything was running
+                                on AWS and it was a constant battle to scale out systems whilst balancing cost with user experience.
+                                Security was also a top concern and this fed into some really interesting projects for me at
+                                Utiltiywise. This time also introduced me to proper cross business agile development, the concepts
+                                and expectations of which I have brought with me.
+                            </p>
+
+                            <hr>
+
+                            <h5>Software Engineer <small class="blue-grey-text darken-4">@Technolog</small></h5>
+                            <span class="primary-color-text">DEC 2012 - MAR 2014</span>
+                            <p>
+                                I was a software engineer in a multi-disciplined team at Technolog; an electronics manufacturer in
+                                the utilities industry. I worked primarily with the data infrastructure that supports a network of data
+                                loggers and automatic meter reading systems. I developed a lot of internal software here – mainly
+                                on ASP.NET and Java with Tapestry 5. I basically learnt to program as part of a team at Technolog,
+                                picking up concepts such as the importance of design patterns and test driven development.
+                            </p>
+
+                            <hr>
+
+                            <h5>Statistical Analyist <small class="blue-grey-text darken-4">@Experian</small></h5>
+                            <span class="primary-color-text">JUL 2010 - DEC 2012</span>
+                            <p>
+                                After my degree, I returned to Experian Decision Analytics in a more analytical role. Due to my
+                                previous experience with Experian systems, I was immediately assigned to a large software testing
+                                project. I was solely responsible for creating suitable test scripts, reporting bugs and providing in-
+                                depth analytical support to developers. Due to my highly technical approach to projects and support,
+                                something that differentiated me from my peers, I became a regular and successful technical contact
+                                for training and development within my department.
+                            </p>
+
+                            <hr>
+
+                            <h5>Systems Support Analyist <small class="blue-grey-text darken-4">@Experian</small></h5>
+                            <span class="primary-color-text">JUN 2008 - AUG 2009</span>
+                            <p>
+                                As part of my degree, I completed a 14 month placement in a technical role at Experian; the UK
+                                market leading credit reference bureau. My main responsibilities were to maintain, schedule and
+                                develop a system of data manipulation programs on old school IBM mainframes.
+                            </p>
+                        
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+</div>

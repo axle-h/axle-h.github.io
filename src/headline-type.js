@@ -5,7 +5,7 @@ const hideClass = "hide";
 const highlightClass = "highlight";
 const initialAnimationDelay = 3000;
 const longAnimationDelay = 1500;
-const shortAnimationDelay = 250;
+const shortAnimationDelay = 200;
 
 const State = Object.freeze({
     Type:   Symbol("Type"),
@@ -34,7 +34,7 @@ export default class HeadlineType {
 
     animate() {
         const word = this.words[this.index];
-        let nextDelay = longAnimationDelay;
+        let nextDelay = shortAnimationDelay;
 
         switch (this.state) {
             case State.Highlight:
@@ -46,15 +46,12 @@ export default class HeadlineType {
                 word.reset();
                 this.index = (this.index + 1) % this.words.length;
                 this.state = State.Type;
-                nextDelay = shortAnimationDelay;
                 break;
 
             case State.Type:
-                if (word.type()) {
-                    nextDelay = shortAnimationDelay;
-                }
-                else {
+                if (!word.type()) {
                     this.state = State.Highlight;
+                    nextDelay = longAnimationDelay;
                 }
                 break;
         }

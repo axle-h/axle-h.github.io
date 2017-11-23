@@ -19,11 +19,13 @@ const uglify = new webpack.optimize.UglifyJsPlugin({
 });
 
 const runtimeChunk = new webpack.optimize.CommonsChunkPlugin({ name: "runtime" });
+const vendorChunk = new webpack.optimize.CommonsChunkPlugin({ name: ["vendor", "polyfills"] });
 
 module.exports = {
     entry: {
         main: ["./src/main.js", "./src/scss/main.scss"],
-        vendor: [ "materialize-css" ]
+        vendor: [ "materialize-css" ],
+        polyfills: [ "array-from" ]
     },
     output: {
         path: path.resolve(__dirname, "dist"),
@@ -53,5 +55,5 @@ module.exports = {
             }
         ]
     },
-    plugins: [ clean, html, runtimeChunk, uglify, extractSass ]
+    plugins: [ clean, html, vendorChunk, runtimeChunk, uglify, extractSass ]
 };

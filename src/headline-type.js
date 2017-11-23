@@ -1,22 +1,25 @@
 "use strict";
 
+const arrayFrom = require("array-from");
+
 const headlineClass = "headline-word";
 const hideClass = "hide";
 const highlightClass = "highlight";
 const initialAnimationDelay = 3000;
 const longAnimationDelay = 1500;
+const highlightAnimationDelay = 300;
 const shortAnimationDelay = 200;
 
 const State = Object.freeze({
-    Type:   Symbol("Type"),
-    Highlight:  Symbol("Highlight"),
-    Delete: Symbol("Delete")
+    Type:   "Type",
+    Highlight:  "Highlight",
+    Delete: "Delete"
 });
 
 export default class HeadlineType {
     constructor(element) {
         this.element = element;
-        this.words = Array.from(element.getElementsByClassName(headlineClass)).map(w => new Word(w));
+        this.words = arrayFrom(element.getElementsByClassName(headlineClass)).map(w => new Word(w));
         this.index = 0;
         this.state = State.Highlight;
         
@@ -40,6 +43,7 @@ export default class HeadlineType {
             case State.Highlight:
                 word.highlight();
                 this.state = State.Delete;
+                nextDelay = highlightAnimationDelay;
                 break;
 
             case State.Delete:

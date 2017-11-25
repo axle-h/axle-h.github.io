@@ -5,20 +5,50 @@ layout: default
     <div class="section">
     <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 
-      <header class="post-header">
-        <h3 class="post-title primary-color-text" itemprop="name headline">{{ page.title | escape }}</h3>
-        <p class="post-meta blue-grey-text">
-          <time datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">
-            {% assign date_format = site.minima.date_format | default: "%b %-d, %Y" %}
-            {{ page.date | date: date_format }}
-          </time>
-          {% if page.author %}
-            • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">{{ page.author }}</span></span>
-          {% endif %}</p>
-      </header>
+      <div class="row">
+        <div class="col s12">
+          <div class="card grey lighten-5">
+              <div class="card-content post-content">
+                <header>
+                  <span class="card-title primary-color-text" itemprop="name headline">
+                      <h4>{{ page.title | escape }}</h4>
+                  </span>
+    
+                  <p class="blue-grey-text">
+                    <time datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">
+                      {% assign date_format = site.minima.date_format | default: "%b %-d, %Y" %}
+                      {{ page.date | date: date_format }}
+                    </time>
+                    {% if page.author %}
+                      • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">{{ page.author }}</span></span>
+                    {% endif %}
+                  </p>
+                </header>
 
-      <div class="post-content" itemprop="articleBody">
-        {{ content }}
+                <section itemprop="articleBody">
+                    {{ content }}
+                </section>
+              </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col s12">
+          <div class="card-panel grey lighten-5">
+            <div class="row valign-wrapper">
+              <div class="col s3 l2">
+                  <img src="{{ "/assets/images/mugshot-square.jpg" | relative_url }}" alt="" class="circle responsive-img">
+              </div>
+              <div class="col s9 l10">
+                <h5>Alex Haslehurst</h5>
+                <p>
+                  A UK midlands based software developer, mathematician, runner, cyclist, coffee drinker and retro gamer.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {% if site.disqus.shortname %}

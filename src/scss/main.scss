@@ -12,6 +12,7 @@ nav a {
     @extend .primary-color-text, .text-darken-2;
 }
 
+/****** Home ******/
 .index-banner {
     min-height: 450px;
     height: auto;
@@ -63,6 +64,12 @@ nav a {
         &.highlight {
             @extend .primary-color, .darken-2;
         }
+    }
+}
+
+.post-description {
+    a {
+        @extend .orange-text, .text-lighten-3;;
     }
 }
 

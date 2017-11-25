@@ -75,7 +75,9 @@ layout: no_nav
         <div class="card-content white-text">
           <span class="card-title">{{ post.title }}</span>
           <h6 class="grey-text ">{{ post.date | date_to_long_string  }}</h6>
-          <p>{{ post.content | split:'<!--break-->' | first | strip_html }}</p>
+          <div class="post-description">
+            {{ post.content | split:'<!--break-->' | first }}
+          </div>
         </div>
         <div class="card-action">
           <a href="{{ post.url | relative_url }}" class="valign-wrapper">Read <i class="material-icons">navigate_next</i></a>

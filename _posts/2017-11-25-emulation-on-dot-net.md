@@ -6,9 +6,12 @@ author: Alex Haslehurst
 categories: software development emulation
 ---
 
-Please check out my GameBoy emulator written in .NET Core; [Retro.Net](https://github.com/axle-h/Retro.Net). Yes, a GameBoy emulator written in .NET Core. *Why? Why not*. This started as a programming exercise for me many years ago. I wanted a goal to work towards and wasn’t happy with the boring examples that accompanied tutorials. Instead, I started a project that I knew would encourage me to continue writing code in my spare time whilst also including a few personal interests of electronics and retro gaming. It has been re-written multiple times over the years and evolved into a successful product that actually plays Tetris at full speed. The CPU core is dynamically compiled into .NET with the help of the expression tree API and cached for speed. User interface is currently handled by ASP.NET Core, communicating over web sockets to a client written in Angular that’s geared towards a crowd gaming style of input. I plan to do a few write-ups about my experience with this project. Firstly: why it was a bad idea.
+Please check out my GameBoy emulator written in .NET Core; [Retro.Net](https://github.com/axle-h/Retro.Net). Yes, a GameBoy emulator written in .NET Core. *Why? Why not*.
+I plan to do a few write-ups about my experience with this project. Firstly: why it was a bad idea.
 
 <!--break-->
+
+Retro.Net started as a programming exercise for me many years ago. I wanted a goal to work towards and wasn’t happy with the boring examples that accompanied tutorials. Instead, I started a project that I knew would encourage me to continue writing code in my spare time whilst also including a few personal interests of electronics and retro gaming. It has been re-written multiple times over the years and evolved into a successful product that actually plays Tetris at full speed. The CPU core is dynamically compiled into .NET with the help of the expression tree API and cached for speed. User interface is currently handled by ASP.NET Core, communicating over web sockets to a client written in Angular that’s geared towards a crowd gaming style of input. 
 
 Let’s cut to it.
 > .NET is *not* an ideal platform for emulating legacy hardware.

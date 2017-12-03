@@ -84,8 +84,16 @@ nav a {
     }
     .post {
         .post-content {
-            p {
-               margin-bottom: 1em; 
+            p, table {
+               margin-bottom: 1em;
+            }
+
+            @media #{$medium-and-down} {
+                img {
+                    display: block;
+                    margin-left: auto;
+                    margin-right: auto;
+                }
             }
     
             ul {
@@ -96,11 +104,19 @@ nav a {
                     list-style-type: disc;
                 }
             }
+
+            img {
+                max-width:100%;
+                height:auto
+            }
         }
     }
 }
 
-
+/****** Code highlighting ******/
+.highlight {
+    overflow-x: auto;
+}
 
 /****** CV ******/
 .cv {

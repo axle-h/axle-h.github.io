@@ -6,7 +6,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 const html = new HtmlWebpackPlugin({ template: "./src/head.html", filename: "head.html", inject: "head" });
 
-const clean = new CleanWebpackPlugin([ "dist", "assets/javascript", "assets/css" ]);
+const clean = new CleanWebpackPlugin([ "dist", "assets/javascript", "assets/css/bundle.*.css" ]);
 
 const extractSass = new ExtractTextPlugin({
     filename: "assets/css/bundle.[contenthash].css"

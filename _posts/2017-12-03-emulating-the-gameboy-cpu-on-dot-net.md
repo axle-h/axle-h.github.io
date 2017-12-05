@@ -1,0 +1,572 @@
+---
+layout: post
+title:  "Emulating the GameBoy CPU on .NET"
+date:   2017-12-03 16:20:00 +0000
+author: Alex Haslehurst
+categories: software development emulation
+---
+
+At it's lowest level, a CPU can be represented by a finite state machine, where state is handled by registers and domain by the address space. This model is pretty simple to implement in software as all you need is a mechanism for tracking state and a definition of all possible state transitions. Luckily the GameBoy CPU, a Sharp LR35902, is derived from the popular and very well documented Zilog Z80 - A microprocessor that is unbelievably still in production today, over 40 years after it's introduction.
+
+<!--break-->
+
+#### Architecture
+
+The Z80 is an 8-bit microprocessor, meaning that each operation is natively performed on a single byte. The instruction set does have some 16-bit operations but these are just executed as multiple cycles of 8-bit logic. The GameBoy CPU has a 16-bit wide address bus, which logically represents a 64K memory map. Data is transferred to the CPU over an 8-bit wide data bus but this is irrelevant to simulating the system at state machine level. The Z80 and the Intel 8080 that it derives from have 256 I/O ports for accessing external peripherals but the GameBoy CPU has none - favouring memory mapped I/O instead. Since I found [an abundance of Z80 documentation](/assets/documents/gameboy-cpu/UM0080.pdf), including [non-official, or undocumented behaviours](/assets/documents/gameboy-cpu/z80-documented.pdf) that were discovered by ZX Spectrum developers, I opted to implement an emulator compatible with the full Z80 specification. To achieve Intel 8080 and GameBoy compatibility, which aren't strict logical subsets of the Z80, I simply provide a platform configuration mechanism that can toggle features.
+
+#### Registers
+
+Firstly we need some registers. The Intel 8080 and GameBoy CPU have six 8-bit general purpose registers, an accumulator, flags, stack pointer and program counter. 16-bit access is also provided to each general purpose register and the accumulator and flags registers in sequential pairs. Additionally, the Z80 has two more 16-bit index registers, an alternative set of each general purpose, accumulator and flags registers and a few more bits and pieces.
+
+| Register | Size                | Purpose
+| -------- | ------------------- |---- 
+| AF       | 16-bit or two 8-bit | Accumulator (A) and flag bits (F)
+| BC       | 16-bit or two 8-bit | Data/address
+| DE       | 16-bit or two 8-bit | Data/address
+| HL       | 16-bit or two 8-bit | Accumulator/address
+| SP       | 16-bit              | Stack pointer
+| PC       | 16-bit              | Program counter
+
+The Z80 defines alternative/banked versions of `AF`, `BC`, `DE` and `HL` that are accessed via the exchange opcodes and also has some more specialized registers.
+
+| Register | Size                | Purpose
+| -------- | ------------------- |---- 
+| IX       | 16-bit or two 8-bit | Displacement offset base
+| IY       | 16-bit or two 8-bit | Displacement offset base
+| I        | 8-bit               | Interrupt vector base register
+| R        | 8-bit               | DRAM refresh counter
+
+##### Flags register
+
+The flags register is a single byte that contains a bit-mask set according to the last result. Notice that the GameBoy flags register only uses the most significant 4-bits and does not implement the sign or parity/overflow flag. The least significant bits of the GameBoy flags register are always 0.
+
+| 8080/Z80 Bit | GameBoy Bit | Name            | Description
+| ------------ | ----------- | --------------- | ---
+| 0            | 4           | Carry           | Set if the result did not fit in the register
+| 1            | 6           | Subtract        | Set if the last operation was a subtraction
+| 2            | -           | Parity/Overflow | Parity set if even number of bits set. Overflow set if the 2's-complement result does not fit in the register
+| 3            | -           | Undocumented    | Copy of bit 3
+| 4            | 5           | Half Carry      | Carry from bit 3 to bit 4
+| 5            | -           | Undocumented    | Copy of bit 5
+| 6            | 7           | Zero            | Set if the value is zero
+| 7            | -           | Sign            | Set if the 2's-complement value is negative (copy of MSB)
+
+The flags registers are implemented slightly differently on each platform so we'll hide them away behind an interface.
+
+{% highlight C# %}
+public interface IFlagsRegister
+{
+    byte Register { get; set; }
+
+    bool Sign { get; set; }
+
+    bool Zero { get; set; }
+
+    bool Flag5 { get; set; }
+
+    bool HalfCarry { get; set; }
+
+    bool Flag3 { get; set; }
+
+    bool ParityOverflow { get; set; }
+
+    bool Subtract { get; set; }
+
+    bool Carry { get; set; }
+}
+{% endhighlight %}
+
+For example, we might implement the GameBoy flags register as follows.
+
+{% highlight C# %}
+public class GameBoyFlagsRegister : IFlagsRegister
+{
+    private const byte ZeroMask = 1 << 7;
+    private const byte SubtractMask = 1 << 6;
+    private const byte HalfCarryMask = 1 << 5;
+    private const byte CarryMask = 1 << 4;
+
+    public byte Register
+    {
+        get => (byte) ((Zero ? ZeroMask : 0) | (HalfCarry ? HalfCarryMask : 0) | (Subtract ? SubtractMask : 0) | (Carry ? CarryMask : 0));
+        set
+        {
+            Zero = (value & ZeroMask) > 0;
+            HalfCarry = (value & HalfCarryMask) > 0;
+            Subtract = (value & SubtractMask) > 0;
+            Carry = (value & CarryMask) > 0;
+        }
+    }
+
+    public bool Sign { get { return false; } set { } }
+
+    public bool Zero { get; set; }
+
+    public bool Flag5 { get { return false; } set { } }
+
+    public bool HalfCarry { get; set; }
+
+    public bool Flag3 { get { return false; } set { } }
+
+    public bool ParityOverflow { get { return false; } set { } }
+
+    public bool Subtract { get; set; }
+
+    public bool Carry { get; set; }
+}
+{% endhighlight %}
+
+##### General purpose registers
+
+For defining our register classes we could do with some help for converting between the 8 and 16-bit representations of the registers.
+
+{% highlight C# %}
+public static class BitConverterHelpers
+{
+    public static ushort To16Bit(byte high, byte low) => (ushort) ((high << 8) | low);
+
+    public static (byte high, byte low) To8Bit(ushort value)
+    {
+        var high = value >> 8;
+        var low = value & 0xff;
+        return ((byte) high, (byte) low);
+    }
+}
+{% endhighlight %}
+
+Let's start by defining the general purpose register set.
+
+{% highlight C# %}
+public class GeneralPurposeRegisterSet
+{
+    public byte B { get; set; }
+
+    public byte C { get; set; }
+
+    public byte D { get; set; }
+
+    public byte E { get; set; }
+
+    public byte H { get; set; }
+
+    public byte L { get; set; }
+    
+    public ushort BC
+    {
+        get => BitConverterHelpers.To16Bit(B, C);
+        set => (B, C) = BitConverterHelpers.To8Bit(value);
+    }
+
+    public ushort DE
+    {
+        get => BitConverterHelpers.To16Bit(D, E);
+        set => (D, E) = BitConverterHelpers.To8Bit(value);
+    }
+
+    public ushort HL
+    {
+        get => BitConverterHelpers.To16Bit(H, L);
+        set => (H, L) = BitConverterHelpers.To8Bit(value);
+    }
+}
+{% endhighlight %}
+
+##### Accumulator and flags
+
+The accumulator and flags must be separate from the general purpose registers due to the Z80's banked register support.
+
+{% highlight C# %}
+public class AccumulatorAndFlagsRegisterSet
+{
+    public AccumulatorAndFlagsRegisterSet(IFlagsRegister flagsRegister)
+    {
+        Flags = flagsRegister;
+    }
+
+    public byte A { get; set; }
+    
+    public IFlagsRegister Flags { get; }
+    
+    public ushort AF
+    {
+        get => BitConverterHelpers.To16Bit(A, Flags.Register);
+        set => (A, Flags.Register) = BitConverterHelpers.To8Bit(value);
+    }
+}
+{% endhighlight %}
+
+##### Register access
+
+To simplify the rest of the system, we will access registers via an interface conforming to the full Z80 specification.
+
+{% highlight C# %}
+public interface IRegisters
+{
+    GeneralPurposeRegisterSet GeneralPurposeRegisters { get; }
+
+    AccumulatorAndFlagsRegisterSet AccumulatorAndFlagsRegisters { get; }
+
+    ushort StackPointer { get; set; }
+
+    ushort ProgramCounter { get; set; }
+
+    // Some more Z80 specific stuff omitted for brevity
+}
+{% endhighlight %}
+
+We'll have two implementations of this interface; one for the Z80 and one shared by the GameBoy and Intel 8080. The Z80 implementation will have full functionality whereas the Intel 8080/GameBoy implementation will throw when calling methods or properties that are not supported by the platform. It will be the responsibility of the CPU core implementation to configure the correct level of register support for each platform.
+
+#### Address space
+
+Next we need to implement the memory management unit (MMU) to broker access to the address space. The relationship between CPU, MMU, memory and memory mapped IO devices looks something like the following.
+
+![Simple diagram of the GameBoy MMU](/assets/images/gameboy-cpu/MMU.svg)
+
+An MMU should support reading and writing data in various lengths across the entire address space, whilst abstracting away the hardware that is physically attached to each location in the space.
+
+{% highlight C# %}
+public interface IMmu : IDisposable
+{
+    byte ReadByte(ushort address);
+
+    ushort ReadWord(ushort address);
+
+    byte[] ReadBytes(ushort address, int length);
+
+    void WriteByte(ushort address, byte value);
+
+    void WriteWord(ushort address, ushort word);
+
+    void WriteBytes(ushort address, byte[] bytes);
+}
+{% endhighlight %}
+
+We can implement an MMU in a platform agnostic way by introducing a concept of segments. A segment has a location and length so that the MMU can correctly position it in address space and will provide implementation specific data access operations. For example, most GameBoy cartridges have a microcontroller acting as a memory bank controller (MBC) over multiple banks of read only memory (ROM). Read requests for data in an MBC address space will be forwarded to a configured page of ROM, whereas write requests will change which page is configured. For this reason we really need different interfaces for readable and writeable segments.
+
+{% highlight C# %}
+public interface IAddressSegment
+{
+    MemoryBankType Type { get; }
+
+    ushort Address { get; }
+
+    ushort Length { get; }
+}
+{% endhighlight %}
+
+{% highlight C# %}
+public interface IReadableAddressSegment : IAddressSegment
+{
+    byte ReadByte(ushort address);
+
+    ushort ReadWord(ushort address);
+
+    byte[] ReadBytes(ushort address, int length);
+
+    void ReadBytes(ushort address, byte[] buffer);
+}
+{% endhighlight %}
+
+{% highlight C# %}
+public interface IWriteableAddressSegment : IAddressSegment
+{
+    void WriteByte(ushort address, byte value);
+
+    void WriteWord(ushort address, ushort word);
+
+    void WriteBytes(ushort address, byte[] values);
+}
+{% endhighlight %}
+
+For example, a very simple segment that represents random access memory (RAM) could be implemented using a byte array:
+
+{% highlight C# %}
+public class ArrayBackedMemoryBank : IReadableAddressSegment, IWriteableAddressSegment
+{
+    protected readonly byte[] Memory;
+
+    public ArrayBackedMemoryBank()
+    {
+        Memory = new byte[1024];
+        Type = MemoryBankType.RandomAccessMemory;
+        Address = 0x000;
+        Length = 0x1000;
+    }
+
+    public MemoryBankType Type { get; }
+
+    public ushort Address { get; }
+
+    public ushort Length { get; }
+
+    public byte ReadByte(ushort address) => Memory[address];
+
+    public ushort ReadWord(ushort address) => BitConverter.ToUInt16(Memory, address);
+
+    public byte[] ReadBytes(ushort address, int length)
+    {
+        var bytes = new byte[length];
+        Array.Copy(Memory, address, bytes, 0, length);
+        return bytes;
+    }
+
+    public void ReadBytes(ushort address, byte[] buffer) => Array.Copy(Memory, address, buffer, 0, buffer.Length);
+
+    public void WriteByte(ushort address, byte value) => Memory[address] = value;
+
+    public void WriteWord(ushort address, ushort word)
+    {
+        var bytes = BitConverter.GetBytes(word);
+        Memory[address] = bytes[0];
+        Memory[address + 1] = bytes[1];
+    }
+
+    public void WriteBytes(ushort address, byte[] values) => Array.Copy(values, 0, Memory, address, values.Length);
+}
+{% endhighlight %}
+
+It is the responsibility of the platform to wire up the correct segments and their implementations.
+
+#### Core
+
+A CPU runs on a fetch-decode-execute cycle, called the machine cycle or m-cycle. The CPU will initially fetch a byte, whose location in the address space is pointed to by the program counter register (PC), decode it as an instruction (opcode) and execute it, or contextually use it as a literal for a previous cycle. Opcodes not related to absolute program flow, such as jumps or calls, will end a cycle by incrementing the program counter to point at the next byte in the address space. Opcode length is variable and whilst some operations run in a single cycle, others require multiple fetch-decode-execute cycles to run. Opcodes are specified by the [official Zilog Z80 documentation](/assets/documents/gameboy-cpu/UM0080.pdf) but you must also consider the [differences in implementation on the GameBoy CPU](http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html). Here's an example of running three simple opcodes on a Z80:
+
+![Example fetch-decode-execute on the Z80](/assets/images/gameboy-cpu/CPU.svg)
+
+We're not really concerned with this low level cycle as software cannot control it, but we do need to keep track of how many have occurred so that we have a mechanism to match (read: approximate) platform timing. Our higher level cycle will be based on a concept of an operation, which can be represented by one or more opcodes and optional literals.
+
+Each operation cycle will:
+
+1. Fetch the next opcode.
+2. Decode the fetched opcode.
+3. Fetch any extra data required to resolve the operation including extra opcodes and literals.
+4. Record all m-cycles consumed in the operation so that we can block later to adjust our timings.
+5. Execute the opcode.
+
+##### A naive CPU core
+
+Naively this can be implemented as a while loop with a massive switch statement to handle the opcodes.
+
+{% highlight C# %}
+public class NaiveZ80
+{
+    private readonly IRegisters _registers;
+    private readonly IMmu _mmu;
+    private readonly IAlu _alu;
+
+    public NaiveZ80(IRegisters registers, IMmu mmu, IAlu alu)
+    {
+        _registers = registers;
+        _mmu = mmu;
+        _alu = alu;
+    }
+
+    public void Run()
+    {
+        while (true)
+        {
+            Execute(_mmu.ReadByte(_registers.ProgramCounter++));
+        }
+    }
+
+    private byte A
+    {
+        get => _registers.AccumulatorAndFlagsRegisters.A;
+        set => _registers.AccumulatorAndFlagsRegisters.A = value;
+    }
+
+    private byte B
+    {
+        get => _registers.GeneralPurposeRegisters.B;
+        set => _registers.GeneralPurposeRegisters.B = value;
+    }
+
+    private void Execute(byte opcode)
+    {
+        switch (opcode)
+        {
+            // LD B,A
+            case 0x47:
+                B = A;
+                break;
+
+            // LD A,n
+            case 0x3E:
+                A = _mmu.ReadByte(_registers.ProgramCounter++);
+                break;
+
+            // JP
+            case 0xC3:
+                _registers.ProgramCounter = _mmu.ReadWord(_registers.ProgramCounter);
+                break;
+
+            // ADD A,B
+            case 0x80:
+                A = _alu.Add(A, B);
+                break;
+
+            // Etc, etc, etc
+        }
+    }
+}
+{% endhighlight %}
+
+##### Arithmetic logic unit
+
+Notice that we have abstracted CPU arithmetic behind an arithmetic logic unit (ALU). The interface for this would look something like this.
+
+{% highlight C# %}
+public interface IAlu
+{
+    byte Add(byte a, byte b);
+
+    // all other methods omitted for brevity
+}
+{% endhighlight %}
+
+And implementation.
+
+{% highlight C# %}
+public class Alu : IAlu
+{
+    private readonly IRegisters _registers;
+
+    public Alu(IRegisters registers)
+    {
+        _registers = registers;
+    }
+
+    public byte Add(byte a, byte b)
+    {
+        var flags = _registers.AccumulatorAndFlagsRegisters.Flags;
+        var result = a + b;
+
+        // Half carry = carry from bit 3 to bit 4.
+        flags.HalfCarry = (((a & 0x0f) + (b & 0x0f)) & 0xf0) > 0;
+
+        // Overflow = (added signs are same) && (result sign differs from the sign of either of operands)
+        flags.ParityOverflow = ((a ^ b) & 0x80) == 0 && ((result ^ a) & 0x80) != 0;
+
+        // Carry = carry from bit 7 to bit 8.
+        flags.Carry = (result & 0x100) == 0x100;
+
+        // We're adding, so unset the subtract flag;
+        flags.Subtract = false;
+
+        // Sign flag is a copy of the sign bit.
+        flags.Sign = (result & 0x80) == 0x80;
+
+        // Set Zero flag if result is 0
+        flags.Zero = result == 0;
+
+        // Undocumented flags are set from corresponding result bits.
+        flags.Flag5 = (result & 0x20) == 0x20;
+        flags.Flag3 = (result & 0x8) == 0x8;
+
+        return (byte) result;
+    }
+}
+{% endhighlight %}
+
+We spend the majority of the `Add` function dealing with flags. This is a common theme of ALU methods so it makes sense that a complete ALU implementation would group flag manipulations into logical groups abstracted away behind methods such as `SetResultFlags`. 
+
+##### A dynamic CPU core
+
+We can do much better than the naive Z80 implementation above. The main issue I have with it is that we are decoding each opcode on every cycle, even if we've already decoded the exact same block of memory in a previous cycle. Since we're all software developers here, we know that the basic building blocks of software are control flow structures such as loops and functions. Software written for the Z80 platform is no different, it also consists of control flow structures, which means that the same code is run many times but against different data or CPU states. An ideal solution to this problem is to recompile Z80 opcodes and static data into a structure suitable for caching. In this case we would run a decode step only once per block of memory, compiling and caching it with enough meta data to recall later. When the CPU core attempts to decode the same block in the future, it will first check the cache. A hit will mean it can skip the entire decode-compile step resulting in a massive boost to performance. Since we're using .NET we have the expression tree API; a brilliant abstraction over emitting IL. Here's an example of how we might improve the original naive example to use cached expression trees.
+
+{% highlight C# %}
+public class ExpressionTreeZ80
+{
+    private readonly IRegisters _registers;
+    private readonly IMmu _mmu;
+    private readonly IAlu _alu;
+    private readonly IDictionary<ushort, Action<IRegisters, IMmu, IAlu>> _cache;
+
+    public ExpressionTreeZ80(IRegisters registers, IMmu mmu, IAlu alu)
+    {
+        _registers = registers;
+        _mmu = mmu;
+        _alu = alu;
+        _cache = new Dictionary<ushort, Action<IRegisters, IMmu, IAlu>>();
+    }
+
+    private static readonly ParameterExpression Registers = Expression.Parameter(typeof(IRegisters), "registers");
+    private static readonly ParameterExpression Mmu = Expression.Parameter(typeof(IMmu), "mmu");
+    private static readonly ParameterExpression Alu = Expression.Parameter(typeof(IAlu), "alu");
+    
+    private static readonly Expression AccumulatorAndFlagsRegisters = Expression.Property(Registers, nameof(IRegisters.AccumulatorAndFlagsRegisters));
+    private static readonly Expression GeneralPurposeRegisters = Expression.Property(Registers, nameof(IRegisters.GeneralPurposeRegisters));
+    private static readonly Expression ProgramCounter = Expression.Property(Registers, nameof(IRegisters.ProgramCounter));
+    private static readonly Expression A = Expression.Property(AccumulatorAndFlagsRegisters, nameof(AccumulatorAndFlagsRegisterSet.A));
+    private static readonly Expression B = Expression.Property(GeneralPurposeRegisters, nameof(GeneralPurposeRegisterSet.B));
+    private static readonly Expression IncrementProgramCounter = Expression.PreIncrementAssign(ProgramCounter);
+    private static readonly Expression MmuReadByte = Expression.Call(Mmu, typeof(IMmu).GetMethod(nameof(IMmu.ReadByte)), ProgramCounter);
+    private static readonly Expression MmuReadWord = Expression.Call(Mmu, typeof(IMmu).GetMethod(nameof(IMmu.ReadWord)), ProgramCounter);
+    private static Expression AluAdd(Expression a, Expression b) => Expression.Call(Alu, typeof(IAlu).GetMethod(nameof(IAlu.Add)), a, b);
+
+    public void Run()
+    {
+        while (true)
+        {
+            // First check if a block is cached at the address currently in the program counter.
+            if(!_cache.TryGetValue(_registers.ProgramCounter, out var action))
+            {
+                // Get a block of expressions and compile it.
+                var expressions = YieldNextBlock().ToList();
+                var block = Expression.Block(expressions);
+                var lambda = Expression.Lambda<Action<IRegisters, IMmu, IAlu>>(block, Registers, Mmu, Alu);
+                action = lambda.Compile();
+
+                // Cache this block.
+                _cache.Add(_registers.ProgramCounter, action);
+            }
+
+            // Execute the block.
+            action(_registers, _mmu, _alu);
+        }
+    }
+
+    private IEnumerable<Expression> YieldNextBlock()
+    {
+        for (var address = _registers.ProgramCounter; ; address++)
+        {
+            var opcode = _mmu.ReadByte(address);
+            switch (opcode)
+            {
+                // LD B,A
+                case 0x47:
+                    yield return Expression.Assign(B, A);
+                    break;
+
+                // LD A,n
+                case 0x3E:
+                    yield return Expression.Assign(A, MmuReadByte);
+                    yield return IncrementProgramCounter;
+
+                    // we also need to increment in the current context so we read the next opcode from the correct place.
+                    address++; 
+                    break;
+
+                // JP
+                case 0xC3:
+                    yield return Expression.Assign(ProgramCounter, MmuReadWord);
+                    yield break;
+
+                // ADD A,B
+                case 0x80:
+                    yield return Expression.Assign(A, AluAdd(A, B));
+                    break;
+
+                // Etc, etc, etc
+            }
+
+            // Increment the program counter in the expression tree.
+            yield return IncrementProgramCounter;
+        }
+    }
+}
+{% endhighlight %}
+
+#### Final thoughts
+
+The examples presented here have obviously been bastardised to fit onto a blog post, demonstrating a concept or technique rather than providing a complete implementation. For example, the `ExpressionTreeZ80` above fails to consider timing or self modifying code, misses out on some simple optimizations such as a pre-fetch queue and fails to consider unit testability by not separating the decode and execute steps. For the full implementation please visit [Retro.Net](https://github.com/axle-h/Retro.Net) on GitHub.

@@ -1,6 +1,7 @@
 ---
 layout: post
 title:  "Emulating the GameBoy CPU on .NET"
+name: emulating-the-gameboy-cpu-on-dot-net
 date:   2017-12-03 16:20:00 +0000
 author: Alex Haslehurst
 categories: software development emulation
@@ -8,11 +9,11 @@ categories: software development emulation
 
 At it's lowest level, a CPU can be represented by a finite state machine, where state is handled by registers and domain by the address space. This model is pretty simple to implement in software as all you need is a mechanism for tracking state and a definition of all possible state transitions. Luckily the GameBoy CPU, a Sharp LR35902, is derived from the popular and very well documented Zilog Z80 - A microprocessor that is unbelievably still in production today, over 40 years after it's introduction.
 
-<!--break-->
+<!--more-->
 
 #### Architecture
 
-The Z80 is an 8-bit microprocessor, meaning that each operation is natively performed on a single byte. The instruction set does have some 16-bit operations but these are just executed as multiple cycles of 8-bit logic. The GameBoy CPU has a 16-bit wide address bus, which logically represents a 64K memory map. Data is transferred to the CPU over an 8-bit wide data bus but this is irrelevant to simulating the system at state machine level. The Z80 and the Intel 8080 that it derives from have 256 I/O ports for accessing external peripherals but the GameBoy CPU has none - favouring memory mapped I/O instead. Since I found [an abundance of Z80 documentation](/assets/documents/gameboy-cpu/UM0080.pdf), including [non-official, or undocumented behaviours](/assets/documents/gameboy-cpu/z80-documented.pdf) that were discovered by ZX Spectrum developers, I opted to implement an emulator compatible with the full Z80 specification. To achieve Intel 8080 and GameBoy compatibility, which aren't strict logical subsets of the Z80, I simply provide a platform configuration mechanism that can toggle features.
+The Z80 is an 8-bit microprocessor, meaning that each operation is natively performed on a single byte. The instruction set does have some 16-bit operations but these are just executed as multiple cycles of 8-bit logic. The GameBoy CPU has a 16-bit wide address bus, which logically represents a 64K memory map. Data is transferred to the CPU over an 8-bit wide data bus but this is irrelevant to simulating the system at state machine level. The Z80 and the Intel 8080 that it derives from have 256 I/O ports for accessing external peripherals but the GameBoy CPU has none - favouring memory mapped I/O instead. Since I found [an abundance of Z80 documentation](/assets/documents/emulating-the-gameboy-cpu-on-dot-net/UM0080.pdf), including [non-official, or undocumented behaviours](/assets/documents/emulating-the-gameboy-cpu-on-dot-net/z80-documented.pdf) that were discovered by ZX Spectrum developers, I opted to implement an emulator compatible with the full Z80 specification. To achieve Intel 8080 and GameBoy compatibility, which aren't strict logical subsets of the Z80, I simply provide a platform configuration mechanism that can toggle features.
 
 #### Registers
 
@@ -220,7 +221,7 @@ We'll have two implementations of this interface; one for the Z80 and one shared
 
 Next we need to implement the memory management unit (MMU) to broker access to the address space. The relationship between CPU, MMU, memory and memory mapped IO devices looks something like the following.
 
-![Simple diagram of the GameBoy MMU](/assets/images/gameboy-cpu/MMU.svg)
+![Simple diagram of the GameBoy MMU](/assets/images/emulating-the-gameboy-cpu-on-dot-net/MMU.svg)
 
 An MMU should support reading and writing data in various lengths across the entire address space, whilst abstracting away the hardware that is physically attached to each location in the space.
 
@@ -329,9 +330,9 @@ It is the responsibility of the platform to wire up the correct segments and the
 
 #### Core
 
-A CPU runs on a fetch-decode-execute cycle, called the machine cycle or m-cycle. The CPU will initially fetch a byte, whose location in the address space is pointed to by the program counter register (PC), decode it as an instruction (opcode) and execute it, or contextually use it as a literal for a previous cycle. Opcodes not related to absolute program flow, such as jumps or calls, will end a cycle by incrementing the program counter to point at the next byte in the address space. Opcode length is variable and whilst some operations run in a single cycle, others require multiple fetch-decode-execute cycles to run. Opcodes are specified by the [official Zilog Z80 documentation](/assets/documents/gameboy-cpu/UM0080.pdf) but you must also consider the [differences in implementation on the GameBoy CPU](http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html). Here's an example of running three simple opcodes on a Z80:
+A CPU runs on a fetch-decode-execute cycle, called the machine cycle or m-cycle. The CPU will initially fetch a byte, whose location in the address space is pointed to by the program counter register (PC), decode it as an instruction (opcode) and execute it, or contextually use it as a literal for a previous cycle. Opcodes not related to absolute program flow, such as jumps or calls, will end a cycle by incrementing the program counter to point at the next byte in the address space. Opcode length is variable and whilst some operations run in a single cycle, others require multiple fetch-decode-execute cycles to run. Opcodes are specified by the [official Zilog Z80 documentation](/assets/documents/emulating-the-gameboy-cpu-on-dot-net/UM0080.pdf) but you must also consider the [differences in implementation on the GameBoy CPU](http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html). Here's an example of running three simple opcodes on a Z80:
 
-![Example fetch-decode-execute on the Z80](/assets/images/gameboy-cpu/CPU.svg)
+![Example fetch-decode-execute on the Z80](/assets/images/emulating-the-gameboy-cpu-on-dot-net/CPU.svg)
 
 We're not really concerned with this low level cycle as software cannot control it, but we do need to keep track of how many have occurred so that we have a mechanism to match (read: approximate) platform timing. Our higher level cycle will be based on a concept of an operation, which can be represented by one or more opcodes and optional literals.
 

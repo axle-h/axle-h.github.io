@@ -10,10 +10,10 @@ layout: no_nav
     <div class="row">
       <div class="section">
           <div class="container">
-            <h2 class="header center">Hello I'm {{ site.title | split: ' ' | first }}</h2>
-            <h5 class="header center">A software developer with a passion for</h5>
+            <div class="header big center">Hello I'm {{ site.title | split: ' ' | first }}</div>
+            <div class="header center">A software developer with a passion for</div>
             <div class="row center">
-                <h5 id="headline-type" class="header center">
+                <div id="headline-type" class="header center">
                     <strong class="headline-word">technology</strong>
                     <strong class="headline-word hide">.NET Core</strong>
                     <strong class="headline-word hide">machine learning</strong>
@@ -27,11 +27,13 @@ layout: no_nav
                     <strong class="headline-word hide">my 10km time</strong>
                     <strong class="headline-word hide">coffee</strong>
                     <strong class="headline-word hide">retro gaming</strong>
-                </h5>
+                </div>
             </div>
             
             <div class="row center">
-              <a href="{{ "/about" | relative_url }}" class="btn-large waves-effect waves-light">Who?</a>
+              <a href="{{ "/about" | relative_url }}" class="btn btn-large waves-effect waves-light">
+                <span class="fa fa-user fa-fw fa-lg" aria-hidden="true"></span> My Profile
+              </a>
             </div>
           </div>
         </div>
@@ -44,7 +46,7 @@ layout: no_nav
     <div class="row">
       <div class="col s12 m6">
         <div class="icon-block">
-          <h2 class="center"><i class="material-icons">code</i></h2>
+          <h2 class="center"><i class="fa fa-code" aria-hidden="true"></i></h2>
           <h5 class="center">Software Developer</h5>
           <p class="light center">
             I have over 5 years commercial software development experience spanning multiple industries and technologies.
@@ -55,7 +57,7 @@ layout: no_nav
 
       <div class="col s12 m6">
         <div class="icon-block">
-          <h2 class="center"><i class="material-icons">show_chart</i></h2>
+          <h2 class="center"><i class="fa fa-bar-chart" aria-hidden="true"></i></h2>
           <h5 class="center">Mathematician</h5>
           <p class="light center">
             My strong education in mathematics has helped me quickly accelerate my career past day to day, dumb, CRUD style projects and into data science focussed roles.

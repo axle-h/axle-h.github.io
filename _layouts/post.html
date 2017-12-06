@@ -1,6 +1,8 @@
 ---
 layout: default
+comments: true
 ---
+
 <div class="container post-container">
     <div class="section">
     <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
@@ -15,12 +17,15 @@ layout: default
                   </span>
     
                   <p class="blue-grey-text">
+                    <i class="fa fa-clock-o fa-fw" aria-hidden="true"></i>
                     <time datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">
                       {% assign date_format = site.minima.date_format | default: "%b %-d, %Y" %}
                       {{ page.date | date: date_format }}
                     </time>
+                    <br>
                     {% if page.author %}
-                      • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">{{ page.author }}</span></span>
+                      <i class="fa fa-user fa-fw" aria-hidden="true"></i>  
+                      <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">{{ page.author }}</span></span>
                     {% endif %}
                   </p>
                 </header>
@@ -50,7 +55,7 @@ layout: default
           </div>
         </div>
       </div>
-
+      
       {% if site.disqus.shortname %}
         {% include disqus_comments.html %}
       {% endif %}

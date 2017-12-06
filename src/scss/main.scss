@@ -1,6 +1,5 @@
 @charset "utf-8";
 
-$roboto-font-path: "/assets/fonts";
 $fa-font-path: "/assets/fonts";
 
 @import "palette";
@@ -8,10 +7,23 @@ $fa-font-path: "/assets/fonts";
 @import "~font-awesome/scss/font-awesome.scss";
 @import "syntax";
 
-/****** Nav ******/
-nav a {
-    @extend .primary-color-text, .text-darken-2;
+/****** Fonts ******/
+h1,h2,h3,h4,h5,h6 {
+    font-family: 'Roboto Slab', serif;
 }
+
+
+/****** Nav ******/
+nav {
+    a {
+        @extend .primary-color-text, .text-darken-2;
+    }
+    .sidenav-trigger {
+        font-size: $button-icon-font-size;
+    }
+}
+
+
 
 /****** Home ******/
 .index-banner {
@@ -48,6 +60,19 @@ nav a {
 
     @media #{$extra-large-and-up} {
         min-height: 550px;
+    }
+
+    .header {
+        font-size: $h5-fontsize;
+        display: block;
+        font-weight: 400;
+        line-height: 110%;
+        margin-bottom: 0.3em;
+
+        &.big {
+            font-size: $h2-fontsize;
+        }
+
     }
 }
 

@@ -1,4 +1,4 @@
-<div class="col s12 m6 l4">
+<div class="col s12 m6 xl4">
     <div class="card grey lighten-4">
         <div class="card-image">
             <a href="{{ include.post.url | relative_url }}">
@@ -7,12 +7,17 @@
         </div>
         <div class="card-stacked">
             <div class="card-content">
-                <span class="card-title">{{ include.post.title }}</span>
-                <h6 class="grey-text ">{{ include.post.date | date_to_long_string }}</h6>
+                <h5 class="card-title primary-color-text">{{ include.post.title }}</h5>
+                <h6 class="blue-grey-text">
+                    <i class="fa fa-clock-o fa-fw" aria-hidden="true"></i>
+                    {{ include.post.date | date_to_long_string }}
+                </h6>
                 {{ include.post.excerpt }}
             </div>
             <div class="card-action">
-                <a href="{{ include.post.url | relative_url }}" class="valign-wrapper">Read <i class="material-icons">navigate_next</i></a>
+                <a href="{{ include.post.url | relative_url }}" class="valign-wrapper">
+                    Read <i class="fa fa-angle-right fa-lg fa-fw" aria-hidden="true"></i>
+                </a>
             </div>
         </div>
     </div>

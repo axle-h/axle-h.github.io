@@ -89,7 +89,10 @@ public class GameBoyFlagsRegister : IFlagsRegister
 
     public byte Register
     {
-        get => (byte) ((Zero ? ZeroMask : 0) | (HalfCarry ? HalfCarryMask : 0) | (Subtract ? SubtractMask : 0) | (Carry ? CarryMask : 0));
+        get => (byte) ((Zero ? ZeroMask : 0)
+                     | (HalfCarry ? HalfCarryMask : 0)
+                     | (Subtract ? SubtractMask : 0)
+                     | (Carry ? CarryMask : 0));
         set
         {
             Zero = (value & ZeroMask) > 0;
@@ -124,7 +127,8 @@ For defining our register classes we could do with some help for converting betw
 {% highlight C# %}
 public static class BitConverterHelpers
 {
-    public static ushort To16Bit(byte high, byte low) => (ushort) ((high << 8) | low);
+    public static ushort To16Bit(byte high, byte low)
+        => (ushort) ((high << 8) | low);
 
     public static (byte high, byte low) To8Bit(ushort value)
     {

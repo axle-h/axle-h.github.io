@@ -41,16 +41,16 @@ The Z80 defines alternative/banked versions of `AF`, `BC`, `DE` and `HL` that ar
 
 The flags register is a single byte that contains a bit-mask set according to the last result. Notice that the GameBoy flags register only uses the most significant 4-bits and does not implement the sign or parity/overflow flag. The least significant bits of the GameBoy flags register are always 0.
 
-| 8080/Z80 Bit | GameBoy Bit | Name            | Description
-| ------------ | ----------- | --------------- | ---
-| 0            | 4           | Carry           | Set if the result did not fit in the register
-| 1            | 6           | Subtract        | Set if the last operation was a subtraction
-| 2            | -           | Parity/Overflow | Parity set if even number of bits set. Overflow set if the 2's-complement result does not fit in the register
-| 3            | -           | Undocumented    | Copy of bit 3
-| 4            | 5           | Half Carry      | Carry from bit 3 to bit 4
-| 5            | -           | Undocumented    | Copy of bit 5
-| 6            | 7           | Zero            | Set if the value is zero
-| 7            | -           | Sign            | Set if the 2's-complement value is negative (copy of MSB)
+| 8080/Z80 Bit | GameBoy Bit | Name            
+| ------------ | ----------- | --------------- 
+| 0            | 4           | Carry           
+| 1            | 6           | Subtract        
+| 2            | -           | Parity/Overflow 
+| 3            | -           | Undocumented    
+| 4            | 5           | Half Carry      
+| 5            | -           | Undocumented    
+| 6            | 7           | Zero            
+| 7            | -           | Sign            
 
 The flags registers are implemented slightly differently on each platform so we'll hide them away behind an interface.
 

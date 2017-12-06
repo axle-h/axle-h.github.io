@@ -1,20 +1,9 @@
-<!--<div class="col s12">
-    <div class="card blue-grey darken-1">
-        <div class="card-content white-text">
-        <span class="card-title">{{ include.post.title }}</span>
-        <h6 class="grey-text ">{{ include.post.date | date_to_long_string  }}</h6>
-        <div class="post-description">{{ include.post.excerpt }}</div>
-        </div>
-        <div class="card-action">
-        <a href="{{ include.post.url | relative_url }}" class="valign-wrapper">Read <i class="material-icons">navigate_next</i></a>
-        </div>
-    </div>
-</div>-->
-
-<div class="col">
-    <div class="card grey lighten-4 horizontal small">
+<div class="col s12 m6 l4">
+    <div class="card grey lighten-4">
         <div class="card-image">
-            <img src="/assets/images/{{include.post.name}}/logo.png">
+            <a href="{{ include.post.url | relative_url }}">
+                <img src="/assets/images/{{include.post.name}}/logo.png">
+            </a>
         </div>
         <div class="card-stacked">
             <div class="card-content">

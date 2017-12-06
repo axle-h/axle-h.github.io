@@ -4,15 +4,15 @@ const arrayFrom = require("array-from");
 
 const headlineClass = "headline-word";
 const hideClass = "hide";
-const highlightClass = "highlight";
+const selectedClass = "selected";
 const initialAnimationDelay = 3000;
 const longAnimationDelay = 1500;
-const highlightAnimationDelay = 300;
+const selectedAnimationDelay = 300;
 const shortAnimationDelay = 200;
 
 const State = Object.freeze({
     Type:   "Type",
-    Highlight:  "Highlight",
+    Selected:  "Selected",
     Delete: "Delete"
 });
 
@@ -21,7 +21,7 @@ export default class HeadlineType {
         this.element = element;
         this.words = arrayFrom(element.getElementsByClassName(headlineClass)).map(w => new Word(w));
         this.index = 0;
-        this.state = State.Highlight;
+        this.state = State.Selected;
         
         // Fix visibility. We want the word to visible but the letters to be hidden.
         for (var i = 0; i < this.words.length; i++) {
@@ -40,10 +40,10 @@ export default class HeadlineType {
         let nextDelay = shortAnimationDelay;
 
         switch (this.state) {
-            case State.Highlight:
-                word.highlight();
+            case State.Selected:
+                word.select();
                 this.state = State.Delete;
-                nextDelay = highlightAnimationDelay;
+                nextDelay = selectedAnimationDelay;
                 break;
 
             case State.Delete:
@@ -54,7 +54,7 @@ export default class HeadlineType {
 
             case State.Type:
                 if (!word.type()) {
-                    this.state = State.Highlight;
+                    this.state = State.Selected;
                     nextDelay = longAnimationDelay;
                 }
                 break;
@@ -92,12 +92,12 @@ class Word {
         this.element.classList.add(hideClass);
     }
 
-    highlight() {
-        this.element.classList.add(highlightClass);
+    select() {
+        this.element.classList.add(selectedClass);
     }
 
     reset() {
-        this.element.classList.remove(highlightClass);
+        this.element.classList.remove(selectedClass);
         this.letterElements.forEach(l => l.classList.add(hideClass))
         this.index = 0;
     }

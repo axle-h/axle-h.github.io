@@ -6,6 +6,7 @@ $fa-font-path: "/assets/fonts";
 @import "palette";
 @import "~materialize-css/sass/materialize.scss";
 @import "~font-awesome/scss/font-awesome.scss";
+@import "syntax";
 
 /****** Nav ******/
 nav a {
@@ -61,7 +62,7 @@ nav a {
 #headline-type {
     min-height: 2em;
     .headline-word {
-        &.highlight {
+        &.selected {
             @extend .primary-color, .darken-2;
         }
     }
@@ -111,15 +112,6 @@ nav a {
             }
         }
     }
-}
-
-/****** Code highlighting ******/
-.highlight {
-    overflow-x: auto;
-    margin-left: 0; 
-    margin-right: 0;
-    font-size: 0.8em;
-    padding-left: 1em;
 }
 
 /****** CV ******/

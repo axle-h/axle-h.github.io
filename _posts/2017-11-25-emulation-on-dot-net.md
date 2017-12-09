@@ -12,6 +12,11 @@ I plan to do a few write-ups about my experience with this project. Firstly: why
 
 <!--more-->
 
+1. [Emulation on .NET]({% post_url 2017-11-25-emulation-on-dot-net %})
+2. [Emulating the GameBoy CPU on .NET]({% post_url 2017-12-03-emulating-the-gameboy-cpu-on-dot-net %})
+
+##### Background
+
 Retro.Net started as a programming exercise for me many years ago. I wanted a goal to work towards and wasn't happy with the boring examples that accompanied tutorials. Instead, I started a project that I knew would encourage me to continue writing code in my spare time whilst also including some electronics and retro gaming; a couple of personal interests. It has been re-written multiple times over the years and evolved into a successful product that actually plays Tetris at full speed. The CPU core is dynamically re-compiled into .NET with the help of the expression tree API and cached for speed. User interface is currently handled by ASP.NET Core, communicating over web sockets to a client written in Angular that's geared towards a crowd gaming style of input. 
 
 Let's cut to it.
@@ -45,4 +50,4 @@ For these reasons software emulating legacy platforms has traditionally been wri
 
 However, there are use cases for emulators other than playing games where cycle accurate timing is not essential and in fact running the simulation as fast as possible would be beneficial. A great example of this would be in training a machine learning algorithm to play software written for the emulated platform. In this case we would prefer to run multiple platform instances, training multiple agents concurrently and each as fast as possible. Another example would be in the user interface of [Retro.Net](https://github.com/axle-h/Retro.Net). This employs a crowd gaming concept, where all connected clients can vote on the next input. Cycle accurate timing is not essential as HTTP latency and the voting period length can be many orders of magnitude longer than the timing resolution required.
 
-Next time I'll have a look at the core of the emulator behind [Retro.Net](https://github.com/axle-h/Retro.Net) that uses a high level form of dynamic recompilation to emulate the Z80 derived GameBoy CPU.
+Next time I'll have a look at the core of the emulator behind [Retro.Net](https://github.com/axle-h/Retro.Net), which uses a high level form of dynamic recompilation to emulate the Z80 derived GameBoy CPU.

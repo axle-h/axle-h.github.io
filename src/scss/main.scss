@@ -108,6 +108,21 @@ nav {
                margin-bottom: 1em;
             }
 
+            
+            $header-scale: 1.5;
+            $h1-fontsize: $h1-fontsize / $header-scale;
+            $h2-fontsize: $h2-fontsize / $header-scale;
+            $h3-fontsize: $h3-fontsize / $header-scale;
+            $h4-fontsize: $h4-fontsize / $header-scale;
+            $h5-fontsize: $h5-fontsize / $header-scale;
+            $h6-fontsize: $h6-fontsize / $header-scale;
+            h1 { font-size: $h1-fontsize; margin: ($h1-fontsize / 1.5) 0 ($h1-fontsize / 2.5) 0;}
+            h2 { font-size: $h2-fontsize; margin: ($h2-fontsize / 1.5) 0 ($h2-fontsize / 2.5) 0;}
+            h3 { font-size: $h3-fontsize; margin: ($h3-fontsize / 1.5) 0 ($h3-fontsize / 2.5) 0;}
+            h4 { font-size: $h4-fontsize; margin: ($h4-fontsize / 1.5) 0 ($h4-fontsize / 2.5) 0;}
+            h5 { font-size: $h5-fontsize; margin: ($h5-fontsize / 1.5) 0 ($h5-fontsize / 2.5) 0;}
+            h6 { font-size: $h6-fontsize; margin: ($h6-fontsize / 1.5) 0 ($h6-fontsize / 2.5) 0;}
+
             @media #{$medium-and-down} {
                 img {
                     display: block;

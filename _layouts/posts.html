@@ -2,17 +2,12 @@
 layout: default
 ---
 
-
-
 <div class="container">
     <div class="row">
         {{ content }}
     </div>
 
-    <div class="row">
-        {% for post in site.posts %}
-            {% include post-card.html post=post %}
-        {% endfor %}
-        </div>
-    </div>
+    
+    {% include post-cards.html %}
+    
 </div>

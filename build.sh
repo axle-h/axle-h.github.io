@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 BUNDLE=bundle
 JEKYLL="$BUNDLE exec jekyll"

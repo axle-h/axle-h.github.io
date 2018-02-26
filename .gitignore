@@ -25,6 +25,7 @@ node_modules
 *~
 
 # OS or Editor folders
+.vscode/
 ._*
 .cache
 .DS_Store

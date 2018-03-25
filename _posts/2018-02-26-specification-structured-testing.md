@@ -32,16 +32,18 @@ You can find it on [GitHub][github] and [NuGet][nuget].
 [Bogus]: https://github.com/bchavez/Bogus
 [Autofac.Extras.Moq]: https://github.com/autofac/Autofac.Extras.Moq
 [SpecFlow]: http://specflow.org
+[Retro.Net]: https://github.com/axle-h/Retro.Net
+[AutoMapper]: https://automapper.org
 
 ## The problem
 
-We should all be familiar with the sensible Arrange, Act, Assert (AAA) pattern, which encourages developers to define unit tests in an explicit, modular structure. Stuff like this can only be good but when did you last read some decent material dedicated to the structuring of test classes? The lack of this means that every developer writes unit tests in a slightly different way - I call this free-form or flat unit testing. I have on numerous occasions been the victim of spending far to much time attempting to reverse engineer the thoughts of the original developer of some probably very technically sound unit tests that are so obtuse that they have become unmaintainable. I have cursed to myself whilst consulting the history, already considering a strongly worded Slack message when unbelievably the name responsible for that entire dirty, dirty unit test file is my own. Ergh. What can we do about this? How about we define a structure for our unit tests and stick to it.
+We should all be familiar with the sensible Arrange, Act, Assert (AAA) pattern, which encourages developers to write unit tests in an explicit, modular structure. Stuff like this can only be good but when did you last read some decent material dedicated to the structuring of test classes? The lack of this means that every developer writes unit tests in a slightly different way - I call this free-form or flat unit testing. I have on numerous occasions been the victim of spending far too much time attempting to reverse engineer the thoughts of the original developer of some probably very technically sound unit tests that are so obtuse that they have become unmaintainable. I have cursed to myself whilst consulting the history, already considering a strongly worded Slack message when unbelievably the name responsible for that entire dirty, dirty unit test file is my own. Ergh. What can we do about this? How about we define a structure for our unit tests and stick to it.
 
 ## Frameworks, lots of them
 
 A large factor that divides .NET Core developer opinions in regards to unit testing is the lack of a decent quality, fully featured, Microsoft backed framework to work with. Scala for instance has ScalaTest and Angular has Jasmine. Both of these include support for rich methodologies such as BDD, fixtures, fluent assertions and either direct mocking/spy support or deep integration with well supported mocking frameworks. In .NET Core we have to construct a Frankenstein solution from a unit testing framework such as [MSTest][MSTest], [xunit][xunit] or [NUnit][NUnit], a mocking framework such as [Moq][Moq] or [NSubstitute][NSubstitute], a fake data library such as [AutoFixture][AutoFixture] or [Bogus][Bogus] and an assertions library such as [FluentAssertions][FluentAssertions] or [Shouldly][Shouldly]. Unit tests written against a combination of all of these end up with slight overlaps such as asserting calls on the mocking library whilst also asserting results of service functions with the assertion library.
 
-So the first step of cleaning up the mess for all development teams should be to decide exactly which frameworks to use everywhere and stick with them. A NuGet meta package like Microsoft.AspNetCore.All could work. But why stop there? How about we define some common functionality in this package so that all of our unit tests can either inherit from or consume a common set of tools.
+So the first step of cleaning up the mess for all development teams should be to decide exactly which frameworks to use everywhere and stick with them. A NuGet meta package like `Microsoft.AspNetCore.All` could work. But why stop there? How about we define some common functionality in this package so that all of our unit tests can either inherit from or consume a common set of tools.
 
 ### Unit test framework
 
@@ -69,7 +71,7 @@ someVariable.Should().NotBeNull().And.BeSameAs(someOtherVariable);
 
 ### Test data library
 
-For complex test data, I like to use [AutoFixture][AutoFixture], which has finally been ported to .NET Core. I also like to use [Bogus][Bogus] for generating context aware test data e.g. user names, email address, URL's. Bogus is a tiny library anyway so I'm happy to include both.
+For complex test data, I like to use [AutoFixture][AutoFixture], which has finally been ported to .NET Core. I also like to use [Bogus][Bogus] for generating context aware test data e.g. user names, email addresses, URL's. Bogus is a tiny library anyway so I'm happy to include both.
 
 {% highlight C# %}
 
@@ -91,15 +93,15 @@ The whole idea behind specification based testing is to define your tests in ter
 * **When** we use a service to do an action
   * **And** the data has feature A
     * **Then** it should not return null
-    * **And** it should do something specific to feature A
-    * **And** it should not do something specific to feature B
+    * **Then** it should do something specific to feature A
+    * **Then** it should not do something specific to feature B
   * **And** the data has feature B
     * **Then** it should not return null
-    * **And** it should do something specific to feature B
-    * **And** it should not do something specific to feature A
+    * **Then** it should do something specific to feature B
+    * **Then** it should not do something specific to feature A
   * **And** there is no data
     * **Then** it should return null
-    * **And** it should not throw (implied)
+    * **Then** it should not throw (implied)
 
 The idea is that it's almost conversation. This really helps future developers understand what you meant your tests to actually test, failures to be more descriptive and the structure of tests to be more concise.
 
@@ -109,7 +111,7 @@ Although this specification style structure is associated with unit tests writte
 
 If we take the concept of specification structured tests from BDD and leverage the tooling of existing unit testing frameworks, we get what I like to call BDD-lite. This is not a new framework, nothing needs to change on developer machines or in CI, it's a simple set of standards for structuring unit tests more concisely.
 
-When introducing BDD-lite to a team, it should be the encouraged approach but entirely optional. Specification structured testing lends itself really well to the CRUD style microservices that we see in modern microservice applications but doesn't do so well in situations that require a complicated fixture as the specification itself requires exclusive control of it. For example, the unit tests in my GameBoy emulator require a very complicated fixture to setup and teardown an environment around the CPU core so they do not use specification style testing.
+When introducing BDD-lite to a team, it should be the encouraged approach but entirely optional. Specification structured testing lends itself really well to the CRUD style applications that we see in modern microservice architectures but doesn't do so well in situations that require a complicated fixture as the specification itself requires exclusive control of it. For example, the unit tests in my [.NET Core GameBoy emulator Retro.Net][Retro.Net] require a very complicated fixture to setup and teardown an environment around the CPU core so they do not use specification style testing.
 
 ## Example
 
@@ -140,6 +142,7 @@ public class BreakfastService
             return null;
         }
 
+        // The bacon sandwich is only yummy if we got our preferred type of bacon.
         var isYummy = bacon.IsSmoked == preferSmokedBacon;
         return new BaconSandwich
                 {
@@ -151,7 +154,7 @@ public class BreakfastService
 
 {% endhighlight %}
 
-This example needs a bacon class, a bacon sandwich class and a bacon repository interface:
+This example needs a bacon class, a bacon sandwich class and a bacon repository interface (that's a lot of bacon :-)):
 
 {% highlight C# %}
 
@@ -170,7 +173,7 @@ public class BaconSandwich
 public interface IBaconRepository
 {
     /// <summary>
-    /// Gets and removes a slice of bacon from this bacon repository, hopefully of the preferred type, or null we've already eaten it all.
+    /// Gets and removes a slice of bacon from this bacon repository, hopefully of the preferred type, or null we've already eaten it all :-(.
     /// </summary>
     /// <param name="preferSmoked">if set to <c>true</c> then we'll try to get smoked bacon, but we may still return un-smoked. Sorry.</param>
     /// <returns>A slice of bacon, or null if we've already eaten it all.</returns>
@@ -184,19 +187,19 @@ We can represent the behaviours of `MakeMeABaconSandwichAsync` in a hierarchical
 * **When** we use the breakfast service to make me a bacon sandwich
   * **And** there is bacon of the correct type available
     * **Then** it should not return null
-    * **And** it should belong to the correct person
-    * **And** it should be yummy
+    * **Then** it should belong to the correct person
+    * **Then** it should be yummy
   * **And** there is bacon available but not of the correct type
     * **Then** it should not return null
-    * **And** it should belong to the correct person
-    * **And** it should not be yummy
+    * **Then** it should belong to the correct person
+    * **Then** it should not be yummy
   * **And** there is no bacon available
     * **Then** it should return null
-    * **And** it should not throw (implied)
+    * **Then** it should not throw (implied)
 
 ### Free form unit test
 
-If we were to test `MakeMeABaconSandwichAsync` then we could write each coarse behaviour as an independent unit test, the fine behaviours would be represented by assertions at the end of each test method.
+If we were to test `MakeMeABaconSandwichAsync` with AAA structured, flat unit tests then we could write each coarse behaviour as an independent unit test, the fine behaviours would be represented by assertions at the end of each test method.
 
 {% highlight C# %}
 
@@ -267,6 +270,8 @@ public class BreakfastServiceTests
 
 The unit tests themselves are structured well but that's a lot of boiler plate isn't it. There is definitely scope for extracting some common code out into a function or two. We might extract the arrange, act and assert steps as functions but it would be pretty difficult to keep clean. Believe me I tried.
 
+Imagine a future development of `BreakfastService` started explicitly consuming bread or sauce from separate repositories. We'd have to inject these dependencies, changing the signature of the constructor and the pattern in which we call our dependencies. To fix these unit tests we'd have to change the constructor call and the mock setup in three different places. This is something that we can avoid with specification structured testing.
+
 ### Explicit test structure
 
 We should all know that the structure of a (good) test should closely follow the arrange, act, assert pattern. The example tests certainly do this by following a common process:
@@ -278,7 +283,7 @@ We should all know that the structure of a (good) test should closely follow the
 2. Act: Call the service method.
 3. Assert: Assert features of the result.
 
-This is nice but completely implicit. I.e. a developer could arrive later and move some arrange code after the act step in order to force an assertion to pass. Or worse, add another round of acting and asserting, essentially coupling two tests together. If we are writing good tests then why not be more explicit in our test structure? How about we guide developers into this pattern explicitly with a test structure that looks something like this:
+This is nice but completely implicit. I.e. a future developer working o n these tests could move some arrange code after the act step in order to force an assertion to pass. Or worse, add another round of acting and asserting, essentially coupling two tests together. If we are writing good tests then why not be more explicit in our test structure? How about we guide developers into this pattern explicitly with a specification-like test structure that looks something like this:
 
 {% highlight C# %}
 
@@ -355,7 +360,7 @@ There's two major problems here:
   * We can only know that the first assertion did not throw by actually looking at the code.
   * We do not know the result of the last assertion as it didn't actually run.
 
- Some information about the result of the test has been lost. Using rich assertion libraries such as FluentAssertions can mitigate this slightly with functions that combine assertions, however they can be difficult to write effectively the result of a failure is a long and difficult to read message. I don't like making life harder for myself, especially when things are going wrong.
+ Some information about the result of the test has been lost. Using rich assertion libraries such as FluentAssertions can mitigate this slightly with functions that combine assertions, however they can be difficult to write effectively, the result of a failure is a long and difficult to read message. I don't like making life harder for myself, especially when things are going wrong.
 
 Wouldn't it be nice if we could structure our tests to produce messages like this:
 
@@ -430,11 +435,11 @@ public class When_attempting_to_make_a_bacon_sandwich_without_bacon : BaconServi
 
 ### Auto mocking container
 
-The Spec classes in xunit.spec supports the subject pattern by using an auto mocking container. This automatically injects dependencies as mocks into the constructor of a subject so we don't have to construct mocks or call the subject constructor directly. We can configure these mocks in our arrange step. This has the massive advantage that changing the signature of service constructors, which we should do all the time due to DI, does not automatically break tests. It also remove loads of boiler plate code and enables us to only be concerned with the dependent mocks of the behaviour that we're testing. I've used [Autofac.Extras.Moq][Autofac.Extras.Moq], an auto mock container based on Moq for the mocking bit and Autofac for the container bit.
+The Spec classes in xunit.spec support the subject pattern by using an auto mocking container. This automatically injects dependencies as mocks into the constructor of a subject so we don't have to construct mocks or call the subject constructor directly. We can configure these mocks in our arrange step. This has the massive advantage that changing the signature of service constructors, which we should do all the time due to DI, does not automatically break tests. It also remove loads of boiler plate code and enables us to only be concerned with the dependent mocks of the behaviour that we're testing. I've used [Autofac.Extras.Moq][Autofac.Extras.Moq], an auto mock container based on Moq for the mocking bit and Autofac for the container bit.
 
 ## Bells and whistles
 
-There's some cool stuff that you can do with specification tests. For example, when using AutoMapper it's such a black box that it should be a requirement for you to unit test each of your profiles. Check out [xunit-spec-automapper][xunit-spec-automapper] which provides a specification base class configured for testing AutoMapper profiles. E.g. if you had an assembly with loads of profiles like this one:
+There's some cool stuff that you can do with specification tests. For example, when using [AutoMapper][AutoMapper], profiles are such a black box that it should be a requirement for you to unit test each of them. Check out [xunit-spec-automapper][xunit-spec-automapper] which provides a specification base class configured for testing AutoMapper profiles. E.g. if you had an assembly with loads of profiles like this one:
 
 {% highlight C# %}
 

@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Specification structured testing"
+title:  "Specification Structured Testing"
 logo: specification-structured-testing/logo.jpg
 date:   2018-02-26 17:30:00 +0000
 author: Alex Haslehurst
@@ -34,6 +34,8 @@ You can find it on [GitHub][github] and [NuGet][nuget].
 [SpecFlow]: http://specflow.org
 [Retro.Net]: https://github.com/axle-h/Retro.Net
 [AutoMapper]: https://automapper.org
+[ScalaTest]: http://www.scalatest.org
+[Jasmine]: https://jasmine.github.io
 
 ## The problem
 
@@ -41,13 +43,13 @@ We should all be familiar with the sensible Arrange, Act, Assert (AAA) pattern, 
 
 ## Frameworks, lots of them
 
-A large factor that divides .NET Core developer opinions in regards to unit testing is the lack of a decent quality, fully featured, Microsoft backed framework to work with. Scala for instance has ScalaTest and Angular has Jasmine. Both of these include support for rich methodologies such as BDD, fixtures, fluent assertions and either direct mocking/spy support or deep integration with well supported mocking frameworks. In .NET Core we have to construct a Frankenstein solution from a unit testing framework such as [MSTest][MSTest], [xunit][xunit] or [NUnit][NUnit], a mocking framework such as [Moq][Moq] or [NSubstitute][NSubstitute], a fake data library such as [AutoFixture][AutoFixture] or [Bogus][Bogus] and an assertions library such as [FluentAssertions][FluentAssertions] or [Shouldly][Shouldly]. Unit tests written against a combination of all of these end up with slight overlaps such as asserting calls on the mocking library whilst also asserting results of service functions with the assertion library.
+A large factor that divides .NET Core developer opinions in regards to unit testing is the lack of a decent quality, fully featured, Microsoft backed framework to work with. Scala for instance has [ScalaTest][ScalaTest] and Angular has [Jasmine][Jasmine]. Both of these include support for rich methodologies such as BDD, fixtures, fluent assertions and either direct mocking/spy support or deep integration with well supported mocking frameworks. In .NET Core we have to construct a Frankenstein solution from a unit testing framework such as [MSTest][MSTest], [xunit][xunit] or [NUnit][NUnit], a mocking framework such as [Moq][Moq] or [NSubstitute][NSubstitute], a fake data library such as [AutoFixture][AutoFixture] or [Bogus][Bogus] and a fluent assertion library such as [FluentAssertions][FluentAssertions] or [Shouldly][Shouldly]. Unit tests written against a combination of all of these end up with slight overlaps such as asserting calls on the mocking library whilst also asserting results of service functions with the assertion library.
 
 So the first step of cleaning up the mess for all development teams should be to decide exactly which frameworks to use everywhere and stick with them. A NuGet meta package like `Microsoft.AspNetCore.All` could work. But why stop there? How about we define some common functionality in this package so that all of our unit tests can either inherit from or consume a common set of tools.
 
 ### Unit test framework
 
-Microsoft provides [MSTest][MSTest], which is a clear improvement over V1 but is still a bit too wordy for my liking, whilst lacking features such as class fixtures and asynchronous lifetime events. Then there's [NUnit][NUnit], which has only recently joined back in with MSBuild based .NET Core support. I prefer this over MSTest as it has a richer feature set. However, it's still quite wordy and it runs on a context per class i.e. a test class instance is reused for each unit test. I don't like this as it provides a dangerous path to coupled tests. I much prefer [xunit][xunit], the latest framework to come from the original developer behind NUnit. It simplifies loads of stuff, removes all of the wordy attributes and uses a context per unit test i.e. every test runs in a separate instance of the test class. It's also backed well by Microsoft, who provide project templates in the default Visual Studio 2017 installation.
+Microsoft provides [MSTest V2][MSTest], which is a clear improvement over V1 but is still a bit too wordy for my liking, whilst lacking features such as class fixtures and asynchronous lifetime events. Then there's [NUnit][NUnit], which has only recently joined back in with MSBuild based .NET Core support. I prefer this over MSTest as it has a richer feature set. However, it's still quite wordy and it runs on a context per class i.e. a test class instance is reused for each unit test. I don't like this as it provides a dangerous path to coupled tests. I much prefer [xunit][xunit], the latest framework to come from the original developer behind NUnit. It simplifies loads of stuff, removes all of the wordy attributes and uses a context per unit test i.e. every test runs in a separate instance of the test class. It's also backed well by Microsoft, who provide project templates in the default Visual Studio 2017 installation.
 
 ### Mocking library
 
@@ -88,7 +90,7 @@ var validUri = Uri.TryCreate(url, UriKind.Absolute, out var uri); // true
 
 The specification structure comes from behaviour driven development (BDD). I'm not interested in the whole BDD approach, including stories and "should behave like" style assertions as free-form unit test frameworks such as [xunit][xunit] do not support it. There are some .NET unit test frameworks that can be used to go full blown BDD such as [NSpec][NSpec] and [machine.specifications][machine.specifications] but these come at the cost of poor tooling including no dotnet CLI support and deep vendor lock in. One step further would be fully featured BDD frameworks like [SpecFlow][SpecFlow], which are written in cross business legible syntax. The problem with these is that the tests are written in an entirely different language from the application code, are not run from the IDE and are not part of the same solution so things like refactorings will not work.
 
-The whole idea behind specification based testing is to define your tests in terms of the behaviours of a single subject. In a microservice architecture, a subject is most likely to be a service, repository or controller but could also be an automapper profile or the DI container. Behaviours are most likely to be defined by the result of calling a method on the subject. We can best think of these behaviours in a hierarchical flow:
+The whole idea behind specification structured testing is to define your tests in terms of the behaviours of a single subject. In a microservice architecture, a subject is most likely to be a service, repository or controller but could also be an automapper profile or the DI container. Behaviours are most likely to be defined by the result of calling a method on the subject. We can best think of these behaviours in a hierarchical flow:
 
 * **When** we use a service to do an action
   * **And** the data has feature A
@@ -109,9 +111,9 @@ Although this specification style structure is associated with unit tests writte
 
 ## BDD-Lite
 
-If we take the concept of specification structured tests from BDD and leverage the tooling of existing unit testing frameworks, we get what I like to call BDD-lite. This is not a new framework, nothing needs to change on developer machines or in CI, it's a simple set of standards for structuring unit tests more concisely.
+If we take the concept of specification structured tests from BDD and leverage the tooling of existing unit testing frameworks, we get what I like to call BDD-lite. This is not a new framework, nothing needs to change on developer machines or in CI, it's a simple set of standards for structuring more concise unit tests.
 
-When introducing BDD-lite to a team, it should be the encouraged approach but entirely optional. Specification structured testing lends itself really well to the CRUD style applications that we see in modern microservice architectures but doesn't do so well in situations that require a complicated fixture as the specification itself requires exclusive control of it. For example, the unit tests in my [.NET Core GameBoy emulator Retro.Net][Retro.Net] require a very complicated fixture to setup and teardown an environment around the CPU core so they do not use specification style testing.
+When introducing BDD-lite to a team, it should be the encouraged approach but entirely optional. Specification structured testing lends itself really well to the CRUD style applications that we often see in modern microservice architectures, but doesn't do so well in situations that require a complicated fixture as the specification itself requires exclusive control of it. For example, the unit tests in my [.NET Core GameBoy emulator Retro.Net][Retro.Net] require a very complicated fixture to setup and teardown an environment around the CPU core so they do not use specification style testing.
 
 ## Example
 
@@ -283,7 +285,7 @@ We should all know that the structure of a (good) test should closely follow the
 2. Act: Call the service method.
 3. Assert: Assert features of the result.
 
-This is nice but completely implicit. I.e. a future developer working o n these tests could move some arrange code after the act step in order to force an assertion to pass. Or worse, add another round of acting and asserting, essentially coupling two tests together. If we are writing good tests then why not be more explicit in our test structure? How about we guide developers into this pattern explicitly with a specification-like test structure that looks something like this:
+This is nice but completely implicit. I.e. a future developer working on these tests could move some arrange code after the act step in order to force an assertion to pass. Or worse, add another round of acting and asserting, essentially coupling two tests together. If we are writing good tests then why not be more explicit in our test structure? How about we guide developers into this pattern explicitly with a specification-like test structure that looks something like this:
 
 {% highlight C# %}
 
@@ -360,7 +362,7 @@ There's two major problems here:
   * We can only know that the first assertion did not throw by actually looking at the code.
   * We do not know the result of the last assertion as it didn't actually run.
 
- Some information about the result of the test has been lost. Using rich assertion libraries such as FluentAssertions can mitigate this slightly with functions that combine assertions, however they can be difficult to write effectively, the result of a failure is a long and difficult to read message. I don't like making life harder for myself, especially when things are going wrong.
+ Some information about the result of the test has been lost. Using rich assertion libraries such as FluentAssertions can mitigate this slightly with functions that combine assertions, however they can be difficult to write effectively and the result of a failure is a long and difficult to read message. I don't like making life harder for myself, especially when things are going wrong.
 
 Wouldn't it be nice if we could structure our tests to produce messages like this:
 
@@ -369,7 +371,7 @@ Wouldn't it be nice if we could structure our tests to produce messages like thi
 ### Specification testing 
 
 Specification structured testing is all about maintaining explicit, readable test structure whilst providing richer messaging.
-My specification structured test library, [xunit.spec][github] consists of base classes for deriving specifications depending on whether your actions are asynchronous and whether your service method returns a result. Back to the example, we can create our own coarse specification to inherit from using a `ResultSpec<TSubject, TResult>`, which is asynchronous and whose act step returns a result:
+My specification structured test library, [xunit.spec][github] consists of base classes for deriving specifications depending on whether your service methods are asynchronous and/or return a result. Back to the example, we can create our own coarse specification to inherit from using a `ResultSpec<TSubject, TResult>`, which is asynchronous and whose act step returns a result:
 
 {% highlight C# %}
 
@@ -439,7 +441,7 @@ The Spec classes in xunit.spec support the subject pattern by using an auto mock
 
 ## Bells and whistles
 
-There's some cool stuff that you can do with specification tests. For example, when using [AutoMapper][AutoMapper], profiles are such a black box that it should be a requirement for you to unit test each of them. Check out [xunit-spec-automapper][xunit-spec-automapper] which provides a specification base class configured for testing AutoMapper profiles. E.g. if you had an assembly with loads of profiles like this one:
+There's some cool stuff that you can do with specification tests. For example [AutoMapper][AutoMapper] profiles are such a black box that it should be a requirement for you to unit test each of them. Check out [xunit-spec-automapper][xunit-spec-automapper] which provides a specification base class configured for testing AutoMapper profiles. E.g. if you had an assembly with loads of profiles like this one:
 
 {% highlight C# %}
 
@@ -480,6 +482,6 @@ public class When_mapping_from_PocoSource_to_PocoDestination : ApplicationMappin
 
 ## Final thoughts
 
-So what do you think? *Actually* don't answer that. I really think that the only way to appreciate the concept of specification structured unit testing is to start writing them. Then fast forward a few months, to when you have to revisit a well tested but neglected microservice and be able to jump right back into your unit test project without having to switch gears to cope with unfamiliar frameworks or parse the structure all over again. Just having a standard structure and set of tools will probably get you most of the way there, the specification structure is just a decent way of formalizing the whole thing.
+So what do you think? *Actually* don't answer that. I really think that the only way to appreciate the concept of specification structured unit tests is to start writing them. Then fast forward a few months, to when you have to revisit a well tested but neglected microservice and be able to jump right back into your unit test project without having to switch gears to cope with unfamiliar frameworks or parse the structure all over again. Just having a standard structure and set of tools will probably get you most of the way there, the specification structure is just a decent way of formalizing the whole thing.
 
 If you haven't already, please check out [xunit.spec][github].  

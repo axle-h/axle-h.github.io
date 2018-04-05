@@ -1,0 +1,277 @@
+---
+layout: post
+title:  "Fluent Integration Testing on ASP.NET Core 2.1"
+logo: fluent-mvc-integration-testing/logo.jpg
+date: 2018-09-27 12:00:00 +0000
+author: Alex Haslehurst
+categories: software development testing
+---
+
+Microsoft have a decent, open source [integration test library for MVC on ASP.NET Core 2.1][mvc-testing], with some pretty in depth [documentation][integration-tests]. In true [post evil][post-evil] Microsoft form, this package provides the bare minimum, lacking opinionated views on structure or choice of testing framework. This is awesome if like me you develop integration tests with a pretty strong opinion. My (current) opinion in this regard is based around a fluent style - I like my tests to be self documenting and built from reusable components. To demonstrate, I have created **xunit-fixture-mvc**, which can be found on [GitHub][github] and [NuGet][nuget].
+
+<!--more-->
+
+[github]: https://github.com/axle-h/xunit-fixture-mvc
+[github-rest-extensions]: https://github.com/axle-h/xunit-fixture-mvc/blob/master/src/Xunit.Fixture.Mvc/Extensions/MvcFunctionalTestFixtureRestExtensions.cs
+[github-fixture]: https://github.com/axle-h/xunit-fixture-mvc/blob/master/src/Xunit.Fixture.Mvc/IMvcFunctionalTestFixture.cs
+[nuget]: https://www.nuget.org/packages/xunit.fixture.mvc
+[github-mysql]: https://github.com/axle-h/xunit-fixture-mvc-mysql
+[nuget-mysql]: https://www.nuget.org/packages/xunit.fixture.mvc.mysql
+[mvc-testing]: https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Testing
+[integration-tests]: https://docs.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-2.1
+[post-evil]: https://www.digitaltrends.com/computing/microsoft-build-2018-ethical-empire
+[auto-fixture]: https://github.com/AutoFixture
+[microsoft-logging]: https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions
+[test-host]: https://www.nuget.org/packages/Microsoft.AspNetCore.TestHost
+[fluent-assertions]: https://github.com/fluentassertions/fluentassertions
+
+## Integration Tests
+
+Integration tests are all about testing two or more components of an application together. We tend not to write many integration tests as they are difficult to develop and even more difficult to maintain, whilst also being slow to run. We can get away with this for integration testing as integration tests should be only part of the full test stack. Along with integration tests, we should also have a larger, faster suite of unit tests and if we have a UI, a smaller, slower suite of UI driven end-to-end tests.
+
+I think that a good integration test is:
+
+* **Integrated:** (obviously). As much of the system should be wired up as possible, ideally all of it, and all access to the system should be achieved via public API's.
+* **Isolated:** No test should rely on a side-effect of another test as side-effect coupled tests are prone to cascading failures, which mask the root cause of the test failure, causing a maintenance nightmare.
+* **Thread safe:** Integration tests are slow so we should plan to run them in parallel wherever possible. To be truly thread safe, each integration test should completely bootstrap a fresh instance of the application whilst taking special steps to isolate the consumption of stateful, dependent services e.g. create and migrate a unique MySQL database per test, create a unique RabbitMQ virtual host per test.
+* **Maintainable:** Since we're potentially testing all layers of an application, we should take special care to develop our tests to be upgradeable with minimum effort. To do so, we should isolate and re-use common functionality, especially so when generating our test models. For this we should be using frameworks like [AutoFixture][auto-fixture] so that new fields are automatically filled in and old fields automatically removed.
+* **Loud!** When a test fails, it should fail loudly. We will want to know all SQL statements that were run, all API requests that were sent, all API responses that were received etc. To do so we will need to integrate the logging feature of our test framework into the application that we're testing, which will be easy if you've used an abstraction like [Microsoft.Extensions.Logging.Abstractions][microsoft-logging].
+
+## The ASP.NET Core Test Host
+
+ASP.NET Core has a hosting provider specifically for integration testing: [Microsoft.AspNetCore.TestHost][test-host]. This replaces the bit of ASP.NET Core that handles HTTP requests, usually Kestrel (or IIS if you're using in-process hosting and are crazy), with something that handles simulated HTTP requests from our integration tests.
+
+> Ok so this isn't a true integration test then as Kestrel isn't handling the HTTP requests right?
+
+Yes, that's true. By ripping out Kestrel and replacing it with something that's more convenient for testing, we're not testing the same ASP.NET Core stack that we will deploy to production. I think that we can get away with it here though as the convenience of using the test server far outweighs the drawbacks of some exotic multi-process solution. Consider such a multi-process solution would look like. Initially, we would probably rely on docker, which sounds promising. However, our test container wouldn't have direct control over the lifetime of an application container so in order for testing to be isolated, each integration test would have to spin up it's own copy of the application container. That would be a lot of containers and a massive scripting headache. Also, how would each integration test know when each application container is ready? The only viable option is to poll it, which is very inefficient and messy.
+
+One major thing we cannot ignore when accepting the use of the test server is that we're no longer testing whether the application actually works inside of a container. For example, if you were to upgrade the ASP.NET Core packages but not the base image in your `Dockerfile`, then the application would build fine and all integration tests might pass but we'd end up with an application image that cannot be started. The solution to this is to write a "health check" type test that would spin up an application container and all of it's dependencies then make a very simple request.
+
+## Microsoft's Weak Example
+
+Here's the example ripped from Microsoft's MVC integration test [documentation][integration-tests]:
+
+{% highlight C# %}
+public class BasicTests 
+    : IClassFixture<WebApplicationFactory<RazorPagesProject.Startup>>
+{
+    private readonly WebApplicationFactory<RazorPagesProject.Startup> _factory;
+
+    public BasicTests(WebApplicationFactory<RazorPagesProject.Startup> factory)
+    {
+        _factory = factory;
+    }
+
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/Index")]
+    [InlineData("/About")]
+    [InlineData("/Privacy")]
+    [InlineData("/Contact")]
+    public async Task Get_EndpointsReturnSuccessAndCorrectContentType(string url)
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+
+        // Act
+        var response = await client.GetAsync(url);
+
+        // Assert
+        response.EnsureSuccessStatusCode(); // Status Code 200-299
+        Assert.Equal("text/html; charset=utf-8", 
+            response.Content.Headers.ContentType.ToString());
+    }
+{% endhighlight %}
+
+Other than this being a test for a *dirty, dirty* Razor Page's project I have some issues with it.
+
+* It's not isolated. It uses the xunit class fixture feature to share the web application factory and subsequently the test server between all tests. This means that all tests will run sequentially (read: slowly) whilst also providing the opportunity for them to become dependent on each other.
+* It will get messy. Imagine all of the boiler plate that would have to be introduced if we were to drop the class fixture and instead bootstrap a fresh test server per test, potentially deserializing each response body and then tearing everything down afterwards.
+
+## Something Better
+
+Imagine we had a simple API that returns the current UTC datetime.
+
+{% highlight C# %}
+[Route("date")]
+public class DateController : Controller
+{
+    [HttpGet]
+    public DateDto Get() => new DateDto
+                            {
+                                UtcNow = DateTimeOffset.UtcNow
+                            };
+}
+{% endhighlight %}
+
+A fluent test for this developed with [xunit-fixture-mvc][github] might look like this:
+
+{% highlight C# %}
+public class DateTests
+{
+    private readonly ITestOutputHelper _output;
+
+    public DateTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
+    [Fact]
+    public Task When_getting_date() =>
+        new MvcFunctionalTestFixture<Startup>(_output)
+            .WhenGetting("date")
+            .ShouldReturnSuccessfulStatus()
+            .ShouldReturnJson<DateDto>(x => x.UtcNow.Should().BeCloseTo(DateTimeOffset.UtcNow, 1000))
+            .RunAsync();
+}
+{% endhighlight %}
+
+This already reads pretty well but let's break it down:
+
+{% highlight C# %}
+new MvcFunctionalTestFixture<Startup>(_output)
+{% endhighlight %}
+
+Configures the test server to use the specified `Startup` class and to send all logs to the xunit test context.
+
+{% highlight C# %}
+.WhenGetting("date")
+{% endhighlight %}
+
+Configures the fixture to send a `GET /date` request to the test server once it's up and running.
+
+{% highlight C# %}
+.ShouldReturnSuccessfulStatus()
+{% endhighlight %}
+
+Adds an assertion to the fixture that the response has a successful (2xx) code.
+
+{% highlight C# %}
+.ShouldReturnJson<DateDto>(x => x.UtcNow.Should().BeCloseTo(DateTimeOffset.UtcNow, 1000))
+{% endhighlight %}
+
+Adds an assertion to the fixture that the response body can be deserialized to an instance of `DateDto` and that the `UtcNow` property has been set correctly. We're using the excellent [Fluent Assertions][fluent-assertions].
+
+{% highlight C# %}
+.RunAsync();
+{% endhighlight %}
+
+Runs the fixture. It's important to note that all preceding fluent calls are simply configuration steps and only here do we actually construct a test server. In this case the configured fixture will:
+
+1. Create a new test server, bootstrapped with the API `Startup` class.
+2. Send a `GET /date` request to the API.
+3. Assert that the response has a successful (2xx) code.
+4. Attempt to deserialize the response body and run assertions on the deserialized object.
+5. If no exceptions are thrown, do nothing and let the test pass. Otherwise:
+   * If one exception is thrown => re-throw the exception.
+   * If multiple exceptions are thrown => throw an aggregate exception containing all thrown exceptions.
+
+A conscious design design was that no exception will be thrown until all assertions have been run. The reason why I prefer this approach is to avoid cases where a test is failing for multiple reasons yet it's error message does not reflect this. It can be a labouring experience to fix a broken test, one failure at a time.
+
+## Extension Driven Design
+
+I like to develop these fluent fixture type patterns with extension methods. A decent example in [xunit-fixture-mvc][github] is [Xunit.Fixture.Mvc.Extensions.MvcFunctionalTestFixtureRestExtensions][github-rest-extensions], which uses a RESTful opinion to call the `When` method on [Xunit.Fixture.Mvc.IMvcFunctionalTestFixture][github-fixture]. The example above already used one of these extensions:
+
+{% highlight C# %}
+public static IMvcFunctionalTestFixture WhenGetting(this IMvcFunctionalTestFixture fixture, string url) =>
+    fixture.WhenCallingRestMethod(HttpMethod.Get, url);
+
+public static IMvcFunctionalTestFixture WhenCallingRestMethod(this IMvcFunctionalTestFixture fixture,
+                                                              HttpMethod method,
+                                                              string url,
+                                                              object body = null)
+{
+    var content = body == null
+        ? null :
+        new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
+
+    fixture.When(method, url, content);
+    return fixture;
+}
+{% endhighlight %}
+
+The alternative to this would have been to use inheritance to add methods to the fixture, which would mess with the ability for tests to be written in a fluent style. I.e. if any method was called that returns an `IMvcFunctionalTestFixture`, all instance methods would be inaccessible to proceeding, chained calls.
+
+The use of extensions methods can also extend to the domain of the application that we're testing. For example, there may be more than one API endpoint that returns a `DateDto`. If that's the case then it would make sense to spin this off into a reusable, fluent extension method.
+
+{% highlight C# %}
+public static class DateAssertionExtensions
+{
+    public static IMvcFunctionalTestFixture ShouldReturnDateCloseToNow(this IMvcFunctionalTestFixture fixture) =>
+        fixture.ShouldReturnJson<DateDto>(x => x.UtcNow.Should().BeCloseTo(DateTimeOffset.UtcNow, 1000));
+}
+{% endhighlight %}
+
+The fluent design of our integration test can now be cleaned up further.
+
+{% highlight C# %}
+[Fact]
+public Task When_getting_date() =>
+    new MvcFunctionalTestFixture<Startup>(_output)
+        .WhenGetting("date")
+        .ShouldReturnSuccessfulStatus()
+        .ShouldReturnDateCloseToNow()
+        .RunAsync();
+{% endhighlight %}
+
+## Auto Fixture
+
+For generating request objects, [xunit-fixture-mvc][github] uses [AutoFixture][auto-fixture]. Take a look at these methods from X[unit.Fixture.Mvc.Extensions.MvcFunctionalTestFixtureRestExtensions][github-rest-extensions].
+
+{% highlight C# %}
+public static IMvcFunctionalTestFixture WhenUpdating<TId, TModel>(this IMvcFunctionalTestFixture fixture,
+                                                                  string entity,
+                                                                  TId id,
+                                                                  out TModel model) => 
+    fixture.WhenCallingRestMethod(HttpMethod.Put, $"{entity}/{Uri.EscapeDataString(id.ToString())}", out model);
+
+public static IMvcFunctionalTestFixture WhenCallingRestMethod<TModel>(this IMvcFunctionalTestFixture fixture,
+                                                                      HttpMethod method,
+                                                                      string url,
+                                                                      out TModel model)
+{
+    model = fixture.Create<TModel>();
+    return fixture.WhenCallingRestMethod(method, url, model);
+}
+{% endhighlight %}
+
+We can use C# 7 inline variable declaration to call these methods in a fluent style.
+
+{% highlight C# %}
+[Fact]
+public Task When_updating_something() =>
+    new MvcFunctionalTestFixture<Startup>(_output)
+        .WhenUpdating("something", 1, out UpdateSomethingRequest request)
+        .ShouldReturnSuccessfulStatus()
+        .ShouldReturnSomething(request)
+        .RunAsync();
+{% endhighlight %}
+
+I think this looks awesome.
+
+## MySQL
+
+I have demonstrated how this library could be extended to support other packages and frameworks by integrating it with MySQL. xunit-fixture-mvc-mysql is also available on [GitHub][github-mysql] and [NuGet][nuget-mysql]. Here's a complete usage example.
+
+{% highlight C# %}
+[Fact]
+public Task When_creating_breakfast_item() =>
+    new MvcFunctionalTestFixture<Startup>(_output)
+        .HavingMySqlDatabase<BreakfastContext>()
+        .WhenCreating("BreakfastItem", out CreateOrUpdateBreakfastItemRequest request)
+        .ShouldReturnSuccessfulStatus()
+        .JsonResultShould<BreakfastItem>(r => r.Id.Should().Be(1),
+                                         r => r.Name.Should().Be(request.Name),
+                                         r => r.Rating.Should().Be(request.Rating))
+        .ShouldExistInDatabase<BreakfastContext, BreakfastItem>(1,
+                                        x => x.Id.Should().Be(1),
+                                        x => existing.Name.Should().Be(request.Name),
+                                        x => x.Rating.Should().Be(request.Rating))
+        .RunAsync();
+{% endhighlight %}
+
+The first fluent argument, `.HavingMySqlDatabase<BreakfastContext>()` will configure the fixture to use the specified `DbContext` type to create a new, fully migrated database that has been isolated specifically for this test. Then the call to `.ShouldExistInDatabase<BreakfastContext, BreakfastItem>` will configure the fixture to, after the request has completed, find the `BreakfastItem` entity in the database with an id of 1 and run the specified assertions on it.
+
+## Final Thoughts
+
+There's some pretty complicated stuff going off in these later examples, yet the tests themselves are concise and readable. All of the boilerplate code necessary for setting up the test server, calling it in a RESTfully, managing the lifetime of an isolated MySQL database, AutoFixture based model generation and more is hidden away behind reusable bits of code in extension methods. It's a stupidly simple concept but I think it works really well. What do you think?

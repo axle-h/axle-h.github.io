@@ -12,6 +12,10 @@ h1,h2,h3,h4,h5,h6 {
     font-family: 'Roboto Slab', serif;
 }
 
+a {
+    @extend .primary-color-text;
+    font-weight: 500;
+}
 
 /****** Nav ******/
 nav {
@@ -76,6 +80,10 @@ nav {
 
 .icon-block {
     padding: 0 15px;
+
+    h2, h5 {
+        @extend .primary-color-text;
+    }
 }
 
 #headline-type {
@@ -159,8 +167,14 @@ nav {
         .card {
             background-color: $primary-color;
             @extend .grey-text, .text-lighten-4;
-            a {
-                @extend .grey-text, .text-lighten-4;
+
+            p {
+                a {
+                    @extend .orange-text, .text-lighten-3;
+                    &:hover {
+                        @extend .orange-text, .text-lighten-1;
+                    }
+                }
             }
 
             .determinate {
@@ -191,11 +205,9 @@ footer {
     }
 
     .social-container {
-        a {
-            float: none;
-            @media #{$large-and-up} {
-                float: right;
-            }
+        float: none;
+        @media #{$large-and-up} {
+            float: right;
         }
     }
 }

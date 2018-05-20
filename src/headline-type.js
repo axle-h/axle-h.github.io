@@ -7,8 +7,8 @@ const hideClass = "hide";
 const selectedClass = "selected";
 const initialAnimationDelay = 3000;
 const longAnimationDelay = 1500;
-const selectedAnimationDelay = 300;
-const shortAnimationDelay = 200;
+const selectedAnimationDelay = 400;
+const shortAnimationDelay = 150;
 
 const State = Object.freeze({
     Type:   "Type",

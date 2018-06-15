@@ -25,7 +25,7 @@ The Z80 is an 8-bit microprocessor, meaning that each operation is natively perf
 Firstly we need some registers. The Intel 8080 and GameBoy CPU have six 8-bit general purpose registers, an accumulator, flags, stack pointer and program counter. 16-bit access is also provided to each general purpose register and the accumulator and flags registers in sequential pairs. Additionally, the Z80 has two more 16-bit index registers, an alternative set of each general purpose, accumulator and flags registers and a few more bits and pieces.
 
 | Register | Size                | Purpose
-| -------- | ------------------- |---- 
+| -------- | ------------------- |----
 | AF       | 16-bit or two 8-bit | Accumulator (A) and flag bits (F)
 | BC       | 16-bit or two 8-bit | Data/address
 | DE       | 16-bit or two 8-bit | Data/address
@@ -36,7 +36,7 @@ Firstly we need some registers. The Intel 8080 and GameBoy CPU have six 8-bit ge
 The Z80 defines alternative/banked versions of `AF`, `BC`, `DE` and `HL` that are accessed via the exchange opcodes and also has some more specialized registers.
 
 | Register | Size                | Purpose
-| -------- | ------------------- |---- 
+| -------- | ------------------- |----
 | IX       | 16-bit or two 8-bit | Displacement offset base
 | IY       | 16-bit or two 8-bit | Displacement offset base
 | I        | 8-bit               | Interrupt vector base register
@@ -46,16 +46,16 @@ The Z80 defines alternative/banked versions of `AF`, `BC`, `DE` and `HL` that ar
 
 The flags register is a single byte that contains a bit-mask set according to the last result. Notice that the GameBoy flags register only uses the most significant 4-bits and does not implement the sign or parity/overflow flag. The least significant bits of the GameBoy flags register are always 0.
 
-| 8080/Z80 Bit | GameBoy Bit | Name            
-| ------------ | ----------- | --------------- 
-| 0            | 4           | Carry           
-| 1            | 6           | Subtract        
-| 2            | -           | Parity/Overflow 
-| 3            | -           | Undocumented    
-| 4            | 5           | Half Carry      
-| 5            | -           | Undocumented    
-| 6            | 7           | Zero            
-| 7            | -           | Sign            
+| 8080/Z80 Bit | GameBoy Bit | Name
+| ------------ | ----------- | ---------------
+| 0            | 4           | Carry
+| 1            | 6           | Subtract
+| 2            | -           | Parity/Overflow
+| 3            | -           | Undocumented
+| 4            | 5           | Half Carry
+| 5            | -           | Undocumented
+| 6            | 7           | Zero
+| 7            | -           | Sign
 
 The flags registers are implemented slightly differently on each platform so we'll hide them away behind an interface.
 
@@ -160,7 +160,7 @@ public class GeneralPurposeRegisterSet
     public byte H { get; set; }
 
     public byte L { get; set; }
-    
+
     public ushort BC
     {
         get => BitConverterHelpers.To16Bit(B, C);
@@ -194,9 +194,9 @@ public class AccumulatorAndFlagsRegisterSet
     }
 
     public byte A { get; set; }
-    
+
     public IFlagsRegister Flags { get; }
-    
+
     public ushort AF
     {
         get => BitConverterHelpers.To16Bit(A, Flags.Register);
@@ -478,7 +478,7 @@ public class Alu : IAlu
 }
 {% endhighlight %}
 
-We spend the majority of the `Add` function dealing with flags. This is a common theme of ALU methods so it makes sense that a complete ALU implementation would group flag manipulations into logical groups abstracted away behind methods such as `SetResultFlags`. 
+We spend the majority of the `Add` function dealing with flags. This is a common theme of ALU methods so it makes sense that a complete ALU implementation would group flag manipulations into logical groups abstracted away behind methods such as `SetResultFlags`.
 
 ### A dynamic CPU core
 
@@ -503,16 +503,16 @@ public class ExpressionTreeZ80
     private static readonly ParameterExpression Registers = Expression.Parameter(typeof(IRegisters), "registers");
     private static readonly ParameterExpression Mmu = Expression.Parameter(typeof(IMmu), "mmu");
     private static readonly ParameterExpression Alu = Expression.Parameter(typeof(IAlu), "alu");
-    
+
     private static readonly Expression AccumulatorAndFlagsRegisters = Expression.Property(Registers, nameof(IRegisters.AccumulatorAndFlagsRegisters));
     private static readonly Expression GeneralPurposeRegisters = Expression.Property(Registers, nameof(IRegisters.GeneralPurposeRegisters));
     private static readonly Expression ProgramCounter = Expression.Property(Registers, nameof(IRegisters.ProgramCounter));
     private static readonly Expression A = Expression.Property(AccumulatorAndFlagsRegisters, nameof(AccumulatorAndFlagsRegisterSet.A));
     private static readonly Expression B = Expression.Property(GeneralPurposeRegisters, nameof(GeneralPurposeRegisterSet.B));
     private static readonly Expression IncrementProgramCounter = Expression.PreIncrementAssign(ProgramCounter);
-    private static readonly Expression MmuReadByte = Expression.Call(Mmu, typeof(IMmu).GetMethod(nameof(IMmu.ReadByte)), ProgramCounter);
-    private static readonly Expression MmuReadWord = Expression.Call(Mmu, typeof(IMmu).GetMethod(nameof(IMmu.ReadWord)), ProgramCounter);
-    private static Expression AluAdd(Expression a, Expression b) => Expression.Call(Alu, typeof(IAlu).GetMethod(nameof(IAlu.Add)), a, b);
+
+    private static readonly MethodInfo AluAddMethod = typeof(IAlu).GetMethod(nameof(IAlu.Add));
+    private static Expression AluAdd(Expression left, Expression right) => Expression.Call(Alu, AluAddMethod, left, right);
 
     public void Run()
     {
@@ -540,6 +540,9 @@ public class ExpressionTreeZ80
     {
         for (var address = _registers.ProgramCounter; ; address++)
         {
+            Expression ByteLiteral() => Expression.Constant(_mmu.ReadByte(++address));
+            Expression WordLiteral() => Expression.Constant(_mmu.ReadWord(++address));
+
             var opcode = _mmu.ReadByte(address);
             switch (opcode)
             {
@@ -550,16 +553,17 @@ public class ExpressionTreeZ80
 
                 // LD A,n
                 case 0x3E:
-                    yield return Expression.Assign(A, MmuReadByte);
-                    yield return IncrementProgramCounter;
+                    // We can read the literal now and store it in the expression tree as a constant.
+                    yield return Expression.Assign(A, ByteLiteral());
 
-                    // we also need to increment in the current context so we read the next opcode from the correct place.
-                    address++; 
+                    // We also need to increment the program counter in the expression tree.
+                    yield return IncrementProgramCounter;
                     break;
 
                 // JP
                 case 0xC3:
-                    yield return Expression.Assign(ProgramCounter, MmuReadWord);
+                    // Again, this is a static jump so we can store the address in the expression tree.
+                    yield return Expression.Assign(ProgramCounter, WordLiteral());
                     yield break;
 
                 // ADD A,B

@@ -12,7 +12,7 @@ Microsoft have a decent, open source [integration test library for MVC on ASP.NE
 <!--more-->
 
 [github]: https://github.com/axle-h/xunit-fixture-mvc
-[github-rest-extensions]: https://github.com/axle-h/xunit-fixture-mvc/blob/master/src/Xunit.Fixture.Mvc/Extensions/MvcFunctionalTestFixtureRestExtensions.cs
+[github-rest-extensions]: https://github.com/axle-h/xunit-fixture-mvc/blob/master/src/Xunit.Fixture.Mvc/Extensions/RestExtensions.cs
 [github-fixture]: https://github.com/axle-h/xunit-fixture-mvc/blob/master/src/Xunit.Fixture.Mvc/IMvcFunctionalTestFixture.cs
 [nuget]: https://www.nuget.org/packages/xunit.fixture.mvc
 [github-mysql]: https://github.com/axle-h/xunit-fixture-mvc-mysql
@@ -166,27 +166,31 @@ Runs the fixture. It's important to note that all preceding fluent calls are sim
    * If one exception is thrown => re-throw the exception.
    * If multiple exceptions are thrown => throw an aggregate exception containing all thrown exceptions.
 
-A conscious design design was that no exception will be thrown until all assertions have been run. The reason why I prefer this approach is to avoid cases where a test is failing for multiple reasons yet it's error message does not reflect this. It can be a labouring experience to fix a broken test, one failure at a time.
+A conscious design decision was that no exception will be thrown until all assertions have been run. The reason why I prefer this approach is to avoid cases where a test is failing for multiple reasons yet it's error message does not reflect this. It can be a labouring experience to fix a broken test, one failure at a time.
 
 ## Extension Driven Design
 
-I like to develop these fluent fixture type patterns with extension methods. A decent example in [xunit-fixture-mvc][github] is [Xunit.Fixture.Mvc.Extensions.MvcFunctionalTestFixtureRestExtensions][github-rest-extensions], which uses a RESTful opinion to call the `When` method on [Xunit.Fixture.Mvc.IMvcFunctionalTestFixture][github-fixture]. The example above already used one of these extensions:
+I like to develop these fluent fixture type patterns with extension methods. A decent example in [xunit-fixture-mvc][github] is [Xunit.Fixture.Mvc.Extensions.RestExtensions][github-rest-extensions], which uses a RESTful opinion to call the `When` method on [Xunit.Fixture.Mvc.IMvcFunctionalTestFixture][github-fixture]. The example above already used one of these extensions:
 
 {% highlight C# %}
+/// <summary>
+/// Configures the specified fixture's act step to be a GET request at the specified url.
+/// </summary>
 public static IMvcFunctionalTestFixture WhenGetting(this IMvcFunctionalTestFixture fixture, string url) =>
     fixture.WhenCallingRestMethod(HttpMethod.Get, url);
 
+
+/// <summary>
+/// Configures the specified fixture's act step to be an HTTP request with the specified method, url and body.
+/// </summary>
 public static IMvcFunctionalTestFixture WhenCallingRestMethod(this IMvcFunctionalTestFixture fixture,
-                                                              HttpMethod method,
-                                                              string url,
-                                                              object body = null)
+                                                              HttpMethod method, string url, object body = null)
 {
     var content = body == null
         ? null :
         new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
 
-    fixture.When(method, url, content);
-    return fixture;
+    return fixture.When(method, url, content);
 }
 {% endhighlight %}
 
@@ -216,23 +220,23 @@ public Task When_getting_date() =>
 
 ## Auto Fixture
 
-For generating request objects, [xunit-fixture-mvc][github] uses [AutoFixture][auto-fixture]. Take a look at these methods from X[unit.Fixture.Mvc.Extensions.MvcFunctionalTestFixtureRestExtensions][github-rest-extensions].
+For generating request objects, [xunit-fixture-mvc][github] uses [AutoFixture][auto-fixture]. Take a look at these methods from [Xunit.Fixture.Mvc.Extensions.RestExtensions][github-rest-extensions].
 
 {% highlight C# %}
+/// <summary>
+/// Configures the specified fixture's act step to be a PUT request for the specified entity and id with the specified JSON body.
+/// </summary>
 public static IMvcFunctionalTestFixture WhenUpdating<TId, TModel>(this IMvcFunctionalTestFixture fixture,
-                                                                  string entity,
-                                                                  TId id,
-                                                                  out TModel model) => 
+                                                                  string entity, TId id, out TModel model) =>
     fixture.WhenCallingRestMethod(HttpMethod.Put, $"{entity}/{Uri.EscapeDataString(id.ToString())}", out model);
 
+/// <summary>
+/// Configures the specified fixture's act step to be an HTTP request with the specified method, url and body.
+/// </summary>
 public static IMvcFunctionalTestFixture WhenCallingRestMethod<TModel>(this IMvcFunctionalTestFixture fixture,
-                                                                      HttpMethod method,
-                                                                      string url,
-                                                                      out TModel model)
-{
-    model = fixture.Create<TModel>();
-    return fixture.WhenCallingRestMethod(method, url, model);
-}
+                                                                      HttpMethod method, string url, out TModel model) =>
+    fixture.HavingModel(out model)
+           .WhenCallingRestMethod(method, url, model);
 {% endhighlight %}
 
 We can use C# 7 inline variable declaration to call these methods in a fluent style.
@@ -260,7 +264,7 @@ public Task When_creating_breakfast_item() =>
         .HavingMySqlDatabase<BreakfastContext>()
         .WhenCreating("BreakfastItem", out CreateOrUpdateBreakfastItemRequest request)
         .ShouldReturnSuccessfulStatus()
-        .JsonResultShould<BreakfastItem>(r => r.Id.Should().Be(1),
+        .ShouldReturnJson<BreakfastItem>(r => r.Id.Should().Be(1),
                                          r => r.Name.Should().Be(request.Name),
                                          r => r.Rating.Should().Be(request.Rating))
         .ShouldExistInDatabase<BreakfastContext, BreakfastItem>(1,
@@ -274,4 +278,4 @@ The first fluent argument, `.HavingMySqlDatabase<BreakfastContext>()` will confi
 
 ## Final Thoughts
 
-There's some pretty complicated stuff going off in these later examples, yet the tests themselves are concise and readable. All of the boilerplate code necessary for setting up the test server, calling it in a RESTfully, managing the lifetime of an isolated MySQL database, AutoFixture based model generation and more is hidden away behind reusable bits of code in extension methods. It's a stupidly simple concept but I think it works really well. What do you think?
+There's some pretty complicated stuff going off in these later examples, yet the tests themselves are concise and readable. All of the boilerplate code necessary for setting up the test server, calling it RESTfully, managing the lifetime of an isolated MySQL database, AutoFixture based model generation and more is hidden away behind reusable bits of code in extension methods. It's a stupidly simple concept but I think it works really well. What do you think?

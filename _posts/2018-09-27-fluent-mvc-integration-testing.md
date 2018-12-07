@@ -2,6 +2,7 @@
 layout: post
 title:  "Fluent Integration Testing on ASP.NET Core 2.1"
 logo: fluent-mvc-integration-testing/logo.jpg
+banner: fluent-mvc-integration-testing/banner.jpg
 date: 2018-09-27 12:00:00 +0000
 author: Alex Haslehurst
 categories: software development testing

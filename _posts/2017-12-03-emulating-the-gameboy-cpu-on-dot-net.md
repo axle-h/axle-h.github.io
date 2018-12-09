@@ -1,7 +1,8 @@
 ---
 layout: post
 title:  "Emulating the GameBoy CPU on .NET"
-logo: emulating-the-gameboy-cpu-on-dot-net/logo.png
+logo: emulating-the-gameboy-cpu-on-dot-net/logo.jpg
+banner: emulating-the-gameboy-cpu-on-dot-net/banner.jpg
 date:   2017-12-03 16:20:00 +0000
 author: Alex Haslehurst
 categories: software development emulation

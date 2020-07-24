@@ -3,263 +3,326 @@ layout: default
 ---
 
 <div class="container cv">
-    <div class="row">
-        <aside class="col s12 m12 l5">
-            <div class="card">
-                <div class="card-image">
-                    <img src="{{ '/assets/images/mugshot.jpg' | relative_url }}">
-                    <span class="card-title">
+  <div class="row">
+    <aside class="col s12 m12 l5">
+      <div class="card">
+        <div class="card-image">
+          <img src="{{ '/assets/images/mugshot.jpg' | relative_url }}">
+          <span class="card-title">
                         <h5>Alex Haslehurst</h5>
                         <h6>Senior Software Developer</h6>
                     </span>
-                </div>
+        </div>
 
-                <div class="card-content">
-                    <div class="row">                
-                        <div class="col s12 center-align">
-                            {% include social.html %}
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <div class="row">
-                        <div class="col m12 s12 l3 icon">
-                            <h5><i class="fa fa-user"></i></h5>
-                        </div>                                
-                        <div class="col m12 s12 l9">
-                            <p>
-                                “Highly skilled software engineer with a strong background in mathematics, big data, machine learning,
-                                microservices, modern client and serverless applications across multiple industries, platforms and
-                                public clouds. Driven by the technical challenges of using modern tools and technologies to successfully
-                                deliver complex projects that shape business processes.
-                                SOLID principles and keeping it simple feel core to my development.
-                                Currently enjoying the technical leadership of a scrum team.”
-                            </p>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <div class="row">
-                        <div class="col m12 s12 l3 icon">
-                            <h5><i class="fa fa-code"></i></h5>
-                        </div>
-                        <div class="col m12 s12 l9">
-                            <p>
-                                Specializing in .NET Core microservices orchestrated on Kubernetes or NodeJS running serverless via AWS SAM.
-                                Thinking in domain driven design.
-                                Embracing SaaS.
-                                To me, infrastructure as code seems more natural than using the AWS console.
-                            </p>
-                            <p>
-                                Tons of experience with modern security, recently completely replaced multiple legacy authentication
-                                systems with SSO via OIDC on IdentityServer.
-                                Built this out to integrate with client IdP's, providing new partnerships for my organisation.
-                                On the client, seriously enjoying the move to SPA's on modern application frameworks like Angular and Vue.js. Honestly - everything else feels ancient now.
-                                Previous extensive experience with software running on the JVM including Spark.
-                                Worked extensively with many modern NOSQL & relational databases, caching & messaging systems.
-                            </p>
-                            <p>
-                                Driven by the challenge of learning, integrating and leading with anything that has decent documentation.
-                            </p>
-                            <p>
-                                Please see my <a href="https://ax-h.com">website</a> and <a href="https://github.com/axle-h">GitHub</a> account for examples of personal work.
-                                I have a <a href="https://github.com/axle-h/Retro.Net">.NET Core Gameboy emulator</a> on there with over 550 stars
-                                that was featured on
-                                <a href="https://www.hanselman.com/blog/AMultiplayerServersideGameBoyEmulatorWrittenInNETCoreAndAngular.aspx">
-                                    Scott Hanselman's blog.
-                                </a>
-                            </p>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <div class="row">
-                        <div class="col m12 s12 l3 icon">
-                            <h5><i class="fa fa-rocket"></i></h5>
-                        </div>
-                        <div class="col m12 s12 l9">
-                            .NET Core
-                            <div class="progress">
-                                <div class="determinate" style="width: 90%"></div>
-                            </div>
-                            Microservices
-                            <div class="progress">
-                                <div class="determinate" style="width: 85%"></div>
-                            </div>
-                            Docker
-                            <div class="progress">
-                                <div class="determinate" style="width: 80%"></div>
-                            </div>
-                            Amazon Web Services
-                            <div class="progress">
-                                <div class="determinate" style="width: 70%"></div>
-                            </div>
-                            Kubernetes
-                            <div class="progress">
-                                <div class="determinate" style="width: 70%"></div>
-                            </div>
-                            Angular
-                            <div class="progress">
-                                <div class="determinate" style="width: 60%"></div>
-                            </div>
-                            Scala
-                            <div class="progress">
-                                <div class="determinate" style="width: 55%"></div>
-                            </div>
-                            Spark
-                            <div class="progress">
-                                <div class="determinate" style="width: 70%"></div>
-                            </div>
-                            Cassandra
-                            <div class="progress">
-                                <div class="determinate" style="width: 80%"></div>
-                            </div>
-                            MongoDB
-                            <div class="progress">
-                                <div class="determinate" style="width: 70%"></div>
-                            </div>
-                            SQL
-                            <div class="progress">
-                                <div class="determinate" style="width: 75%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div> 
-        </aside>
-
-        <section class="col s12 m12 l7">
-            <div class="card">
-                <div class="card-content">
-                    <div class="row">
-                        <div class="col s12 m12 l2 icon hide-on-med-and-down">
-                            <h4><i class="fa fa-suitcase"></i></h4>
-                        </div>
-                        <div class="col s12 m12 l10">
-                            <h4><i class="fa fa-suitcase hide-on-large-only"></i> Work Experience</h4>
-                            <h5>
-                                Lead/Senior Software Developer
-                                <br>
-                                <small class="blue-grey-text darken-4">
-                                    <a href="https://www.westfieldhealth.com/">@Westfield Health</a>
-                                </small>
-                            </h5>
-                            <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> JAN 2018 - PRESENT</span>
-                            <p>
-                                Westfield Health, a not-for-profit provider of contributory health schemes and health &amp; wellbeing 
-                                products, is currently in the process of replacing legacy desktop business software with a modern, 
-                                cloud based solution based on a microservice architecture. I have been successfully providing technical leadership 
-                                for a feature squad responsible for product management.
-                                My team is well known for our velocity, quality and for shaping cross-team knowledge &amp; processes.
-                                I have lead multi team projects to modernise and standardise client applications and provide asynchronous messaging via MassTransit on AWS SaaS.
-                                I have also led a series of major security projects to provide single sign on via OIDC to modern &amp; legacy internal software and also external partners.
-                            </p>
-
-                            <hr>
-
-                            <h5>
-                                Senior Software Developer
-                                <br>
-                                <small class="blue-grey-text darken-4">
-                                    <a href="https://www.utilitywise.com/">@Utilitywise</a>
-                                </small>
-                            </h5>
-                            <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> NOV 2015 - JAN 2018</span>
-                            <p>
-                                Utilitywise digitally services thousands of on-site proprietary IoT devices and automatic meter readers
-                                resulting in a consumption of approximately 250 million time series data observations per day.
-                                The core responsibility of the team for which I provided technical leadership was to process
-                                this big data into analytical insights &amp; predictions to be presented to customers via bespoke dashboards.
-                                My highlight was to successfully lead a massive project to port the entire architecture 
-                                from a legacy, relational backed system to a modern big data platform based on Apache Cassandra, Spark and Kafka.
-                                I have focused my efforts on producing quality and decoupled software  that maintains maximum reliability,
-                                whilst building efficiency that has been used to augment the system with new analytical and machine learning
-                                based features. I have also been a web developer, integrating new data platform features across the full stack.
-                            </p>
-
-                            <hr>
-
-                            <h5>
-                                Software Developer
-                                <br>
-                                <small class="blue-grey-text darken-4">
-                                    <a href="https://www.alpharooms.com/">@Alpharooms</a>
-                                </small>
-                            </h5>
-                            <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> MAR 2014 - NOV 2015</span>
-                            <p>
-                                I was a software developer at Alpharooms, an e-commerce travel agent. I worked in the
-                                infrastructure of the fully responsive, SEO optimised consumer facing front end and back office
-                                systems. I worked full stack and became a leading producer in my team whilst also enjoying a more
-                                senior role towards the end of my stay. Whilst much of the technologies I used at Alpharooms are
-                                quickly becoming obsolete (monolithic MVC applications on the full-fat .NET Framework and
-                                Knockout on the client) the skills I picked up have been extremely valuable. Everything was running
-                                on AWS and it was a constant battle to scale out systems whilst balancing cost with user experience.
-                                Security was also a top concern and this fed into some really interesting projects for me
-                                at future positions. This time also introduced me to proper cross business agile development, the concepts
-                                and expectations of which I have brought with me.
-                            </p>
-
-                            <hr>
-
-                            <h5>
-                                Software Engineer
-                                <br>
-                                <small class="blue-grey-text darken-4">
-                                    <a href="https://www.technolog.com/">@Technolog</a>
-                                </small>
-                            </h5>
-                            <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> DEC 2012 - MAR 2014</span>
-                            <p>
-                                I was a software engineer in a multi-disciplined team at Technolog; an electronics manufacturer in
-                                the utilities industry. I worked primarily with the data infrastructure that supports a network of data
-                                loggers and automatic meter reading systems. I basically learnt to program as part of a team,
-                                picking up concepts such as the importance of design patterns and test driven development.
-                            </p>
-
-                            <hr>
-
-                            <h5>
-                                Statistical Analyist
-                                <br>
-                                <small class="blue-grey-text darken-4">
-                                    <a href="https://www.experian.co.uk/">@Experian</a>
-                                </small>
-                            </h5>
-                            <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> JUL 2010 - DEC 2012</span>
-                            <p>
-                                After my degree, I returned to Experian Decision Analytics in a more analytical role. Due to my
-                                previous experience with Experian systems, I was immediately assigned to a large software testing
-                                project. I was solely responsible for creating suitable test scripts, reporting bugs and providing in-
-                                depth analytical support to developers. Due to my highly technical approach to projects and support,
-                                something that differentiated me from my peers, I became a regular and successful technical contact
-                                for training and development within my department.
-                            </p>
-
-                            <hr>
-
-                            <h5>
-                                Support Analyist
-                                <br>
-                                <small class="blue-grey-text darken-4">
-                                    <a href="https://www.experian.co.uk/">@Experian</a>
-                                </small>
-                            </h5>
-                            <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> JUN 2008 - AUG 2009</span>
-                            <p>
-                                As part of my degree, I completed a 14 month placement in a technical role at Experian; the UK
-                                market leading credit reference bureau. My main responsibilities were to maintain, schedule and
-                                develop a system of data manipulation programs on an old school IBM mainframe.
-                            </p>
-                        
-                        </div>
-                    </div>
-                </div>
+        <div class="card-content">
+          <div class="row">
+            <div class="col s12 center-align">
+              {% include social.html %}
             </div>
-        </section>
-    </div>
+          </div>
+
+          <hr>
+
+          <div class="row">
+            <div class="col m12 s12 l3 icon">
+              <h5><i class="fa fa-user"></i></h5>
+            </div>
+            <div class="col m12 s12 l9">
+              <p>
+                “Highly skilled software engineer with a strong background in mathematics, big data, machine learning,
+                microservices, modern client and serverless applications across multiple industries, platforms and
+                public clouds. Driven by the technical challenges of using modern tools and technologies to successfully
+                deliver complex projects that shape business processes.
+                SOLID principles and keeping it simple feel core to my development.
+                Enjoying technical leadership.
+                Embracing Agile & Scrum!”
+              </p>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="row">
+            <div class="col m12 s12 l3 icon">
+              <h5><i class="fa fa-code"></i></h5>
+            </div>
+            <div class="col m12 s12 l9">
+              <p>
+                Polyglot skills built from a passion for software development.
+              </p>
+              <p>
+                Thinking in domain driven design.
+              </p>
+              <p>
+                Embracing SaaS.
+              </p>
+              <p>
+                To me, infrastructure as code seems more natural than using the AWS console.
+              </p>
+              <p>
+                Tons of experience with modern security based on OIDC.
+              </p>
+              <p>
+                On the client, seriously enjoying the move to SPA's on modern application frameworks like Angular &amp; Vue.js.
+              </p>
+              <p>
+                Worked extensively with many modern NOSQL & relational databases, caching & messaging systems.
+              </p>
+              <p>
+                Driven by the challenge of learning, integrating and leading with anything that has decent
+                documentation.
+              </p>
+              <p>
+                Please see my <a href="https://ax-h.com">website</a> and <a href="https://github.com/axle-h">GitHub</a>
+                account for examples of personal work.
+                I have a <a href="https://github.com/axle-h/Retro.Net">.NET Core Gameboy emulator</a> on there with ~600 stars
+                that was featured on
+                <a
+                  href="https://www.hanselman.com/blog/AMultiplayerServersideGameBoyEmulatorWrittenInNETCoreAndAngular.aspx">
+                  Scott Hanselman's blog.
+                </a>
+              </p>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="row">
+            <div class="col m12 s12 l3 icon">
+              <h5><i class="fa fa-rocket"></i></h5>
+            </div>
+            <div class="col m12 s12 l9">
+              .NET Core
+              <div class="progress">
+                <div class="determinate" style="width: 95%"></div>
+              </div>
+              Node.js
+              <div class="progress">
+                <div class="determinate" style="width: 80%"></div>
+              </div>
+              Java
+              <div class="progress">
+                <div class="determinate" style="width: 55%"></div>
+              </div>
+              Scala
+              <div class="progress">
+                <div class="determinate" style="width: 65%"></div>
+              </div>
+              Go
+              <div class="progress">
+                <div class="determinate" style="width: 25%"></div>
+              </div>
+              Python
+              <div class="progress">
+                <div class="determinate" style="width: 30%"></div>
+              </div>
+              Microservices
+              <div class="progress">
+                <div class="determinate" style="width: 85%"></div>
+              </div>
+              Serverless
+              <div class="progress">
+                <div class="determinate" style="width: 80%"></div>
+              </div>
+              Security
+              <div class="progress">
+                <div class="determinate" style="width: 85%"></div>
+              </div>
+              Machine Learning
+              <div class="progress">
+                <div class="determinate" style="width: 60%"></div>
+              </div>
+              Docker
+              <div class="progress">
+                <div class="determinate" style="width: 80%"></div>
+              </div>
+              Amazon Web Services
+              <div class="progress">
+                <div class="determinate" style="width: 80%"></div>
+              </div>
+              Kubernetes
+              <div class="progress">
+                <div class="determinate" style="width: 50%"></div>
+              </div>
+              Angular
+              <div class="progress">
+                <div class="determinate" style="width: 65%"></div>
+              </div>
+              React
+              <div class="progress">
+                <div class="determinate" style="width: 65%"></div>
+              </div>
+              Vue.js
+              <div class="progress">
+                <div class="determinate" style="width: 65%"></div>
+              </div>
+              Spark
+              <div class="progress">
+                <div class="determinate" style="width: 70%"></div>
+              </div>
+              Cassandra
+              <div class="progress">
+                <div class="determinate" style="width: 80%"></div>
+              </div>
+              MongoDB
+              <div class="progress">
+                <div class="determinate" style="width: 70%"></div>
+              </div>
+              SQL
+              <div class="progress">
+                <div class="determinate" style="width: 75%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="col s12 m12 l7">
+      <div class="card">
+        <div class="card-content">
+          <div class="row">
+            <div class="col s12 m12 l2 icon hide-on-med-and-down">
+              <h4><i class="fa fa-suitcase"></i></h4>
+            </div>
+            <div class="col s12 m12 l10">
+              <h4><i class="fa fa-suitcase hide-on-large-only"></i> Work Experience</h4>
+
+              <h5>
+                Senior Software Developer
+                <br>
+                <small class="blue-grey-text darken-4">
+                  <a href="https://in-part.com/">@IN-PART</a>
+                </small>
+              </h5>
+              <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> JAN 2020 - PRESENT</span>
+              <p>
+                IN-PART is a small company with a startup culture that provides a digital partnering platform connecting
+                university research with industry R&D. Virtually all technology at IN-PART was new to me in a commercial
+                context including React, next.js & Node.js (at scale). I saw the move as a challenge & learning experience
+                coupled with validation of my processes and knowledge against a team with far more experience than me in
+                their chosen technologies. I have once again assumed the role of security and data platform expert and
+                been rolling out OIDC & serverless data processing pipelines across the platform as required.
+                Whilst I have enjoyed getting back into coding to a far higher degree, I am continuing to lead projects,
+                plan and distribute architectural work across the team and develop my peers.
+              </p>
+
+              <hr>
+
+              <h5>
+                Senior Software Developer
+                <br>
+                <small class="blue-grey-text darken-4">
+                  <a href="https://www.westfieldhealth.com/">@Westfield Health</a>
+                </small>
+              </h5>
+              <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> JAN 2018 - JAN 2020</span>
+              <p>
+                Westfield Health is a not-for-profit provider of contributory health schemes and health & wellbeing services
+                in the process of migrating many legacy business processes online via a greenfield platform.
+                I provided technical leadership for a feature team responsible for a selection of microservices built into
+                the larger platform. I also led decisions that affected the platform as a whole and distributed processes
+                and libraries to build conformance across all teams. My team was well known for our velocity, quality and
+                for shaping cross-team knowledge & design. I quickly became first contact and technical owner for all things
+                security, platform, serverless, UX/client technologies and mobile development.
+              </p>
+
+              <hr>
+
+              <h5>
+                Senior Software Developer
+                <br>
+                <small class="blue-grey-text darken-4">
+                  <a href="https://www.utilitywise.com/">@Utilitywise</a>
+                </small>
+              </h5>
+              <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> NOV 2015 - JAN 2018</span>
+              <p>
+                UUtilitywise digitally services thousands of on-site proprietary IoT devices and automatic meter readers
+                resulting in the consumption of approximately 250 million time series data observations per day.
+                The core responsibility of the team for which I provided technical leadership was to process this big
+                data into analytical insights which were to be presented on customer dashboards. I led the project to
+                architect this modern data platform, which was built from technologies such as Cassandra, Spark & Kafka.
+                I used primarily Scala based JDK software to deploy a mixture of custom and off-the-shelf machine learning
+                algorithms at scale. I also worked across the web stack including .NET Core on Docker Swarm with Angular on the front end.
+              </p>
+
+              <hr>
+
+              <h5>
+                Software Developer
+                <br>
+                <small class="blue-grey-text darken-4">
+                  <a href="https://www.alpharooms.com/">@Alpharooms</a>
+                </small>
+              </h5>
+              <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> MAR 2014 - NOV 2015</span>
+              <p>
+                Alpharooms is an online travel agent with a modern (for the time) stack built with .NET Framework,
+                SQL Server & MongoDB and based on a service orientated architecture. I worked as a software developer
+                enjoying a more senior role towards the end of my stay. Major challenges were operating efficiently at
+                scale on AWS, maintaining SEO performance, managing asynchronous, external processes at scale and presenting
+                everything with a UX aligned to maximising revenue. Whilst much of the technologies and packages I used at
+                Alpharooms are becoming obsolete, the skills I picked up have been extremely valuable.
+              </p>
+
+              <hr>
+
+              <h5>
+                Software Engineer
+                <br>
+                <small class="blue-grey-text darken-4">
+                  <a href="https://www.technolog.com/">@Technolog</a>
+                </small>
+              </h5>
+              <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> DEC 2012 - MAR 2014</span>
+              <p>
+                I took my first software development job in a multi-disciplined team at Technolog, an electronics manufacturer
+                in the utilities industry. I worked primarily with the data infrastructure that supports a network of data
+                loggers and automatic meter reading systems. I basically learnt to program as part of a team, picking up
+                concepts such as the importance of design patterns and test driven development
+              </p>
+
+              <hr>
+
+              <h5>
+                Statistical Analyst
+                <br>
+                <small class="blue-grey-text darken-4">
+                  <a href="https://www.experian.co.uk/">@Experian</a>
+                </small>
+              </h5>
+              <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> JUL 2010 - DEC 2012</span>
+              <p>
+                I started my career as an Analyst at Experian Decision Analytics. Due to my previous experience with Experian
+                systems during my placement year, I was immediately assigned to a large software testing project.
+                I was solely responsible for creating suitable test scripts, reporting bugs and providing in- depth analytical
+                support to developers. At Experien I realised that what little software development I was responsible for
+                was what kept me driven and set me apart from my peers. This responsibility was slowly taken away from me
+                as I progressed, pushing me to move to software development full time.
+              </p>
+
+              <hr>
+
+              <h5>
+                Support Analyst
+                <br>
+                <small class="blue-grey-text darken-4">
+                  <a href="https://www.experian.co.uk/">@Experian</a>
+                </small>
+              </h5>
+              <span class="primary-color-text"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> JUN 2008 - AUG 2009</span>
+              <p>
+                As part of my degree, I completed a 14 month placement in a technical role at Experian; the UK
+                market leading credit reference bureau. My main responsibilities were to maintain, schedule and
+                develop a system of data manipulation programs on an old school IBM mainframe.
+              </p>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
 
 </div>

@@ -22,9 +22,9 @@ export default class HeadlineType {
         this.words = arrayFrom(element.getElementsByClassName(headlineClass)).map(w => new Word(w));
         this.index = 0;
         this.state = State.Selected;
-        
+
         // Fix visibility. We want the word to visible but the letters to be hidden.
-        for (var i = 0; i < this.words.length; i++) {
+        for (let i = 0; i < this.words.length; i++) {
             const word = this.words[i];
             if (i !== this.index) {
                 word.reset();
@@ -103,8 +103,7 @@ class Word {
     }
 
     type() {
-
-        var typed = undefined;
+        let typed = undefined;
 
         do {
             const letter = this.letterElements[this.index];
@@ -114,7 +113,7 @@ class Word {
                 return false;
             }
         } while (typed === " ");
-        
+
         return true;
     }
 }

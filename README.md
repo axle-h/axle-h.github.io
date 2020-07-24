@@ -17,13 +17,11 @@ sudo gem install bundler
 ./build.sh install
 ```
 
-Then in two separate terminals I run webpack with:
+Then in two separate terminals run webpack and jekyl (in that order!) with:
 
 ```bash
 ./build.sh watch
 ```
-
-And jekyll with:
 
 ```bash
 ./build.sh serve

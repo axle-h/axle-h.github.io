@@ -1,59 +1,71 @@
-const webpack = require("webpack");
 const path = require("path");
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
-const CleanWebpackPlugin = require("clean-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-
-const html = new HtmlWebpackPlugin({ template: "./src/head.html", filename: "head.html", inject: "head" });
-
-const clean = new CleanWebpackPlugin([ "dist", "assets/javascript", "assets/css/bundle.*.css" ]);
-
-const extractSass = new ExtractTextPlugin({
-    filename: "assets/css/bundle.[contenthash].css"
-});
-
-const uglify = new webpack.optimize.UglifyJsPlugin({
-    output: {
-        comments: false
-    }
-});
-
-const runtimeChunk = new webpack.optimize.CommonsChunkPlugin({ name: "runtime" });
-const vendorChunk = new webpack.optimize.CommonsChunkPlugin({ name: ["vendor", "polyfills"] });
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
     entry: {
-        main: ["./src/main.js", "./src/scss/main.scss"],
-        vendor: [ "materialize-css" ],
-        polyfills: [ "array-from" ]
+        main: ['./src/main.js'],
     },
     output: {
         path: path.resolve(__dirname, "dist"),
         filename: "assets/javascript/[name].[chunkhash].js",
         publicPath: "/"
     },
+    optimization: {
+      splitChunks: {
+        chunks: 'all',
+      },
+    },
     module: {
         rules: [
-            {
-                test: /\.js$/,
-                exclude: /node_modules/,
-                use: {
-                    loader: "babel-loader",
-                    options: {
-                        presets: ["babel-preset-env"]
-                    }
-                }
-            },
-            {
-                test: /\.(sass|scss)$/,
-                use: ExtractTextPlugin.extract({
-                    use: [
-                        { loader: "css-loader", options: { minimize: true } },
-                        { loader: "sass-loader" }
-                    ]
-                })
+          {
+            test: /.(ttf|otf|eot|svg|woff2?)$/,
+            use: [{
+              loader: 'file-loader',
+              options: {
+                name: '[name].[ext]',
+                outputPath: 'assets/fonts',
+                publicPath: '/assets/fonts'
+              }
+            }]
+          },
+          {
+            test: /.(jpg|png)$/,
+            use: [{
+              loader: 'file-loader',
+              options: {
+                name: '[name].[ext]',
+                outputPath: 'assets/images',
+                publicPath: '/assets/images'
+              }
+            }]
+          },
+          {
+            test: /\.m?js$/,
+            exclude: /node_modules/,
+            use: {
+              loader: 'babel-loader',
+              options: {
+                presets: [
+                  ['@babel/preset-env', { targets: "defaults" }]
+                ]
+              }
             }
+          },
+          {
+            test: /\.s[ac]ss$/i,
+            use: [
+              MiniCssExtractPlugin.loader,
+              "css-loader",
+              "sass-loader",
+            ],
+          },
         ]
     },
-    plugins: [ clean, html, vendorChunk, runtimeChunk, uglify, extractSass ]
+    plugins: [
+      new MiniCssExtractPlugin({
+        filename: "assets/css/[name].[chunkhash].css",
+      }),
+      new HtmlWebpackPlugin({ template: "./src/head.html", filename: "head.html", inject: "head", minify: false }),
+    ]
 };

@@ -1,17 +1,15 @@
 #!/bin/bash
 set -e
 
-BUNDLE=bundle
-JEKYLL="$BUNDLE exec jekyll"
-NPM=npm
+JEKYLL="bundle exec jekyll"
 
 install () {
-  $BUNDLE install --path vendor/bundle
-	$NPM install
+  bundle install --path vendor/bundle
+	yarn install
 }
 
 build () {
-  $NPM run build
+  yarn build
 	$JEKYLL build
 }
 
@@ -20,7 +18,7 @@ serve () {
 }
 
 watch () {
-  $NPM run watch
+  yarn watch
 }
 
 clean () {

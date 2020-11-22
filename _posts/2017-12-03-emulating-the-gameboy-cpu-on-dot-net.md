@@ -60,7 +60,7 @@ The flags register is a single byte that contains a bit-mask set according to th
 
 The flags registers are implemented slightly differently on each platform so we'll hide them away behind an interface.
 
-{% highlight C# %}
+```c#
 public interface IFlagsRegister
 {
     byte Register { get; set; }
@@ -81,11 +81,11 @@ public interface IFlagsRegister
 
     bool Carry { get; set; }
 }
-{% endhighlight %}
+```
 
 For example, we might implement the GameBoy flags register as follows.
 
-{% highlight C# %}
+```c#
 public class GameBoyFlagsRegister : IFlagsRegister
 {
     private const byte ZeroMask = 1 << 7;
@@ -124,13 +124,13 @@ public class GameBoyFlagsRegister : IFlagsRegister
 
     public bool Carry { get; set; }
 }
-{% endhighlight %}
+```
 
 ### General purpose registers
 
 For defining our register classes we could do with some help for converting between the 8 and 16-bit representations of the registers.
 
-{% highlight C# %}
+```c#
 public static class BitConverterHelpers
 {
     public static ushort To16Bit(byte high, byte low)
@@ -143,11 +143,11 @@ public static class BitConverterHelpers
         return ((byte) high, (byte) low);
     }
 }
-{% endhighlight %}
+```
 
 Let's start by defining the general purpose register set.
 
-{% highlight C# %}
+```c#
 public class GeneralPurposeRegisterSet
 {
     public byte B { get; set; }
@@ -180,13 +180,13 @@ public class GeneralPurposeRegisterSet
         set => (H, L) = BitConverterHelpers.To8Bit(value);
     }
 }
-{% endhighlight %}
+```
 
 ### Accumulator and flags
 
 The accumulator and flags must be separate from the general purpose registers due to the Z80's banked register support.
 
-{% highlight C# %}
+```c#
 public class AccumulatorAndFlagsRegisterSet
 {
     public AccumulatorAndFlagsRegisterSet(IFlagsRegister flagsRegister)
@@ -204,13 +204,13 @@ public class AccumulatorAndFlagsRegisterSet
         set => (A, Flags.Register) = BitConverterHelpers.To8Bit(value);
     }
 }
-{% endhighlight %}
+```
 
 ### Register access
 
 To simplify the rest of the system, we will access registers via an interface conforming to the full Z80 specification.
 
-{% highlight C# %}
+```c#
 public interface IRegisters
 {
     GeneralPurposeRegisterSet GeneralPurposeRegisters { get; }
@@ -223,7 +223,7 @@ public interface IRegisters
 
     // Some more Z80 specific stuff omitted for brevity
 }
-{% endhighlight %}
+```
 
 We'll have two implementations of this interface; one for the Z80 and one shared by the GameBoy and Intel 8080. The Z80 implementation will have full functionality whereas the Intel 8080/GameBoy implementation will throw when calling methods or properties that are not supported by the platform. It will be the responsibility of the CPU core implementation to configure the correct level of register support for each platform.
 
@@ -235,7 +235,7 @@ Next we need to implement the memory management unit (MMU) to broker access to t
 
 An MMU should support reading and writing data in various lengths across the entire address space, whilst abstracting away the hardware that is physically attached to each location in the space.
 
-{% highlight C# %}
+```c#
 public interface IMmu : IDisposable
 {
     byte ReadByte(ushort address);
@@ -250,11 +250,11 @@ public interface IMmu : IDisposable
 
     void WriteBytes(ushort address, byte[] bytes);
 }
-{% endhighlight %}
+```
 
 We can implement an MMU in a platform agnostic way by introducing a concept of segments. A segment has a location and length so that the MMU can correctly position it in address space and will provide implementation specific data access operations. For example, most GameBoy cartridges have a microcontroller acting as a memory bank controller (MBC) over multiple banks of read only memory (ROM). Read requests for data in an MBC address space will be forwarded to a configured page of ROM, whereas write requests will change which page is configured. For this reason we really need different interfaces for readable and writeable segments.
 
-{% highlight C# %}
+```c#
 public interface IAddressSegment
 {
     MemoryBankType Type { get; }
@@ -263,9 +263,9 @@ public interface IAddressSegment
 
     ushort Length { get; }
 }
-{% endhighlight %}
+```
 
-{% highlight C# %}
+```c#
 public interface IReadableAddressSegment : IAddressSegment
 {
     byte ReadByte(ushort address);
@@ -276,9 +276,9 @@ public interface IReadableAddressSegment : IAddressSegment
 
     void ReadBytes(ushort address, byte[] buffer);
 }
-{% endhighlight %}
+```
 
-{% highlight C# %}
+```c#
 public interface IWriteableAddressSegment : IAddressSegment
 {
     void WriteByte(ushort address, byte value);
@@ -287,11 +287,11 @@ public interface IWriteableAddressSegment : IAddressSegment
 
     void WriteBytes(ushort address, byte[] values);
 }
-{% endhighlight %}
+```
 
 For example, a very simple segment that represents random access memory (RAM) could be implemented using a byte array:
 
-{% highlight C# %}
+```c#
 public class ArrayBackedMemoryBank : IReadableAddressSegment, IWriteableAddressSegment
 {
     protected readonly byte[] Memory;
@@ -334,7 +334,7 @@ public class ArrayBackedMemoryBank : IReadableAddressSegment, IWriteableAddressS
 
     public void WriteBytes(ushort address, byte[] values) => Array.Copy(values, 0, Memory, address, values.Length);
 }
-{% endhighlight %}
+```
 
 It is the responsibility of the platform to wire up the correct segments and their implementations.
 
@@ -358,7 +358,7 @@ Each operation cycle will:
 
 Naively this can be implemented as a while loop with a massive switch statement to handle the opcodes.
 
-{% highlight C# %}
+```c#
 public class NaiveZ80
 {
     private readonly IRegisters _registers;
@@ -420,24 +420,24 @@ public class NaiveZ80
         }
     }
 }
-{% endhighlight %}
+```
 
 ### Arithmetic logic unit
 
 Notice that we have abstracted CPU arithmetic behind an arithmetic logic unit (ALU). The interface for this would look something like this.
 
-{% highlight C# %}
+```c#
 public interface IAlu
 {
     byte Add(byte a, byte b);
 
     // all other methods omitted for brevity
 }
-{% endhighlight %}
+```
 
 And implementation.
 
-{% highlight C# %}
+```c#
 public class Alu : IAlu
 {
     private readonly IRegisters _registers;
@@ -477,7 +477,7 @@ public class Alu : IAlu
         return (byte) result;
     }
 }
-{% endhighlight %}
+```
 
 We spend the majority of the `Add` function dealing with flags. This is a common theme of ALU methods so it makes sense that a complete ALU implementation would group flag manipulations into logical groups abstracted away behind methods such as `SetResultFlags`.
 
@@ -485,7 +485,7 @@ We spend the majority of the `Add` function dealing with flags. This is a common
 
 We can do much better than the naive Z80 implementation above. The main issue I have with it is that we are decoding each opcode on every cycle, even if we've already decoded the exact same block of memory in a previous cycle. Since we're all software developers here, we know that the basic building blocks of software are control flow structures such as loops and functions. Software written for the Z80 platform is no different, it also consists of control flow structures, which means that the same code is run many times but against different data or CPU states. An ideal solution to this problem is to recompile Z80 opcodes and static data into a structure suitable for caching. In this case we would run a decode step only once per block of memory, compiling and caching it with enough meta data to recall later. When the CPU core attempts to decode the same block in the future, it will first check the cache. A hit will mean it can skip the entire decode-compile step resulting in a massive boost to performance. We will define block boundaries where an operation changes the program counter directly i.e. program flow opcodes such as jumps, calls, resets and returns. Since we're using .NET we have the expression tree API; a brilliant abstraction over emitting IL. Here's an example of how we might improve the original naive example to use cached expression trees.
 
-{% highlight C# %}
+```c#
 public class ExpressionTreeZ80
 {
     private readonly IRegisters _registers;
@@ -580,7 +580,7 @@ public class ExpressionTreeZ80
         }
     }
 }
-{% endhighlight %}
+```
 
 ## Final thoughts
 

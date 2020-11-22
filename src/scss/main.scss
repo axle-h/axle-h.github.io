@@ -9,6 +9,10 @@ $fa-font-path: '~@fortawesome/fontawesome-free/webfonts';
 @import "~materialize-css/sass/materialize.scss";
 @import "syntax";
 
+b, strong {
+  font-weight: 600;
+}
+
 /****** Fonts ******/
 h1,h2,h3,h4,h5,h6 {
     font-family: 'Roboto Slab', serif;
@@ -133,14 +137,6 @@ nav {
             h5 { font-size: $h5-fontsize; margin: ($h5-fontsize / 1.5) 0 ($h5-fontsize / 2.5) 0;}
             h6 { font-size: $h6-fontsize; margin: ($h6-fontsize / 1.5) 0 ($h6-fontsize / 2.5) 0;}
 
-            @media #{$medium-and-down} {
-                img {
-                    display: block;
-                    margin-left: auto;
-                    margin-right: auto;
-                }
-            }
-
             ul {
                 list-style-type: disc;
                 margin-left: 1em;
@@ -150,9 +146,24 @@ nav {
                 }
             }
 
+            @media #{$large-and-up} {
+              img {
+                max-width: 70% !important;
+              }
+            }
+
+            @media #{$medium-only} {
+              img {
+                max-width: 80% !important;
+              }
+            }
+
             img {
-                max-width:100%;
-                height:auto
+                max-width: 100%;
+                height: auto;
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
             }
         }
     }

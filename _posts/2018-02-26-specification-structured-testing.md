@@ -61,7 +61,7 @@ I'd like to structure my unit tests as specifications and to do so I require an 
 Xunit provides basic assertions but these are no good for specification structured tests, which work far better with nice fluent "it should" type assertions.
 I prefer the API of [FluentAssertions][FluentAssertions] over [Shouldly][Shouldly] as it can chain up calls really nicely.
 
-{% highlight C# %}
+```c#
 
 // Complex assertions with Shouldly can be messy.
 someVariable.ShouldSatisfyAllConditions(() => someVariable.ShouldNotBeNull(),
@@ -70,13 +70,13 @@ someVariable.ShouldSatisfyAllConditions(() => someVariable.ShouldNotBeNull(),
 // Complex assertions with FluentAssertions are very concise.
 someVariable.Should().NotBeNull().And.BeSameAs(someOtherVariable);
 
-{% endhighlight %}
+```
 
 ### Test data library
 
 For complex test data, I like to use [AutoFixture][AutoFixture], which has finally been ported to .NET Core. I also like to use [Bogus][Bogus] for generating context aware test data e.g. user names, email addresses, URL's. Bogus is a tiny library anyway so I'm happy to include both.
 
-{% highlight C# %}
+```c#
 
 // AutoFixture is really useful for generating POCO's with little configuration.
 var fakePoco = Fixture.Create<Poco>();
@@ -85,7 +85,7 @@ var fakePoco = Fixture.Create<Poco>();
 var url = Fake.Internet.Url();
 var validUri = Uri.TryCreate(url, UriKind.Absolute, out var uri); // true
 
-{% endhighlight %}
+```
 
 ## Behaviour driven development
 
@@ -120,7 +120,7 @@ When introducing BDD-lite to a team, it should be the encouraged approach but en
 
 Imagine that we have a breakfast service that makes bacon sandwiches (because why not):
 
-{% highlight C# %}
+```c#
 
 public class BreakfastService
 {
@@ -155,11 +155,11 @@ public class BreakfastService
     }
 }
 
-{% endhighlight %}
+```
 
 This example needs a bacon class, a bacon sandwich class and a bacon repository interface (that's a lot of bacon :-)):
 
-{% highlight C# %}
+```c#
 
 public class Bacon
 {
@@ -183,7 +183,7 @@ public interface IBaconRepository
     Task<Bacon> TakeBaconOfPreferredTypeAsync(bool preferSmoked);
 }
 
-{% endhighlight %}
+```
 
 We can represent the behaviours of `MakeMeABaconSandwichAsync` in a hierarchical flow as before:
 
@@ -204,7 +204,7 @@ We can represent the behaviours of `MakeMeABaconSandwichAsync` in a hierarchical
 
 If we were to test `MakeMeABaconSandwichAsync` with AAA structured, flat unit tests then we could write each coarse behaviour as an independent unit test, the fine behaviours would be represented by assertions at the end of each test method.
 
-{% highlight C# %}
+```c#
 
 public class BreakfastServiceTests
 {
@@ -269,7 +269,7 @@ public class BreakfastServiceTests
     }
 }
 
-{% endhighlight %}
+```
 
 The unit tests themselves are structured well but that's a lot of boiler plate isn't it. There is definitely scope for extracting some common code out into a function or two. We might extract the arrange, act and assert steps as functions but it would be pretty difficult to keep clean. Believe me I tried.
 
@@ -288,7 +288,7 @@ We should all know that the structure of a (good) test should closely follow the
 
 This is nice but completely implicit. I.e. a future developer working on these tests could move some arrange code after the act step in order to force an assertion to pass. Or worse, add another round of acting and asserting, essentially coupling two tests together. If we are writing good tests then why not be more explicit in our test structure? How about we guide developers into this pattern explicitly with a specification-like test structure that looks something like this:
 
-{% highlight C# %}
+```c#
 
 public class Spec
 {
@@ -306,7 +306,7 @@ public class Spec
     [Fact] public void Something_should_not_be_null() => "something".Should().NotBeNull();
 }
 
-{% endhighlight %}
+```
 
 ### Test failure messages
 
@@ -316,7 +316,7 @@ These tests all pass and display like this (in Resharper):
 
 This is fine but what happens when we break something. What if some rogue developer starts stealing your bacon sandwiches.
 
-{% highlight C# %}
+```c#
 
 public async Task<BaconSandwich> MakeMeABaconSandwichAsync(bool preferSmokedBacon, string owner)
 {
@@ -342,7 +342,7 @@ public async Task<BaconSandwich> MakeMeABaconSandwichAsync(bool preferSmokedBaco
             };
 }
 
-{% endhighlight %}
+```
 
 We now get a failure message like this.
 
@@ -350,13 +350,13 @@ We now get a failure message like this.
 
 The entire test fails even though some assertions have passed. Here's the assertions from the failing test.
 
-{% highlight C# %}
+```c#
 
 result.Should().NotBeNull(); // This assertion passed but it's success was implicit
 result.IsYummy.Should().BeTrue(); // This assertion failed so an exception was thrown here
 result.Owner.Should().Be(owner); // This assertion did not run due to the exception
 
-{% endhighlight %}
+```
 
 There's two major problems here:
 
@@ -374,7 +374,7 @@ Wouldn't it be nice if we could structure our tests to produce messages like thi
 Specification structured testing is all about maintaining explicit, readable test structure whilst providing richer messaging.
 My specification structured test library, [xunit.spec][github] consists of base classes for deriving specifications depending on whether your service methods are asynchronous and/or return a result. Back to the example, we can create our own coarse specification to inherit from using a `ResultSpec<TSubject, TResult>`, which is asynchronous and whose act step returns a result:
 
-{% highlight C# %}
+```c#
 
 public abstract class BaconService_BaconSandwich_Spec : ResultSpec<BreakfastService, BaconSandwich>
 {
@@ -402,11 +402,11 @@ public abstract class BaconService_BaconSandwich_Spec : ResultSpec<BreakfastServ
     protected override Task<BaconSandwich> ActAsync(BreakfastService subject) => subject.MakeMeABaconSandwichAsync(_preferSmoked, Owner);
 }
 
-{% endhighlight %}
+```
 
 So we now have the top level part of the behaviour tree; we have all the code necessary to setup and call the service with toggles present to send us down each behaviour, all in a concise class. Fine behaviours can be defined by inheritance:
 
-{% highlight C# %}
+```c#
 
 public abstract class Successfully_making_a_bacon_sandwich : BaconService_BaconSandwich_Spec
 {
@@ -434,7 +434,7 @@ public class When_attempting_to_make_a_bacon_sandwich_without_bacon : BaconServi
     [Fact] public void It_should_return_null() => Result.Should().BeNull();
 }
 
-{% endhighlight %}
+```
 
 ### Auto mocking container
 
@@ -444,7 +444,7 @@ The Spec classes in xunit.spec support the subject pattern by using an auto mock
 
 There's some cool stuff that you can do with specification tests. For example [AutoMapper][AutoMapper] profiles are such a black box that it should be a requirement for you to unit test each of them. Check out [xunit-spec-automapper][xunit-spec-automapper] which provides a specification base class configured for testing AutoMapper profiles. E.g. if you had an assembly with loads of profiles like this one:
 
-{% highlight C# %}
+```c#
 
 public class PocoProfile : Profile
 {
@@ -455,22 +455,22 @@ public class PocoProfile : Profile
     }
 }
 
-{% endhighlight %}
+```
 
 You’d create an application specific specification base class like this:
 
-{% highlight C# %}
+```c#
 
 public abstract class ApplicationMappingSpec<TSource, TDestination> : MappingSpec<TSource, TDestination>
 {
     protected override ICollection<Type> ProfileTypes { get; } = new[] { typeof(PocoProfile) };
 }
 
-{% endhighlight %}
+```
 
 Then you can define mapping specifications like so:
 
-{% highlight C# %}
+```c#
 
 public class When_mapping_from_PocoSource_to_PocoDestination : ApplicationMappingSpec<PocoSource, PocoDestination>
 {
@@ -479,7 +479,7 @@ public class When_mapping_from_PocoSource_to_PocoDestination : ApplicationMappin
     [Fact] public void It_should_not_map_int() => Destination.Int.Should().NotBe(Source.Int);
 }
 
-{% endhighlight %}
+```
 
 ## Final thoughts
 

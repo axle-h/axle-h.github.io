@@ -52,7 +52,7 @@ One major thing we cannot ignore when accepting the use of the test server is th
 
 Here's the example ripped from Microsoft's MVC integration test [documentation][integration-tests]:
 
-{% highlight C# %}
+```c#
 public class BasicTests 
     : IClassFixture<WebApplicationFactory<RazorPagesProject.Startup>>
 {
@@ -82,7 +82,7 @@ public class BasicTests
         Assert.Equal("text/html; charset=utf-8", 
             response.Content.Headers.ContentType.ToString());
     }
-{% endhighlight %}
+```
 
 Other than this being a test for a *dirty, dirty* Razor Page's project I have some issues with it.
 
@@ -93,7 +93,7 @@ Other than this being a test for a *dirty, dirty* Razor Page's project I have so
 
 Imagine we had a simple API that returns the current UTC datetime.
 
-{% highlight C# %}
+```c#
 [Route("date")]
 public class DateController : Controller
 {
@@ -103,11 +103,11 @@ public class DateController : Controller
                                 UtcNow = DateTimeOffset.UtcNow
                             };
 }
-{% endhighlight %}
+```
 
 A fluent test for this developed with [xunit-fixture-mvc][github] might look like this:
 
-{% highlight C# %}
+```c#
 public class DateTests
 {
     private readonly ITestOutputHelper _output;
@@ -125,37 +125,37 @@ public class DateTests
             .ShouldReturnJson<DateDto>(x => x.UtcNow.Should().BeCloseTo(DateTimeOffset.UtcNow, 1000))
             .RunAsync();
 }
-{% endhighlight %}
+```
 
 This already reads pretty well but let's break it down:
 
-{% highlight C# %}
+```c#
 new MvcFunctionalTestFixture<Startup>(_output)
-{% endhighlight %}
+```
 
 Configures the test server to use the specified `Startup` class and to send all logs to the xunit test context.
 
-{% highlight C# %}
+```c#
 .WhenGetting("date")
-{% endhighlight %}
+```
 
 Configures the fixture to send a `GET /date` request to the test server once it's up and running.
 
-{% highlight C# %}
+```c#
 .ShouldReturnSuccessfulStatus()
-{% endhighlight %}
+```
 
 Adds an assertion to the fixture that the response has a successful (2xx) code.
 
-{% highlight C# %}
+```c#
 .ShouldReturnJson<DateDto>(x => x.UtcNow.Should().BeCloseTo(DateTimeOffset.UtcNow, 1000))
-{% endhighlight %}
+```
 
 Adds an assertion to the fixture that the response body can be deserialized to an instance of `DateDto` and that the `UtcNow` property has been set correctly. We're using the excellent [Fluent Assertions][fluent-assertions].
 
-{% highlight C# %}
+```c#
 .RunAsync();
-{% endhighlight %}
+```
 
 Runs the fixture. It's important to note that all preceding fluent calls are simply configuration steps and only here do we actually construct a test server. In this case the configured fixture will:
 
@@ -173,7 +173,7 @@ A conscious design decision was that no exception will be thrown until all asser
 
 I like to develop these fluent fixture type patterns with extension methods. A decent example in [xunit-fixture-mvc][github] is [Xunit.Fixture.Mvc.Extensions.RestExtensions][github-rest-extensions], which uses a RESTful opinion to call the `When` method on [Xunit.Fixture.Mvc.IMvcFunctionalTestFixture][github-fixture]. The example above already used one of these extensions:
 
-{% highlight C# %}
+```c#
 /// <summary>
 /// Configures the specified fixture's act step to be a GET request at the specified url.
 /// </summary>
@@ -193,23 +193,23 @@ public static IMvcFunctionalTestFixture WhenCallingRestMethod(this IMvcFunctiona
 
     return fixture.When(method, url, content);
 }
-{% endhighlight %}
+```
 
 The alternative to this would have been to use inheritance to add methods to the fixture, which would mess with the ability for tests to be written in a fluent style. I.e. if any method was called that returns an `IMvcFunctionalTestFixture`, all instance methods would be inaccessible to proceeding, chained calls.
 
 The use of extensions methods can also extend to the domain of the application that we're testing. For example, there may be more than one API endpoint that returns a `DateDto`. If that's the case then it would make sense to spin this off into a reusable, fluent extension method.
 
-{% highlight C# %}
+```c#
 public static class DateAssertionExtensions
 {
     public static IMvcFunctionalTestFixture ShouldReturnDateCloseToNow(this IMvcFunctionalTestFixture fixture) =>
         fixture.ShouldReturnJson<DateDto>(x => x.UtcNow.Should().BeCloseTo(DateTimeOffset.UtcNow, 1000));
 }
-{% endhighlight %}
+```
 
 The fluent design of our integration test can now be cleaned up further.
 
-{% highlight C# %}
+```c#
 [Fact]
 public Task When_getting_date() =>
     new MvcFunctionalTestFixture<Startup>(_output)
@@ -217,13 +217,13 @@ public Task When_getting_date() =>
         .ShouldReturnSuccessfulStatus()
         .ShouldReturnDateCloseToNow()
         .RunAsync();
-{% endhighlight %}
+```
 
 ## Auto Fixture
 
 For generating request objects, [xunit-fixture-mvc][github] uses [AutoFixture][auto-fixture]. Take a look at these methods from [Xunit.Fixture.Mvc.Extensions.RestExtensions][github-rest-extensions].
 
-{% highlight C# %}
+```c#
 /// <summary>
 /// Configures the specified fixture's act step to be a PUT request for the specified entity and id with the specified JSON body.
 /// </summary>
@@ -238,11 +238,11 @@ public static IMvcFunctionalTestFixture WhenCallingRestMethod<TModel>(this IMvcF
                                                                       HttpMethod method, string url, out TModel model) =>
     fixture.HavingModel(out model)
            .WhenCallingRestMethod(method, url, model);
-{% endhighlight %}
+```
 
 We can use C# 7 inline variable declaration to call these methods in a fluent style.
 
-{% highlight C# %}
+```c#
 [Fact]
 public Task When_updating_something() =>
     new MvcFunctionalTestFixture<Startup>(_output)
@@ -250,7 +250,7 @@ public Task When_updating_something() =>
         .ShouldReturnSuccessfulStatus()
         .ShouldReturnSomething(request)
         .RunAsync();
-{% endhighlight %}
+```
 
 I think this looks awesome.
 
@@ -258,7 +258,7 @@ I think this looks awesome.
 
 I have demonstrated how this library could be extended to support other packages and frameworks by integrating it with MySQL. xunit-fixture-mvc-mysql is also available on [GitHub][github-mysql] and [NuGet][nuget-mysql]. Here's a complete usage example.
 
-{% highlight C# %}
+```c#
 [Fact]
 public Task When_creating_breakfast_item() =>
     new MvcFunctionalTestFixture<Startup>(_output)
@@ -273,7 +273,7 @@ public Task When_creating_breakfast_item() =>
                                         x => existing.Name.Should().Be(request.Name),
                                         x => x.Rating.Should().Be(request.Rating))
         .RunAsync();
-{% endhighlight %}
+```
 
 The first fluent argument, `.HavingMySqlDatabase<BreakfastContext>()` will configure the fixture to use the specified `DbContext` type to create a new, fully migrated database that has been isolated specifically for this test. Then the call to `.ShouldExistInDatabase<BreakfastContext, BreakfastItem>` will configure the fixture to, after the request has completed, find the `BreakfastItem` entity in the database with an id of 1 and run the specified assertions on it.
 

@@ -8,7 +8,13 @@ author: Alex Haslehurst
 categories: software development testing
 ---
 
-Given my last few posts, you'd be forgiven for thinking that this blog has an underlying testing theme. As unintended as it may be, since I've written *yet another* lightweight unit testing framework that works significantly different to my previous [specification structured][spec-testing] approach, I think it qualifies for another post. `given-fixture` is intended to support writing really concise but readable tests built from many small, fluent extension methods that configure a fixture for taking care of all that nasty boiler plate. Me and the rest of my team have written hundreds of unit tests with this. We seem to be having great success and continue to refine it regularly. So please take a look, it's available on [GitHub][github] and [NuGet][nuget].
+Given my last few posts, you'd be forgiven for thinking this blog has an underlying testing theme.
+As unintended as it may be, since I've written *yet another* lightweight unit testing framework that works significantly different to my previous
+[specification structured][spec-testing] approach, I think it qualifies for another post.
+`given-fixture` is intended to support writing really concise but readable tests built from many small,
+fluent extension methods that configure a fixture for taking care of all that nasty boiler plate.
+Me and the rest of my team have written hundreds of unit tests with this. We seem to be having great success and continue to refine it regularly.
+So please take a look, it's available on [GitHub][github] and [NuGet][nuget].
 
 <!--more-->
 
@@ -76,13 +82,13 @@ Some test data must conform to a particular structure in order for our tests to 
 
 For structured data, the excellent [Bogus][bogus] library is perfect. The test fixture in `given-fixture` provides a `Faker` instance so that we can wrap it fluently like so.
 
-{% highlight C# %}
+```c#
 Given.Fixture
      .HavingFake(f => f.Internet.Url(), out var url)
      .HavingFake(f => f.Internet.Email(), out var email)
      .HavingFake(f => f.Random.AlphaNumeric(16), out var knownLength)
      .HavingFake(f => f.Random.Int(1, 10), out var knownRange);
-{% endhighlight %}
+```
 
 The Bogus library really fits in with our fluent style.
 
@@ -90,52 +96,52 @@ The Bogus library really fits in with our fluent style.
 
 If a test is often generating data of a particular structure, we may want to wrap it in a new extension method, for example.
 
-{% highlight C# %}
+```c#
 public static ITestFixture HavingUrlWithPath(this ITestFixture fixture,
                                              out string url) =>
     fixture.HavingFake(f => f.Internet.UrlWithPath(), out url);
-{% endhighlight %}
+```
 
 For unstructured data we can use [AutoFixture][auto-fixture]. The test fixture in `given-fixture` provides an `IFixture` instance so that we can wrap it fluently like so.
 
-{% highlight C# %}
+```c#
 Given.Fixture
      .HavingModel(out SomeModel model)
      .HavingModels(out ICollection<SomeModel> models)
      .HavingModel(out Guid guid);
-{% endhighlight %}
+```
 
 These methods support the composer functionality of AutoFixture.
 
-{% highlight C# %}
+```c#
 Given.Fixture
      .HavingModel(out SomeModel model1, c => c.Without(c => c.SomeProperty))
      .HavingModel(out SomeModel model2, c => c.With(c => c.SomeProperty, "some value"));
-{% endhighlight %}
+```
 
 With extensions provided in the library, you can also combine Bogus with AutoFixture to generate structured data in POCO's.
 
-{% highlight C# %}
+```c#
 Given.Fixture
      .HavingModel(out SomeModel model,
                   c => c.With(c => c.Email, f => f.Internet.Email())
                         .With(x => x.Price, f => f.Random.Decimal(10, 20)));
-{% endhighlight %}
+```
 
 Again we may want to generate the same sort of data in multiple tests, in which case we would extract a new reusable extension method.
 
-{% highlight C# %}
+```c#
 public static ITestFixture HavingSomeModelWithPrice(this ITestFixture fixture,
                                                     out SomeModel model,
                                                     decimal price) =>
     fixture.HavingModel(out model, c => c.With(x => x.Price, price));
-{% endhighlight %}
+```
 
 ### Configuring mocks
 
 For mocking dependencies, I have used [Moq][moq] with the repository from [Autofac.Extras.Moq][autofac-moq]. The test fixture in `given-fixture` provides an `AutoMock` instance so that we can wrap it fluently like so.
 
-{% highlight C# %}
+```c#
 Given.Fixture
      .HavingModel(out SomeModel model)
      .HavingMock<ISomeService>(m => m.Setup(x => x.SomeMethodAsync())
@@ -144,23 +150,23 @@ Given.Fixture
      .HavingMock<ISomeService>(m => m.Setup(x => x.SomeOtherMethod())
                                      .Throws(new InvalidOperationException())
                                      .Verifiable());
-{% endhighlight %}
+```
 
 I noticed whilst writing tests using these methods that most of the time I was mocking methods to return models or throw exceptions that I had just generated with AutoFixture. So I have included a set of extension methods that cover most of these common cases. Using these extension methods, the above example becomes more concise.
 
-{% highlight C# %}
+```c#
 Given.Fixture
      .HavingMocked<ISomeService, SomeModel>(x => x.SomeMethodAsync(), out model)
      .HavingMockThrow<ISomeService, InvalidOperationException>(x => x.SomeOtherMethod());
-{% endhighlight %}
+```
 
 Because this is just wrapping the Moq library you can still use parameter assertions, for example.
 
-{% highlight C# %}
+```c#
 Given.Fixture
      .HavingMocked<ISomeService, SomeModel>(x => x.SomeMethodAsync(It.Is<SomeRequest>(r => r.Name == "some name")),
                                             out model);
-{% endhighlight %}
+```
 
 Each of these methods calls the `Verifiable(string because)` method on the mock object. This is a good practice as it asserts all mock actions were actually completed i.e. the test is actually testing the subject behaviour that we expect. After result and exception assertions have completed, the test fixture automatically calls `VerifyAll()` on each configured mock.
 
@@ -170,53 +176,53 @@ Once we have all test data ready and all dependent calls mocked out, we need a s
 
 If testing with a subject.
 
-{% highlight C# %}
+```c#
 Given.Fixture
      .When<SomeService, SomeResult>(x => x.SomeMethodAsync());
-{% endhighlight %}
+```
 
 Or without a subject.
 
-{% highlight C# %}
+```c#
 Given.Fixture
      .WhenStatic<SomeResult>(() => SomeStaticClass.SomeStaticMethod());
-{% endhighlight %}
+```
 
 ### Assertions
 
 For asserting features of the result, the fixture provides `ShouldReturn` and for the thrown exception, `ShouldThrow`. The library also provides a selection of common assertion extension methods using the excellent [FluentAssertions][fluent-assertions] library.
 
-{% highlight C# %}
+```c#
 Given.Fixture
      .ShouldReturnEquivalent(new { Name = "some name", Price = 10.0m });
-{% endhighlight %}
+```
 
 These also include common exception assertions for example.
 
-{% highlight C# %}
+```c#
 Given.Fixture
      .ShouldThrowArgumentException("request");
-{% endhighlight %}
+```
 
 ### Running the fixture
 
 Up to this point, we have only been configuring the fixture. We must call either `Run` or `RunAsync` to run the fixture depending on whether the act step is asynchronous.
 
-{% highlight C# %}
+```c#
 public Task When_calling_some_async_method() =>
      Given.Fixture
           .When<SomeService, SomeResult>(x => x.SomeMethodAsync())
           .RunAsync();
-{% endhighlight %}
+```
 
 For synchronous methods.
 
-{% highlight C# %}
+```c#
 public void When_calling_some_sync_method() =>
      Given.Fixture
           .When<SomeService, SomeResult>(x => x.SomeMethod())
           .Run();
-{% endhighlight %}
+```
 
 The fixture will throw if you attempt to use the incorrect run method for your act step.
 
@@ -224,7 +230,7 @@ The fixture will throw if you attempt to use the incorrect run method for your a
 
 Imagine that we have `BreakfastService`, a service for creating breakfasts. This is simply naming and pricing collections of breakfast items.
 
-{% highlight C# %}
+```c#
 public class BreakfastService
 {
     private readonly IBreakfastItemRepository _breakfastItemRepository;
@@ -295,11 +301,11 @@ public class BreakfastService
     private static string GetItemNames(IEnumerable<BreakfastItem> items) =>
         Regex.Replace(string.Join(", ", items.Select(i => i.Name)), ",(?=[^,]*$)", " and");
 }
-{% endhighlight %}
+```
 
 First of all, each test will share common test fixture configuration steps, such as configuring the subject and method to call. To avoid repeating ourselves in code we should wrap these in extension methods.
 
-{% highlight C# %}
+```c#
 internal static class BreakfastTestExtensions
 {
     /// <summary>
@@ -329,11 +335,11 @@ internal static class BreakfastTestExtensions
                                                                             params BreakfastItem[] expectedItems) =>
         fixture.ShouldReturnEquivalent(new Breakfast { Name = expectedName, Price = expectedItems.Sum(i => i.Price) });
 }
-{% endhighlight %}
+```
 
 Our first tests should assert that relevant argument exceptions are thrown when calling the service with bad arguments.
 
-{% highlight C# %}
+```c#
 [Fact]
 public Task When_attempting_to_get_breakfast_with_null_request() =>
     Given.Fixture
@@ -347,11 +353,11 @@ public Task When_attempting_to_get_breakfast_with_no_items() =>
          .WhenGettingBreakfast()
          .ShouldThrowArgumentException("request")
          .RunAsync();
-{% endhighlight %}
+```
 
 Next we should test the happy path.
 
-{% highlight C# %}
+```c#
 [Fact]
 public Task When_getting_bacon_egg_and_sausage() =>
     Given.Fixture
@@ -364,11 +370,11 @@ public Task When_getting_bacon_egg_and_sausage() =>
          .ShouldReturnBreakfastWithCorrectNameAndPrice("Bacon, Egg and Sausage",
                                                        bacon, egg, sausage)
          .RunAsync();
-{% endhighlight %}
+```
 
 Finally we should write tests for behaviours that are not represented by the happy path i.e. code in the service that has not been called by any of the above tests. Firstly we need to test the failure when one of the breakfast items cannot be retrieved from the repository.
 
-{% highlight C# %}
+```c#
 [Fact]
 public Task When_attempting_to_get_breakfast_with_missing_item() =>
     Given.Fixture
@@ -376,11 +382,11 @@ public Task When_attempting_to_get_breakfast_with_missing_item() =>
          .WhenGettingBreakfast(BreakfastItemType.Bacon)
          .ShouldReturnNull()
          .RunAsync();
-{% endhighlight %}
+```
 
 Next we have the case where all breakfast items are requested, then we should get a special case of a "Full English Breakfast".
 
-{% highlight C# %}
+```c#
 [Fact]
 public Task When_getting_full_english_breakfast() =>
     Given.Fixture
@@ -395,11 +401,11 @@ public Task When_getting_full_english_breakfast() =>
          .ShouldReturnBreakfastWithCorrectNameAndPrice("Full English Breakfast",
                                                        bacon, egg, sausage, toast)
          .RunAsync();
-{% endhighlight %}
+```
 
 Next we have the case where not all Full English Breakfast items are requested but the selection includes toast, then we should get a special case of "{items} on Toast".
 
-{% highlight C# %}
+```c#
 [Fact]
 public Task When_getting_bacon_and_egg_on_toast() =>
     Given.Fixture
@@ -412,11 +418,11 @@ public Task When_getting_bacon_and_egg_on_toast() =>
          .ShouldReturnBreakfastWithCorrectNameAndPrice("Bacon and Egg on Toast",
                                                        bacon, egg, toast)
          .RunAsync();
-{% endhighlight %}
+```
 
 Finally, we need to make sure that the service is reliably deduplicating breakfast items. *TODO: support multiple items e.g. 2x Bacon*.
 
-{% highlight C# %}
+```c#
 [Fact]
 public Task When_getting_duplicate_bacon() =>
     Given.Fixture
@@ -425,7 +431,7 @@ public Task When_getting_duplicate_bacon() =>
                                BreakfastItemType.Bacon)
          .ShouldReturnBreakfastWithCorrectNameAndPrice("Bacon", bacon)
          .RunAsync();
-{% endhighlight %}
+```
 
 The complete example is available on [GitHub][github].
 

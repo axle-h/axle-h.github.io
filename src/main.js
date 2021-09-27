@@ -1,7 +1,7 @@
 "use strict";
 
 import "./scss/main.scss";
-import "materialize-css";
+import "@materializecss/materialize";
 import HeadlineType from './headline-type';
 import years from './years';
 

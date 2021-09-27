@@ -20,25 +20,17 @@ module.exports = {
         rules: [
           {
             test: /.(ttf|otf|eot|svg|woff2?)$/,
-            use: [{
-              loader: 'file-loader',
-              options: {
-                name: '[name].[ext]',
-                outputPath: 'assets/fonts',
-                publicPath: '/assets/fonts'
-              }
-            }]
+            type: 'asset/resource',
+            generator: {
+              filename: 'assets/fonts/[name][ext][query]'
+            },
           },
           {
             test: /.(jpg|png)$/,
-            use: [{
-              loader: 'file-loader',
-              options: {
-                name: '[name].[ext]',
-                outputPath: 'assets/images',
-                publicPath: '/assets/images'
-              }
-            }]
+            type: 'asset/resource',
+            generator: {
+              filename: 'assets/images/[name][ext][query]'
+            },
           },
           {
             test: /\.m?js$/,
@@ -56,9 +48,16 @@ module.exports = {
             test: /\.s[ac]ss$/i,
             use: [
               MiniCssExtractPlugin.loader,
-              "css-loader",
-              "sass-loader",
+              'css-loader',
+              {
+                loader: 'sass-loader',
+                options: {
+                  implementation: require('sass'),
+                  sassOptions: { quietDeps: true },
+                },
+              },
             ],
+            type: 'javascript/auto',
           },
         ]
     },

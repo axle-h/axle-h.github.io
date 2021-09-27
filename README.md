@@ -2,16 +2,31 @@
 
 [ax-h.com](http://ax-h.com)
 
-Requires ruby and node.
+Requires ruby, node & bundler.
+Follow the [GitHub Pages documentation](https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/testing-your-github-pages-site-locally-with-jekyll).
 
-Some gems also have dependencies.
+### Mac
+Everything can be installed from [Homebrew](https://brew.sh/).
+```bash
+# Install node
+brew install node@14
+brew link node@14
+npm install -g npm --force
+brew install ruby
+```
+
+### Ubuntu
+The packaged node is a nightmare, I would recommend [NodeSource](https://github.com/nodesource/distributions/blob/master/README.md).
+```bash
+# Install ruby
+sudo apt install build-essential ruby-full
+```
+
+Then on all platforms:
 
 ```bash
-# Install build dependencies, node and ruby
-sudo apt install build-essential zlib1g-dev autoconf nodejs npm ruby-full
-
-# Install bundler so that we can get jekyll and dependencies
-sudo gem install bundler
+# Install bundler
+gem install bundler
 
 # Run npm install and bundle install
 ./build.sh install

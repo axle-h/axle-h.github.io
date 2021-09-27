@@ -6,7 +6,7 @@ $fa-font-path: '~@fortawesome/fontawesome-free/webfonts';
 @import '~@fortawesome/fontawesome-free/scss/brands';
 
 @import "palette";
-@import "~materialize-css/sass/materialize.scss";
+@import "~@materializecss/materialize/sass/materialize.scss";
 @import "syntax";
 
 b, strong {

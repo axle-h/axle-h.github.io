@@ -16,7 +16,7 @@
     "build": "npm run clean && npm run webpack && npm run copy-assets",
     "clean": "rimraf dist && rimraf 'assets/@(css|fonts|javascript)' && rimraf _includes/head.html",
     "webpack": "webpack --mode=production",
-    "copy-assets": "copy 'dist/assets/@(css|fonts|javascript)/*' assets && copy 'dist/*.html' _includes",
+    "copy-assets": "copyfiles -u 2 'dist/assets/@(css|fonts|javascript)/*' assets && copyfiles -u 1 'dist/*.html' _includes",
     "watch": "nodemon --watch 'src/**/*' -e scss,js,html --exec 'npm run build'"
   },
   "dependencies": {
@@ -28,7 +28,7 @@
     "@babel/core": "^7.12.7",
     "@babel/preset-env": "^7.12.7",
     "babel-loader": "^8.2.1",
-    "copy": "^0.3.2",
+    "copyfiles": "^2.4.1",
     "css-loader": "^6.3.0",
     "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.3.2",

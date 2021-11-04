@@ -27,17 +27,6 @@
       class: fa-node-js
     - type: logo
       class: dotnet.svg
-- name: Modern UI
-  description: >
-    I've seen browser apps from design through to production with each of the big three SPA frameworks.
-    I like to choose the most appropriate for the project and team, rolling server side rendering or even a native app where required.
-  icons:
-    - type: logo
-      class: angular.svg
-    - type: fab
-      class: fa-react
-    - type: logo
-      class: vuejs.svg
 - name: Cloud
   description: >
     I'm happy to work with any public cloud, infrastructure as code and serverless application framework.
@@ -51,6 +40,17 @@
       class: terraform.svg
     - type: logo
       class: k8s.svg
+- name: Modern UI
+  description: >
+    I've seen browser apps from design through to production with each of the big three SPA frameworks.
+    I like to choose the most appropriate for the project and team, rolling server side rendering or even a native app where required.
+  icons:
+    - type: logo
+      class: angular.svg
+    - type: fab
+      class: fa-react
+    - type: logo
+      class: vuejs.svg
 - name: Big data
   description: >
     I have developed machine learning at scale with open source tools like Apache Cassandra, Spark and Kafka.

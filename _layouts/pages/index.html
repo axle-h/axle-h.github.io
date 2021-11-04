@@ -1,0 +1,84 @@
+---
+layout: default
+comments: true
+---
+
+<section class="hero container-fluid p-0 bg-light">
+  <article class="container p-lg-4 py-3">
+    <div class="row flex-md-row-reverse">
+      <div class="col-xxl-3 col-xl-4 col-md-6 mb-3 mb-md-0">
+        <div class="image-overlay">
+          <img class="img-fluid mask" src="{{ '/assets/images/hero.png' | relative_url }}" alt="profile" />
+          <div class="image-overlay-content d-md-none">
+            <h2 class="fw-bold display-5 mb-1">Alex Haslehurst</h2>
+            <p class="lead mb-0">Software Developer</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="d-none d-md-block">
+          <h2 class="fw-bold display-5 mb-1">Alex Haslehurst</h2>
+          <p class="fw-bold lead text-muted mb-3">Software Developer</p>
+        </div>
+        <p class="mb-1">{{ site.data.blurb.headline }}</p>
+        <p>{{ site.data.blurb.description }}</p>
+        <div class="d-grid gap-2 d-md-block mb-3">
+          <a class="btn btn-primary me-md-1" href="{% link contact.md %}">
+            <i class="fas fa-paper-plane fa-fw"></i>&nbsp;Contact me
+          </a>
+          <a class="btn btn-secondary" href="{% link cv.md %}">
+            <i class="fas fa-file-code fa-fw"></i>&nbsp;My CV
+          </a>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section class="about container p-lg-4 py-3">
+  <h3 class="section-title mb-5">MY SKILLS</h3>
+  <article class="row row-cols-2 row-cols-lg-4 g-3">
+
+    {% for skill in site.data.skills %}
+      <div class="col what-i-do">
+        <div class="icons">
+          {% for icon in skill.icons %}
+            {% if icon.type == 'fas' %}
+              <i class="fas {{ icon.class }} fa-2x"></i>
+            {% elsif icon.type == 'fab' %}
+              <i class="fab {{ icon.class }} fa-2x"></i>
+            {% elsif icon.type == 'logo' %}
+              {% include logos/{{ icon.class }} %}
+            {% endif %}
+          {% endfor %}
+        </div>
+        <h4>{{ skill.name }}</h4>
+        <p>{{ skill.description }}</p>
+      </div>
+    {% endfor %}
+
+  </article>
+</section>
+
+
+
+
+<section class="container p-lg-4 py-3">
+  <h3 class="section-title mb-5">MY STUFF</h3>
+
+  <article class="row row-cols-1 row-cols-md-2 g-3 g-xl-4 mb-4">
+    {% for post in site.posts limit:4 %}
+    <div class="col">
+      {% include post-card.html post=post %}
+    </div>
+    {% endfor %}
+  </article>
+
+  <p class="text-center">
+    <a class="btn btn-lg btn-primary d-md-inline-block d-block" href="{% link articles.md %}">
+      <i class="fas fa-satellite-dish fa-fw"></i>
+      More articles
+    </a>
+  </p>
+</section>

@@ -1,10 +1,8 @@
 ---
-layout: post
-title:  "Specification Structured Testing"
+title: "Specification Structured Testing"
 logo: specification-structured-testing/logo.jpg
 banner: specification-structured-testing/banner.jpg
-date:   2018-02-26 17:30:00 +0000
-author: Alex Haslehurst
+date: 2018-02-26 17:30:00 +0000
 categories: software development testing
 ---
 

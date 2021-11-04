@@ -1,0 +1,19 @@
+{
+    "name": "Alex Haslehurst",
+    "short_name": "Alex Haslehurst",
+    "icons": [
+        {
+            "src": "/assets/favicon/android-chrome-192x192.png?v=1",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/assets/favicon/android-chrome-384x384.png?v=1",
+            "sizes": "384x384",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#ff304f",
+    "background_color": "#ff304f",
+    "display": "standalone"
+}

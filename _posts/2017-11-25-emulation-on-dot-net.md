@@ -1,10 +1,8 @@
 ---
-layout: post
-title:  "Emulation on .NET"
+title: "Emulation on .NET"
 logo: emulation-on-dot-net/logo.png
 banner: emulation-on-dot-net/banner.png
-date:   2017-11-25 14:21:00 +0000
-author: Alex Haslehurst
+date: 2017-11-25 14:21:00 +0000
 categories: software development emulation
 ---
 

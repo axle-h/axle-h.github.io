@@ -1,226 +1,380 @@
 @charset "utf-8";
+@use "sass:math";
 
-$fa-font-path: '~@fortawesome/fontawesome-free/webfonts';
-@import '~@fortawesome/fontawesome-free/scss/fontawesome';
-@import '~@fortawesome/fontawesome-free/scss/solid';
-@import '~@fortawesome/fontawesome-free/scss/brands';
+@import url(https://fonts.googleapis.com/css?family=Nunito:200,300,400,700);
+$font-family-base: Nunito;
+@import url(https://fonts.googleapis.com/css?family=Comfortaa:200,300,400,700);
+$headings-font-family: Comfortaa;
 
-@import "palette";
-@import "~@materializecss/materialize/sass/materialize.scss";
+$primary: #FF304F;
+$secondary: #CACACA;
+$success: #015668;
+$danger: #06648C;
+$info: #0F81C7;
+$warning: #0DE2EA;
+$light: #f5f5f5;
+$dark: #222222;
+$enable-gradients: false;
+$enable-cssgrid: false;
+$grid-gutter-width: 2rem;
+$btn-border-radius: 0;
+$min-contrast-ratio: 3;
+
+.fa-node-js {
+  color: #689F63;
+}
+
+.fa-react {
+  color: #61DAFB;
+}
+
+.fa-js {
+  color: #F1DE4F;
+}
+
+// Configuration
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/mixins";
+@import "~bootstrap/scss/utilities";
+
+$utilities: map-merge(
+    $utilities,
+    (
+      "align": null,
+      "float": null,
+      "opacity": null,
+      "overflow": null,
+      "display": map-merge(
+          map-get($utilities, "display"),
+          (
+            print: false,
+            values: inline-block block grid flex none
+          )
+      ),
+      "shadow": null,
+      "position": null,
+      "top": null,
+      "bottom": null,
+      "start": null,
+      "end": null,
+      "translate-middle": null,
+      "border": null,
+      "border-top": null,
+      "border-end": null,
+      "border-bottom": null,
+      "border-start": null,
+      "border-color": null,
+      "border-width": null,
+      "width": null,
+      "max-width": null,
+      "viewport-width": null,
+      "min-viewport-width": null,
+      "height": null,
+      "max-height": null,
+      "viewport-height": null,
+      "min-viewport-height": null,
+      // Flex
+      "flex-grow": null,
+      "flex-shrink": null,
+      "flex-wrap": null,
+      "align-content": null,
+      "align-self": null,
+      "order": null,
+      // Negative margin
+      "negative-margin": null,
+      "negative-margin-x": null,
+      "negative-margin-y": null,
+      "negative-margin-top": null,
+      "negative-margin-end": null,
+      "negative-margin-bottom": null,
+      "negative-margin-start": null,
+      // Text
+      "font-family": null,
+      "font-size": null,
+      "font-style": null,
+      "line-height": null,
+      "text-transform": null,
+      "white-space": null,
+      "word-wrap": null,
+      // Color
+      "text-opacity": null,
+      // Background
+      "bg-opacity": null,
+      "gradient": null,
+      // Interaction
+      "user-select": null,
+      "pointer-events": null,
+      // Border radius
+      "rounded-top": null,
+      "rounded-end": null,
+      "rounded-bottom": null,
+      "rounded-start": null,
+      // Visibility
+      "visibility": null,
+    )
+);
+
+// Layout & components
+@import "~bootstrap/scss/root";
+@import "~bootstrap/scss/reboot";
+@import "~bootstrap/scss/type";
+@import "~bootstrap/scss/images";
+@import "~bootstrap/scss/containers";
+@import "~bootstrap/scss/grid";
+@import "~bootstrap/scss/tables";
+//@import "~bootstrap/scss/forms";
+@import "~bootstrap/scss/buttons";
+@import "~bootstrap/scss/transitions";
+//@import "~bootstrap/scss/dropdown";
+//@import "~bootstrap/scss/button-group";
+@import "~bootstrap/scss/nav";
+@import "~bootstrap/scss/navbar";
+//@import "~bootstrap/scss/card";
+//@import "~bootstrap/scss/accordion";
+//@import "~bootstrap/scss/breadcrumb";
+//@import "~bootstrap/scss/pagination";
+@import "~bootstrap/scss/badge";
+//@import "~bootstrap/scss/alert";
+//@import "~bootstrap/scss/progress";
+//@import "~bootstrap/scss/list-group";
+//@import "~bootstrap/scss/close";
+//@import "~bootstrap/scss/toasts";
+//@import "~bootstrap/scss/modal";
+//@import "~bootstrap/scss/tooltip";
+//@import "~bootstrap/scss/popover";
+//@import "~bootstrap/scss/carousel";
+//@import "~bootstrap/scss/spinners";
+//@import "~bootstrap/scss/offcanvas";
+
+// Helpers
+//@import "~bootstrap/scss/helpers";
+
+// Utilities
+@import "~bootstrap/scss/utilities/api";
+
 @import "syntax";
 
-b, strong {
-  font-weight: 600;
+$sidebar-width: 280px;
+$sidebar-breakpoint: lg;
+
+@mixin text-decoration-none {
+  text-decoration: none;
+  &:hover {
+    text-decoration: none;
+  }
 }
 
-/****** Fonts ******/
-h1,h2,h3,h4,h5,h6 {
-    font-family: 'Roboto Slab', serif;
+@mixin image-mask($start: 80%) {
+  -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, color-stop($start, rgba(0, 0, 0, 1)), color-stop(100%, rgba(0, 0, 0, 0.1)));
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) $start, rgba(0, 0, 0, 0.1) 100%);
 }
 
-a {
-    @extend .primary-color-text;
-    font-weight: 500;
-}
+.header {
+  @media print {
+    display: none;
+  }
 
-/****** Nav ******/
-nav {
+  background: $dark;
+  color: $white;
+
+  .blog-name {
     a {
-        @extend .primary-color-text, .text-darken-2;
+      color: $white;
+      @include text-decoration-none;
     }
-    .sidenav-trigger {
-        font-size: $button-icon-font-size;
+    width: 100%;
+    position: absolute;
+    left: 0;
+    top: 1.2rem;
+    font-size: 1.5rem;
+  }
+
+  .navbar {
+    padding: 1rem;
+  }
+
+  .nav {
+    .nav-link {
+      color: $white;
+      &.active, &:hover, &:focus {
+        color: $primary;
+      }
     }
+  }
+
+  .social {
+    a {
+      color: $white;
+    }
+  }
+
+  .navbar-toggler {
+    border: 0;
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+  .profile {
+    padding-bottom: 1rem;
+    .mugshot {
+      max-width: 160px;
+    }
+  }
+
+  @include media-breakpoint-up($sidebar-breakpoint) {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: $sidebar-width;
+
+    .blog-name {
+      position: initial;
+      left: unset;
+      top: unset;
+    }
+  }
 }
 
-/****** Home ******/
-.index-banner {
-    min-height: 450px;
-    height: auto;
-    background-image: url('../../assets/images/hero.jpg');
-    background-size: cover;
-    background-position: 0% 0%;
-
-    .nav-wrapper {
-        width: 100%;
-
-        a {
-            @extend .primary-dark-color-text;
-        }
-    }
-
-    .btn {
-        @extend .grey-text, .text-lighten-4;
-    }
-
-    .section {
-        margin-top: auto;
-        margin-bottom: auto;
-        height: 100%;
-        width: 100%;
-    }
-
-    @extend .grey-text, .text-lighten-4;
-
-    @media #{$small-and-down} {
-        background-position: 40% 0%;
-    }
-
-    @media #{$extra-large-and-up} {
-        min-height: 550px;
-    }
-
-    .header {
-        font-size: $h5-fontsize;
-        display: block;
-        font-weight: 400;
-        line-height: 110%;
-        margin-bottom: 0.3em;
-
-        &.big {
-            font-size: $h2-fontsize;
-        }
-
-    }
+.hero {
+  background-color: $light;
 }
 
-.icon-block {
-    padding: 0 15px;
+.main {
+  @include media-breakpoint-up($sidebar-breakpoint) {
+    margin-left: $sidebar-width;
+  }
 
-    h2, h5 {
-        @extend .primary-color-text;
-    }
+  .section-title {
+    border-left: 5px solid $primary;
+    padding-left: $spacer;
+  }
 }
 
-#headline-type {
-    min-height: 2em;
-    .headline-word {
-        &.selected {
-            @extend .primary-color, .darken-2;
-        }
+.image-overlay {
+  position: relative;
+  background-color: $black;
+
+  img {
+    &.mask {
+      @include image-mask(80%);
     }
+    &.mask-more {
+      @include image-mask(60%);
+    }
+  }
+
+  .image-overlay-content {
+    position: absolute;
+    padding-left: map-get($spacers, 3);
+    padding-right: map-get($spacers, 3);
+    padding-bottom: map-get($spacers, 2);
+    bottom: 0;
+    left: 0;
+    color: $white;
+  }
 }
 
-.post-card {
-    .card-title a {
-        @extend .primary-color-text;
+
+
+.about {
+  .what-i-do {
+    .icons {
+      margin-bottom: map-get($spacers, 2);
+      > img, svg {
+        width: 1em;
+        height: 1em;
+        font-size: 2em;
+        display: inline-block;
+        overflow: visible;
+        vertical-align: -0.125em;
+      }
     }
+
+    h4 {
+      font-size: $h6-font-size;
+      font-weight: $font-weight-bold;
+      margin-bottom: map-get($spacers, 1);
+    }
+
+    p {
+      margin-bottom: 0;
+    }
+  }
 }
 
-/****** Post ******/
-.post-container {
-    @media #{$medium-and-down} {
-        width: 100%;
+.post-body {
+  img {
+    display: block;
+    @extend .img-fluid;
+  }
+
+  table {
+    @extend .table;
+  }
+
+  table, img {
+    margin-left: auto;
+    margin-right: auto;
+    @include media-breakpoint-up(md) {
+      max-width: 80% !important;
     }
-
-    @media #{$large-and-up} {
-        width: 85%;
+    @include media-breakpoint-up(lg) {
+      max-width: 70% !important;
     }
-    .post {
-        .post-content {
-            p, table {
-               margin-bottom: 1em;
-            }
+  }
 
-
-            $header-scale: 1.5;
-            $h1-fontsize: $h1-fontsize / $header-scale;
-            $h2-fontsize: $h2-fontsize / $header-scale;
-            $h3-fontsize: $h3-fontsize / $header-scale;
-            $h4-fontsize: $h4-fontsize / $header-scale;
-            $h5-fontsize: $h5-fontsize / $header-scale;
-            $h6-fontsize: $h6-fontsize / $header-scale;
-            h1 { font-size: $h1-fontsize; margin: ($h1-fontsize / 1.5) 0 ($h1-fontsize / 2.5) 0;}
-            h2 { font-size: $h2-fontsize; margin: ($h2-fontsize / 1.5) 0 ($h2-fontsize / 2.5) 0;}
-            h3 { font-size: $h3-fontsize; margin: ($h3-fontsize / 1.5) 0 ($h3-fontsize / 2.5) 0;}
-            h4 { font-size: $h4-fontsize; margin: ($h4-fontsize / 1.5) 0 ($h4-fontsize / 2.5) 0;}
-            h5 { font-size: $h5-fontsize; margin: ($h5-fontsize / 1.5) 0 ($h5-fontsize / 2.5) 0;}
-            h6 { font-size: $h6-fontsize; margin: ($h6-fontsize / 1.5) 0 ($h6-fontsize / 2.5) 0;}
-
-            ul {
-                list-style-type: disc;
-                margin-left: 1em;
-
-                li {
-                    list-style-type: disc;
-                }
-            }
-
-            @media #{$large-and-up} {
-              img {
-                max-width: 70% !important;
-              }
-            }
-
-            @media #{$medium-only} {
-              img {
-                max-width: 80% !important;
-              }
-            }
-
-            img {
-                max-width: 100%;
-                height: auto;
-                display: block;
-                margin-left: auto;
-                margin-right: auto;
-            }
-        }
-    }
+  blockquote {
+    @extend .blockquote;
+  }
 }
 
-/****** CV ******/
+.contact-me {
+  $image-scale: 13rem;
+  $overlap-ratio: 5;
+  $overlap: math.div($image-scale, $overlap-ratio);
+  background-color: $light;
+  margin-top: map-get($spacers, 4) + $overlap;
+  // margin-bottom: map-get($spacers, 4) + math.div($image-scale, 2);
+  img {
+    width: $image-scale;
+    height: $image-scale;
+    object-fit: cover;
+    transform: translateY(-$overlap);
+    box-shadow: 0 0 0 .5rem $body-bg;
+    margin-bottom: -$overlap;
+  }
+}
+
+.cv-header {
+  @media print {
+    display: none;
+  }
+}
+
 .cv {
-    hr {
-        margin-bottom: 1.5em;
-        margin-top: 1.5em;
+  box-shadow: $box-shadow-lg;
+  @media print {
+    // just print the CV
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+    box-shadow: none;
+  }
+
+  .mugshot {
+    max-width: 150px; // larger max width on xs as it's collapsed
+    @include media-breakpoint-up(sm) {
+      max-width: 100px;
     }
-
-    aside {
-        .card {
-            background-color: $primary-color;
-            @extend .grey-text, .text-lighten-4;
-
-            p {
-                a {
-                    @extend .orange-text, .text-lighten-3;
-                    &:hover {
-                        @extend .orange-text, .text-lighten-1;
-                    }
-                }
-            }
-
-            .determinate {
-                @extend .orange, .lighten-3;
-            }
-        }
+    @include media-breakpoint-up(md) {
+      max-width: 130px;
     }
-
-    @media #{$medium-and-down} {
-        width: 100%;
+    @include media-breakpoint-up(xl) {
+      max-width: 160px;
     }
-
-    @media #{$large-and-up} {
-        width: 85%;
-    }
-
-    .icon {
-        @extend .center-align;
-    }
-}
-
-
-/****** Footer ******/
-footer {
-    @extend .grey-text, .text-lighten-4;
-    a {
-        @extend .orange-text, .text-lighten-3;
-    }
-
-    .social-container {
-        float: none;
-        @media #{$large-and-up} {
-            float: right;
-        }
-    }
+  }
 }

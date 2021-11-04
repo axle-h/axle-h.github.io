@@ -1,10 +1,8 @@
 ---
-layout: post
-title:  "Lockdown Project: £50 Very Slow Movie Player"
+title: "Lockdown Project: £50 Very Slow Movie Player"
 logo: very-slow-movie-player/logo.png
 banner: very-slow-movie-player/banner.png
 date: 2020-11-29 12:00:00 +0000
-author: Alex Haslehurst
 categories: development raspberry-pi
 ---
 
@@ -45,7 +43,7 @@ it's been great to be reminded just how much crap higher level platforms like No
 I currently have my very slow movie player set up in the office burning through my wedding video at (effectively) 60 frames per hour.
 By my maths that's a playtime of ~19 days. Here's the guts of it.
 
-![Guts of the Very Slow Movie Player](/assets/images/very-slow-movie-player/guts.jpg)
+![Guts of the Very Slow Movie Player](/assets/images/very-slow-movie-player/guts.jpg){: data-bacon="250" }
 
 Certainly not pretty from behind then. I built it with.
 

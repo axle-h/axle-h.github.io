@@ -1,3 +1,42 @@
-<nav class="grey lighten-4" role="navigation">
-    {% include nav.html %}
-</nav>
+<header class="header text-center">
+  <h1 class="blog-name pt-lg-4 mb-0"><a href="/">Alex Haslehurst</a></h1>
+
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse profile pt-3" id="navbarSupportedContent">
+      <div class="profile">
+        <img class="mugshot mb-3 rounded-circle mx-auto" src="{{ '/assets/images/mugshot.png' | relative_url }}" alt="image">
+        <p>{{ site.data.blurb.headline }}</p>
+
+        {% include social.html %}
+
+        <hr>
+
+        <ul class="nav flex-lg-column justify-content-center text-lg-start mb-2">
+          <li class="nav-item">
+            <a class="nav-link {% if page.name == 'index.md' %} active {% endif %}" href="{% link index.md %}">
+              <i class="fas fa-user fa-fw"></i>&nbsp;About me
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if page.name == 'cv.md' %} active {% endif %}" href="{% link cv.md %}">
+              <i class="fas fa-file-code fa-fw"></i>&nbsp;My CV
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if page.name == 'articles.md' or page.is_post %} active {% endif %}" href="{% link articles.md %}">
+              <i class="fas fa-satellite-dish fa-fw"></i>&nbsp;Articles
+            </a>
+          </li>
+        </ul>
+
+        <a class="btn btn-outline-primary" href="{% link contact.md %}">
+          <i class="fas fa-paper-plane fa-fw"></i>&nbsp;Contact me
+        </a>
+      </div>
+    </div>
+  </nav>
+</header>

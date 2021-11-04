@@ -2,6 +2,8 @@
 
 [ax-h.com](http://ax-h.com)
 
+## Build dependencies
+
 Requires ruby, node & bundler.
 Follow the [GitHub Pages documentation](https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/testing-your-github-pages-site-locally-with-jekyll).
 
@@ -21,25 +23,42 @@ The packaged node is a nightmare, I would recommend [NodeSource](https://github.
 # Install ruby
 sudo apt install build-essential ruby-full
 ```
+## Install packages
 
-Then on all platforms:
+There are two projects:
+
+* `npm` styles & javascript
+* `bundle` static site generation with jekyll
 
 ```bash
 # Install bundler
 gem install bundler
 
 # Run npm install and bundle install
-./build.sh install
+bundle config set --local path 'vendor/bundle'
+bundle install
+npm install
 ```
+
+## Run
 
 Then in two separate terminals run webpack and jekyl (in that order!) with:
 
 ```bash
-./build.sh watch
+npm run watch
 ```
 
 ```bash
-./build.sh serve
+bundle exec jekyll serve
+```
+
+Browse to [http://localhost:4000/](http://localhost:4000/)
+
+## Build
+
+```
+npm run build
+bundle exec jekyll build
 ```
 
 ## TODO

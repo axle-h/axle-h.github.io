@@ -1,23 +1,26 @@
 title: Alex Haslehurst
 email: alex.haslehurst@gmail.com
-description: >-
-  Alex Haslehurst's personal website.
+description: Alex Haslehurst's personal website.
 baseurl: ""
-url: "http://ax-h.com"
-twitter_username: axle_h
-github_username: axle-h
-github_url: https://github.com/axle-h/axle-h.github.io
+url: https://ax-h.com
 excerpt_separator: <!--more-->
 
-sass:
-    style: compressed
-    sass_dir: _sass
+theme: null
 
 # Build settings
 markdown: kramdown
 plugins:
   - jekyll-feed
 
+defaults:
+  -
+    scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      author: Alex Haslehurst
+      is_post: true
 
 disqus:
   shortname: ax-h
@@ -33,7 +36,7 @@ exclude:
   - Gemfile.lock
   - node_modules
   - vendor
-  - src
+  - src/
   - dist
   - webpack.config.js
   - package.json

@@ -1,0 +1,111 @@
+- name: Great architecture
+  description: I am a tech leader, I have designed, lead and delivered many successful, agile projects on modern and legacy infrastructure.
+  icons:
+    - type: fas
+      class: fa-project-diagram text-primary
+- name: Great code
+  description: I can bring my tried & tested experience of building simple solutions to complex problems with quality assurance at each step of the testing pyramid.
+  icons:
+    - type: fas
+      class: fa-code text-primary
+- name: Security first
+  description: I have experience deploying enterprise single-sign-on across legacy, modern and third party platforms.
+  icons:
+    - type: fas
+      class: fa-user-shield text-primary
+- name: DevOps
+  description: Let me demonstrate that a decent continuous deployment pipeline can build the confidence needed to bust the common "we don't deploy on Fridays" policy!
+  icons:
+    - type: fas
+      class: fa-ship text-primary
+- name: Microservices
+  description: Lean, isolated microservices built by autonomous teams on top of modern tooling such as Spring Boot, ASP.NET and Express are my bread & butter.
+  icons:
+    - type: logo
+      class: java.svg
+    - type: fab
+      class: fa-node-js
+    - type: logo
+      class: dotnet.svg
+- name: Modern UI
+  description: >
+    I've seen browser apps from design through to production with each of the big three SPA frameworks.
+    I like to choose the most appropriate for the project and team, rolling server side rendering or even a native app where required.
+  icons:
+    - type: logo
+      class: angular.svg
+    - type: fab
+      class: fa-react
+    - type: logo
+      class: vuejs.svg
+- name: Cloud
+  description: >
+    I'm happy to work with any public cloud, infrastructure as code and serverless application framework.
+    I have designed and developed cloud native applications at scale.
+  icons:
+    - type: logo
+      class: aws.svg
+    - type: logo
+      class: azure.svg
+    - type: logo
+      class: terraform.svg
+    - type: logo
+      class: k8s.svg
+- name: Big data
+  description: >
+    I have developed machine learning at scale with open source tools like Apache Cassandra, Spark and Kafka.
+    My strong background in statistics means I am equally confident in the development of custom algorithms as I am with dropping in off-the-shelf solutions.
+  icons:
+    - type: logo
+      class: spark.svg
+    - type: logo
+      class: cassandra.svg
+    - type: logo
+      class: kafka.svg
+- name: Legacy
+  description: >
+    Whether it's an IE6 era, overambitious JQuery UI, a creaking monolith deployed to VMs or even some native desktop app,
+    I'm happy to bring my experience to help you tame your legacy estate, or maybe tear it down!
+  icons:
+    - type: logo
+      class: jquery.svg
+    - type: logo
+      class: visualstudio.svg
+    - type: fab fa-js
+      class: fa-js
+- name: Data
+  description: >
+    I am lucky to have worked with most of the leading relational and NOSQL DBMS over the last 10 years.
+    I have helped migrate from bare metal to the cloud multiple times and worked on optimising some extremely difficult data access patterns.
+  icons:
+    - type: logo
+      class: mongo.svg
+    - type: logo
+      class: mysql.svg
+    - type: logo
+      class: sqlserver.svg
+    - type: logo
+      class: oracle.svg
+- name: Polyglot
+  description: >
+    I try to diversify my platform experience but prefer, in no particular order:
+    JDK (incl. Kotlin, Scala, Gradle, Spring), .NET Core/5+, Node.js and the (modern) browser.
+    I'm looking to improve my Go, Rust and C++ skills.
+    I seem to be avoiding the python & PHP platforms but am open to anything that involves learning new stuff!
+  icons:
+    - type: logo
+      class: typescript.svg
+    - type: logo
+      class: csharp.svg
+    - type: logo
+      class: kotlin.svg
+    - type: logo
+      class: scala.svg
+- name: Government
+  description: >
+    I have a high level of government clearance, please contact me for details.
+    I have worked in government digital teams to integrate with legacy monoliths and bring new services through alpha, beta and live phases.
+    I have extensive experience with GDS and gov.uk UI development.
+  icons:
+    - type: logo
+      class: govuk.svg

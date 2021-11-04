@@ -1,10 +1,8 @@
 ---
-layout: post
-title:  "The Modern Development Paradigm Shift"
+title: "The Modern Development Paradigm Shift"
 logo: the-modern-development-paradigm-shift/logo.jpg
 banner: the-modern-development-paradigm-shift/banner.jpg
-date:   2017-11-22 22:26:00 +0000
-author: Alex Haslehurst
+date: 2017-11-22 22:26:00 +0000
 categories: software development methodology
 ---
 

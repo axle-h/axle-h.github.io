@@ -1,0 +1,92 @@
+- name: Senior Software Developer
+  at: MoJ D&T
+  url: https://mojdigital.blog.gov.uk/
+  from: FEB 2021
+  to: PRESENT
+  description: >
+    I joined MoJ digital as a senior developer, looking to broaden my experience of working with enterprise scale applications, with thousands of users that have diverse accessibility needs.
+    I also took on a tech challenge at MoJ having less experience with their tech stack and no experience working with Government Digital Service frameworks.
+    I have been technical lead on multiple projects, which have been released through alpha, beta and live phases.
+    Much of my work is available publicly on GitHub.
+- name: Senior Software Developer
+  at: IN-PART
+  url: https://in-part.com/
+  from: JAN 2020
+  to: FEB 2021
+  description: >
+    IN-PART is a small company with a startup culture that provides a digital partnering platform connecting
+    university research with industry R&D. Virtually all technology at IN-PART was new to me in a commercial
+    context including React, next.js and Node.js (at scale). I saw the move as a challenge and learning experience
+    coupled with validation of my processes and knowledge against a team with far more experience than me in
+    their chosen technologies. I have once again assumed the role of security and data platform expert and
+    been rolling out OIDC and serverless data processing pipelines across the platform as required.
+    Whilst I have enjoyed getting back into coding to a far higher degree, I am continuing to lead projects,
+    plan and distribute architectural work across the team and develop my peers.
+- name: Senior Software Developer
+  at: Westfield Health
+  url: https://www.westfieldhealth.com/
+  from: JAN 2018
+  to: JAN 2020
+  description: >
+    Westfield Health is a not-for-profit provider of contributory health schemes and health & wellbeing services
+    in the process of migrating many legacy business processes online via a greenfield platform.
+    I provided technical leadership for a feature team responsible for a selection of microservices built into
+    the larger platform. I also led decisions that affected the platform as a whole and distributed processes
+    and libraries to build conformance across all teams. My team was well known for our velocity, quality and
+    for shaping cross-team knowledge & design. I quickly became first contact and technical owner for all things
+    security, platform, serverless, UX/client technologies and mobile development.
+- name: Senior Software Developer
+  at: t-mac Technologies
+  url: https://t-mac.co.uk/
+  from: NOV 2015
+  to: JAN 2018
+  description: >
+    t-mac Technologies digitally services thousands of on-site proprietary IoT devices and automatic meter readers
+    resulting in the consumption of approximately 250 million time series data observations per day.
+    The core responsibility of the team for which I provided technical leadership was to process this big
+    data into analytical insights which were to be presented on customer dashboards. I led the project to
+    architect this modern data platform, which was built from technologies such as Cassandra, Spark and Kafka.
+    I used primarily Scala based JDK software to deploy a mixture of custom and off-the-shelf machine learning
+    algorithms at scale. I also worked across the web stack including .NET Core on Docker Swarm with Angular on the front end.
+- name: Software Developer
+  at: Alpharooms
+  url: https://www.alpharooms.com/
+  from: MAR 2014
+  to: NOV 2015
+  description: >
+    Alpharooms is an online travel agent with a modern (for the time) stack built with .NET Framework,
+    SQL Server and MongoDB and based on a service orientated architecture. I worked as a software developer
+    enjoying a more senior role towards the end of my stay. Major challenges were operating efficiently at
+    scale on AWS, maintaining SEO performance, managing asynchronous, external processes at scale and presenting
+    everything with a UX aligned to maximising revenue. Whilst much of the technologies and packages I used at
+    Alpharooms are becoming obsolete, the skills I picked up have been extremely valuable.
+- name: Software Engineer
+  at: Technolog
+  url: https://www.technolog.com/
+  from: DEC 2012
+  to: MAR 2014
+  description: >
+    I took my first software development job in a multi-disciplined team at Technolog, an electronics manufacturer
+    in the utilities industry. I worked primarily with the data infrastructure that supports a network of data
+    loggers and automatic meter reading systems. I basically learnt to program as part of a team, picking up
+    concepts such as the importance of design patterns and test driven development.
+- name: Statistical Analyst
+  at: Experian
+  url: https://www.experian.co.uk/
+  from: JUL 2010
+  to: DEC 2012
+  description: >
+    I started my career as an Analyst at Experian Decision Analytics. Due to my previous experience with Experian
+    systems during my placement year, I was immediately assigned to a large software testing project.
+    I was solely responsible for creating suitable test scripts, reporting bugs and providing in- depth analytical
+    support to developers. At Experien I realised that what little software development I was responsible for
+    was what kept me driven and set me apart from my peers. This responsibility was slowly taken away from me
+    as I progressed, pushing me to move to software development full time.
+- name: Mathematics (1st Class Hons)
+  at: Sheffield Hallam University
+  url: https://shu.ac.uk/
+  from: SEP 2006
+  to: JUL 2010
+  description: >
+    Including self enrolled placement year at Experian Decision Analytics.
+    Received an award for my outstanding achievement and had my final year project, a machine learning piece, exhibited at the university.

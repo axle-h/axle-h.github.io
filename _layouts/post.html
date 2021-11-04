@@ -3,66 +3,39 @@ layout: default
 comments: true
 ---
 
-<div class="container post-container">
-    <div class="section">
-    <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+<section class="pt-xxl-3 container-xxl gx-0 gx-xxl-3 mb-4">
+  <img class="img-fluid" src="/assets/images/{{page.banner}}" alt="{{ page.title }}">
+</section>
 
-      <div class="row">
-        <div class="col s12">
-          <div class="card grey lighten-5">
-              <div class="card-image">
-                  <img src="/assets/images/{{page.banner}}">
-              </div>
+<section class="py-3">
+  <article class="container" itemscope itemtype="http://schema.org/BlogPosting">
+    <h1 itemprop="name headline">{{ page.title | escape }}</h1>
 
-              <div class="card-content post-content">
-                <header>
-                  <span class="card-title primary-color-text" itemprop="name headline">
-                      <h1>{{ page.title | escape }}</h1>
-                  </span>
+    <ul class="list-unstyled text-muted">
+      <li>
+        <i class="fas fa-clock fa-fw" aria-hidden="true"></i>
+        <time datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">
+          {{ page.date | date_to_long_string }}
+        </time>
+      </li>
 
-                  <p class="blue-grey-text">
-                    <i class="fas fa-clock fa-fw" aria-hidden="true"></i>
-                    <time datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">
-                      {% assign date_format = site.minima.date_format | default: "%b %-d, %Y" %}
-                      {{ page.date | date: date_format }}
-                    </time>
-                    <br>
-                    {% if page.author %}
-                      <i class="fas fa-user fa-fw" aria-hidden="true"></i>
-                      <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">{{ page.author }}</span></span>
-                    {% endif %}
-                  </p>
-                </header>
-
-                <section itemprop="articleBody">
-                    {{ content }}
-                </section>
-              </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col s12">
-          <div class="card-panel grey lighten-5">
-            <div class="row valign-wrapper">
-              <div class="col s3 l2">
-                  <img src="{{ "/assets/images/mugshot-square.jpg" | relative_url }}" alt="" class="circle responsive-img">
-              </div>
-              <div class="col s9 l10">
-                <h5>Alex Haslehurst</h5>
-                <p>
-                  A UK based software developer, mathematician, husband, father, runner, cyclist, cat lover, coffee drinker and retro gamer.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {% if site.disqus.shortname %}
-        {% include disqus_comments.html %}
+      {% if page.author %}
+        <li>
+          <i class="fas fa-user fa-fw" aria-hidden="true"></i>
+          <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">{{ page.author }}</span></span>
+        </li>
       {% endif %}
-    </article>
+
+      <li>
+        <i class="fas fa-book fa-fw" aria-hidden="true"></i>
+        {% include reading-time.html %}
+      </li>
+    </ul>
+
+    <div class="post-body" itemprop="articleBody">
+      {{ content }}
     </div>
-</div>
+  </article>
+</section>
+
+{% include disqus_comments.html %}

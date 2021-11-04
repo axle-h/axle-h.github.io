@@ -1,10 +1,8 @@
 ---
-layout: post
-title:  "Fixture Based Fluent Unit Testing"
+title: "Fixture Based Fluent Unit Testing"
 logo: fluent-unit-testing/logo.png
 banner: fluent-unit-testing/banner.png
 date: 2018-12-09 12:00:00 +0000
-author: Alex Haslehurst
 categories: software development testing
 ---
 

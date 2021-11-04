@@ -1,12 +1,8 @@
-{% if page.comments != false and jekyll.environment == "production" %}
+{% if site.disqus.shortname and page.comments != false and jekyll.environment == "production" %}
 
-  <div class="row">
-    <div class="col s12">
-      <div class="card-panel grey lighten-5">
-        <div id="disqus_thread"></div>
-        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
-      </div>
-    </div>
+  <div class="container">
+    <div id="disqus_thread"></div>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
   </div>
 
   <script>
@@ -24,5 +20,5 @@
       (d.head || d.body).appendChild(s);
     })();
   </script>
-  
+
 {% endif %}

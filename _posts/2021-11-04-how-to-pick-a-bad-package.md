@@ -2,7 +2,7 @@
 title: "How to pick a bad package"
 logo: how-to-pick-a-bad-package/logo.png
 banner: how-to-pick-a-bad-package/banner.png
-date: 2021-11-04 09:00:00 +0000
+date: 2021-11-04 19:00:00 +0000
 categories: software development
 ---
 

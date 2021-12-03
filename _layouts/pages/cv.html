@@ -47,6 +47,18 @@ comments: true
 
     <hr class="my-4 text-muted">
 
+    <div>
+      <h3 class="section-title mb-4">TECH</h3>
+      {% for tech in site.data.tech %}
+        <dl class="row mb-0">
+          <dt class="col-sm-2">{{ tech.name }}</dt>
+          <dd class="col-sm-10">{{ tech.value }}</dd>
+        </dl>
+      {% endfor %}
+    </div>
+
+    <hr class="my-4 text-muted">
+
     <div class="row g-3">
       <div class="col-lg-8">
         <h3 class="section-title mb-4">EXPERIENCE</h3>

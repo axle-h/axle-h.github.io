@@ -1,0 +1,156 @@
+---
+title: How to pick a bad package
+categories: [software, development]
+published: true
+---
+
+I recently dusted off the [source code](https://github.com/axle-h/axle-h.github.io) for [ax-h.com](https://ax-h.com) and noticed something rather nasty that was both embarrassing but in hindsight, totally avoidable.
+
+## The package
+When I was first developing [ax-h.com](https://ax-h.com), I was suffering from a bit of [Bootstrap](https://getbootstrap.com/) fatigue.
+I was using it daily at work, felt that every web app I was working on looked identical and wanted to make something that looked very different.
+I had (and still have) little interest in writing a UI framework from scratch, so I started looking for an alternative to the tired old Bootstrap.
+
+[Material design](https://material.io/) was a big thing at the time so thought I'd give it a go.
+This was the start of my problems as the reference implementation of the material design spec is [Angular Material](https://material.angular.io/), which depends on Angular.
+Not wanting to go full Angular, I instead plucked the first framework with *material* in the name from npm: [materialize-css](https://www.npmjs.com/package/materialize-css).
+I developed the site on top of this framework in [all it's glory](https://web.archive.org/web/20180308180409/https://ax-h.com/), had lots of fun and was successful in making something that broke away from Bootstrap's look & feel.
+
+## Health back in 2017
+At first glance, Materialize looked great!
+
+Here's their [GitHub page from September 2017](https://web.archive.org/web/20170905071204/https://github.com/Dogfalo/materialize), around the time I first downloaded it.
+First thing to note is that it has 28k stars, 4k forks and loads of activity on issues & pull requests, implying a popular library and a very healthy community.
+
+Here's the [contributor page that I would have seen in 2017](https://github.com/Dogfalo/materialize/graphs/contributors?from=2014-09-07&to=2017-11-18&type=c).
+The project had been going for ~3 years, had two primary contributors and hundreds of others.
+The two primary contributors were putting in a serious and equal amount of time so my assumptions were that if one were to lose interest then the other would take over.
+
+Monetary support was being requested but since this was over PayPal, there is no publicly available data on the level of support that the project was receiving.
+
+In summary, it passed the health checks I set at the time.
+
+<CheckList>
+    <CheckListItem>It didn't mine crypto</CheckListItem>
+    <CheckListItem>It had a strong presence i.e. it was a top search result for 'material css'</CheckListItem>
+    <CheckListItem>It was MIT licensed</CheckListItem>
+    <CheckListItem>It was under active development</CheckListItem>
+    <CheckListItem>It had a large community</CheckListItem>
+    <CheckListItem>It seemed to be in use</CheckListItem>
+</CheckList>
+
+## Four years later
+
+> TLDR; the entire project was a bait & switch.
+
+OK, that might be a bit harsh, no bitcoin was mined, what probably happened was that as the project time commitment grew out of control, the project maintainers gave up and proceeded to handle the fallout extremely poorly.
+
+### The abandonment
+It made it to V1, then... nothing.
+Well not strictly nothing, the project maintainers launched a [Patreon campaign](https://web.archive.org/web/20210308195838/https://www.patreon.com/materialize), collected some serious support (well over €1,000/month), [announced they were "taking a break"](https://github.com/Dogfalo/materialize/issues/6319#issuecomment-479318082), then went AWOL.
+Meanwhile, contributions dried up, community issues and pull requests were ignored, but Patreon tiers were still being filled and rewards claimed ([at the expense of community frustration 🤣](https://github.com/Dogfalo/materialize/commit/824e78248b3de81e383445e76ffb04cc3264fe7d#commitcomment-39610021)).
+
+### The vulnerability
+Then things got worse. Reporting an XSS vulnerability was [dismissed](https://github.com/Dogfalo/materialize/issues/6286) so
+[CVE-2019-11002](https://www.cvedetails.com/cve/CVE-2019-11002/) was reported and
+escalated through npm via [GHSA-98f7-p5rc-jx67](https://github.com/advisories/GHSA-98f7-p5rc-jx67).
+
+Requests for a fix were [further dismissed](https://github.com/Dogfalo/materialize/issues/6286#issuecomment-495981290) and [ignored](https://github.com/Dogfalo/materialize/issues/6331).
+The naivety on display from the contributing developers regarding the severity of XSS was shocking.
+The reaction seemed to focus on the passing of blame onto package consumers and frustration that a "feature" had been flagged as a vulnerability.
+
+Note to package maintainers, this is not how to handle the reporting of a security vulnerability!
+
+### The fork
+Even before the vulnerability, the community had [noticed the lack of activity](https://github.com/Dogfalo/materialize/issues/6319).
+My personal favourite during this time was the implication that a [pay-to-fix policy was in effect](https://github.com/Dogfalo/materialize/issues/6438#issuecomment-524828143).
+
+The situation was improved slightly by a fork into a new [materializecss organisation](https://github.com/materializecss) and eventually a new release onto npm [under a new name](https://www.npmjs.com/package/@materializecss/materialize).
+However, 6 months on, the popularity of this fork is still nowhere near that of the original e.g. weekly downloads hovering between 100 & 300, only 370 stars on GitHub
+([~50/month](https://star-history.t9t.io/#materializecss/materialize) vs [~1000/month](https://star-history.t9t.io/#Dogfalo/materialize) when the original library was new back in 2015).
+
+The poor popularity of the Materialize fork is not helped by the original copy still not being archived, still having no abandonment PSA, funding still being requested and [materializecss.com](https://materializecss.com/) still appearing no.1 on a Google search for 'material css'.
+
+The original repository maintainer still seems AWOL and work on the forked repository seems to be exclusively from a small subset of the original contributors.
+This also happen to include individuals that reacted most unprofessionally to the initial XSS vulnerability report, so I personally lack trust in their custody of the project.
+
+On a positive note, they fixed most of the outstanding bugs reported since the abandonment, including the XSS vulnerability, and they replaced funding options with a 'contribute on GitHub' CTA.
+At least now companies stuck with Materialize (assuming such a thing exists) have a short term fix.
+
+Regardless of the existence of this fork and the absence of the original maintainers, **the Patreon still collects around €1,900/month**.
+
+## What did I miss?
+Ripping Materialize out of this site was actually only a few hours work and luckily this is a hobby project, but if I'd of chosen Materialize commercially then I'd of had the tail-between-my-legs
+task of informing my project manager that we need to divert our roadmap to technical debt, and it's all my fault.
+I don't remember what I was thinking four years ago, maybe (I hope) I wouldn't have considered Materialize commercially, but regardless, I had to reevaluate my approach to choosing an open source library.
+
+### Appreciation of risk
+When choosing a package for an application, a different risk profile is acceptable based on the intended coupling between it and the application.
+When a package is critical to the structure of that application e.g. a UI library, risk should be considered much more carefully vs choosing a package to implement some exchangeable application feature e.g. an API client.
+In choosing Materialize over say Bootstrap as a UI library, I failed to identify it's function as critical to the application and so failed to assign the correct risk profile throughout the decision.
+
+### Quality
+Materialize surely looked nice, especially on mobile, but it did have some implementation issues, even for 2017.
+
+* Poor choice of compatibility -
+  even though IE 10's flex support was over 3 years old when Materialize was in initial development, the grid system is based on floats, [I kid you not](https://github.com/Dogfalo/materialize/blob/824e78248b3de81e383445e76ffb04cc3264fe7d/sass/components/_grid.scss#L69).
+  Worse, the primary maintainer [dismissed the idea](https://github.com/Dogfalo/materialize/issues/771#issuecomment-76321333) that Materialize could maintain compatibility with IE whilst using flex.
+  Bootstrap managed it fine the same year [during the v4 beta](https://getbootstrap.com/docs/4.0/migration/#grid-system), whilst [maintaining support for IE10+](https://getbootstrap.com/docs/4.0/getting-started/browsers-devices/#desktop-browsers).
+* Messing with browser native stuff -
+  whilst decent frameworks will leave components alone that work better as native controls, Materialize had no such restraint and reimplemented some stuff that it really shouldn't have
+  e.g. the [select](https://materializecss.com/select.html), [checkbox](https://materializecss.com/checkboxes.html) and [date picker](https://materializecss.com/pickers.html).
+  This choice not only makes Materialize more prone to cross browser bugs, especially on mobile, but also breaks accessibility and performance on all platforms.
+  Note that I have never used these offending components but I would still classify this as a smell for poor practise.
+* Watch closely and it's actually quite rough around the edges -
+  content jerks around during transitions, components transition when they shouldn't, things pop in on page load... it's just not great. Even their demo site has bugs.
+
+### Commercial usage
+I don't think anyone was actually using it commercially!
+Back in 2017 I must have looked at their [showcase](https://materializecss.com/showcase.html) and told myself "yep, there's some sites using it".
+I'm not sure that I clicked them at the time but looking now, 5 are broken (one even spits out a MySql stacktrace!), 1 switched to Bootstrap and only 1 other that looks like a real business has remained using Materialize in 2021.
+Even though I wouldn't have known back in 2017 that nearly half would disappear from the internet in 4 years, I should have seen that at least 4 were just personal blog sites and at max 2 seemed like legitimate commercial usage.
+*If you fancy a laugh then take a look at the top right of the Materialize showcase screenshot for 'Adbeus'.*
+
+### Maintainer attitude and status
+Materialize development was hosted from a personal GitHub account, and even after it's popularity exploded, it failed to open up into an organisation or recruit a larger pool of maintainers.
+
+Even in 2017, regardless of active development, the issues and ignored pull requests were piling up ([238 issues and 144 PRs late 2017](https://web.archive.org/web/20170905071204/https://github.com/Dogfalo/materialize)).
+This implies to me that the maintainers had a personal agenda for the project that they were racing to realise and so were not interested in distractions.
+
+I also didn't check out the statuses of the maintainers deeply enough at the time.
+Some quick digital detective work now, and I can see that both attended Carnegie Mellon University, where they were very likely students at the time and both had a very sporadic pattern of GitHub contributions (both are now completely AWOL as they likely now have day jobs and/or families).
+This isn't necessarily a reason not to use a package but if developing the thing was an academic exercise then there's a risk that once studies are over, the thing will be abandoned.
+It is far safer to choose a package that is backed by some commercial entity directly (like Twitter is to Bootstrap) or even by some individual backed by some commercial financial incentive.
+[Jimmy Bogard's](https://github.com/jbogard) projects are a great example of this. The company involved provides a decent guarantee of maintenance, even when Jimmy moves on from the company and loses interest.
+
+## Lessons
+When I'm picking a package to implement some critical feature of an application, for example the UI framework, I am now more careful in my decision-making process.
+I used to think:
+
+> "It's a popular, open source package, if it fails then someone will just fork it."
+
+But now I see the naivety of this statement.
+Is anyone actually interested in forking it?
+If so, how long would the wait be for a decent fork?
+And at what cost, i.e. would I still choose to depend on it based on this new fork? 
+
+With that lesson learnt, here is my refined list requirements for choosing a critical package to be used by any application. 
+
+1. Does it mine cypto?
+2. Is it a canonical solution to the problem
+   e.g. is it referenced in a noteworthy blog article?
+   Does anything template it?
+   Does a Pluralsight course exist?
+   Are there decent questions on StackOverflow?
+3. Does it use a permissive free software license?
+4. Is it under active development? Even if not, it could be considered 'feature complete' but must still be seeing security updates and bug fixes.
+5. Does it have a large and active community interest?
+6. <Badge colorScheme='yellow'>NEW</Badge> Are there any known vulnerabilities? If not, then have there been any previously and do the attitudes of the maintainers towards vulnerabilities align with your own?
+7. <Badge colorScheme='yellow'>NEW</Badge> Is there any actual commercial interest in keeping it maintained? (a handful of personal blogging sites don't count!)
+8. <Badge colorScheme='yellow'>NEW</Badge> Is it under the exclusive control of a single individual? If yes then:
+   * Does that individual have a legitimate commercial interest to maintain it?
+   * Otherwise, does the individual seem open to outside contributions, is the individual contactable and does their attitude align with your own?
+9. <Badge colorScheme='yellow'>NEW</Badge> Is it actually any good?! A quick scan through the source code is sometimes all you'll need to determine quality e.g.
+   * Are there any tests?
+   * Does it use outdated or deprecated features and dependencies?
+   * Does it introduce a potentially dangerous dependency?

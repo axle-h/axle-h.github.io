@@ -1,0 +1,6 @@
+@media print {
+    nav { display: none; }
+    #mugshot { display: none; }
+    main { position:relative; padding:0; height:1px; overflow:visible; }
+    #cv { position:absolute; width:100%; top:0; padding:0; margin: 0; box-shadow: none }
+}

@@ -8,6 +8,8 @@ const nextConfig = {
         github: 'axle-h',
         googleMaps: 'a12DCrhaHz9XdY2n8',
         location: 'Sheffield, UK',
+        disqus: 'ax-h',
+        googleAnalytics: 'UA-110996722-1'
     }
 };
 

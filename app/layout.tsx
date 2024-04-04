@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { Providers } from '../components/providers'
+import { Providers } from '@/components/providers'
 import { Rubik } from 'next/font/google'
 import { Nav } from '@/components/nav'
 import { ReactNode } from 'react'
+import Analytics from '@/components/analytics'
 
 const rubik = Rubik({
   subsets: ['latin'],
@@ -40,6 +41,8 @@ export default function RootLayout({
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="msapplication-TileColor" content="#b91d47" />
         <meta name="theme-color" content="#ffffff" />
+
+        <Analytics />
       </head>
       <body className={rubik.variable}>
         <Providers>

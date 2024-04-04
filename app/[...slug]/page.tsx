@@ -43,7 +43,7 @@ export default async function PostPage({
         />
       </Container>
 
-      <Container>
+      <Container mb={12}>
         <Heading mt={{ base: 4, md: 6, lg: 12 }} mb={4}>
           {post.title}
         </Heading>

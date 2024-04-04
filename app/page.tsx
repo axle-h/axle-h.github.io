@@ -8,7 +8,7 @@ export default async function BlogHome() {
   return (
     <>
       <Hero />
-      <Container py={4}>
+      <Container mt={6} mb={12}>
         <Grid
           templateColumns={{ base: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
           gap={6}

@@ -435,7 +435,7 @@ function Footer() {
 
 export default function Cv() {
   return (
-    <Container as="main" my={4}>
+    <Container as="main" mt={6} mb={12}>
       <Box
         id="cv"
         overflow="hidden"

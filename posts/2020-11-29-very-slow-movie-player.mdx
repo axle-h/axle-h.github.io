@@ -6,7 +6,7 @@ published: true
 
 A typical movie is played at 24fps, in 16 million colours over a couple of hours.
 The very slow movie player will play a movie at 30 frames **per hour** in 2-colours over days, weeks, months.
-I'm not planning to sit back with my popcorn and actually watch a movie on this thing. 
+I'm not planning to sit back with my popcorn and actually watch a movie on this thing.
 Instead, think of it as an attempt to create something interesting enough to be displayed from some very compromised, low power hardware.
 I think that, mounted in a nice frame you could almost call it *art*.
 Imagine the legendary Jack Rabbit Slim scene from Pulp Fiction slowly being revealed over a couple of weeks - the
@@ -39,7 +39,7 @@ it's been great to be reminded just how much crap higher level platforms like No
 I currently have my very slow movie player set up in the office burning through my wedding video at (effectively) 60 frames per hour.
 By my maths that's a playtime of ~19 days. Here's the guts of it.
 
-![Guts of the Very Slow Movie Player](/very-slow-movie-player/guts.jpg)
+![Guts of the Very Slow Movie Player](guts.jpg)
 
 Certainly not pretty from behind then. I built it with.
 
@@ -50,11 +50,11 @@ Certainly not pretty from behind then. I built it with.
   which is totally worth it for debugging and for access to NTP in lue of a realtime clock on the Pi.
   If you're wanting to save even more power, then you can [disable stuff not needed][pi-low-power] like the HDMI and LEDs.
 * [Waveshare 7.5inch, 800x480 E-Ink display HAT for Raspberry Pi][waveshare]
-  Direct from Shenzhen, I paid £40, which is an actual bargain. 
+  Direct from Shenzhen, I paid £40, which is an actual bargain.
   You even get a Raspberry Pi GPIO connector, and they have (not perfect) examples written in C for the Raspberry Pi up on
   [Github][waveshare-github].
   This is an e-paper display, the same technology on Kindles, so it has no backlight and is only actively powered when refreshing the display.
-  In all other respects, it is totally compromised. It displays in 2 colours, black & white-ish and has a maximum refresh rate of 0.5hz. 
+  In all other respects, it is totally compromised. It displays in 2 colours, black & white-ish and has a maximum refresh rate of 0.5hz.
 * [10x15 cm RIBBA frame from IKEA][ikea]
   These are &lt;£2. Probably not worth the 40-minute lockdown queue, but you definitely need the depth of this specific frame.
   The visible area is fine but not perfect.
@@ -107,20 +107,20 @@ This algorithm is a simple forward convolutional filter and very easy to impleme
 
 This is best seen through example. Here's a nice (!) frame from my wedding video.
 
-![Example Frame in RGB](/very-slow-movie-player/rgb.png)
+![Example Frame in RGB](rgb.png)
 
 If we convert this to grayscale then it's still perfectly recognisable.
 
-![Example Frame in Grayscale](/very-slow-movie-player/gray.png)
+![Example Frame in Grayscale](gray.png)
 
 Taking the naive approach to 1bpp quantisation, we get this monstrosity.
 
-![Example Frame in 1-bit Without Dithering](/very-slow-movie-player/gray-1.png)
+![Example Frame in 1-bit Without Dithering](gray-1.png)
 
 Finally, dithering to 1bpp with the Floyd Steinberg algorithm, the result is still compromised but significantly clearer - certainly less Halloween.
 *Note that this image can look absolutely terrible when scaled, so just trust me if you're viewing it on a mobile device!*
 
-![Example Frame in 1-bit Via Floyd Steinberg Dithering](/very-slow-movie-player/dithered.png)
+![Example Frame in 1-bit Via Floyd Steinberg Dithering](dithered.png)
 
 ## Connecting to the display
 
@@ -153,7 +153,7 @@ First make sure the `pi` user account is in the `gpio` user group.
 
 ```bash
 sudo usermod -a -G gpio pi
-``` 
+```
 
 Install dependencies.
 
@@ -165,7 +165,7 @@ Clone and build.
 
 ```bash
 git clone https://github.com/axle-h/vsmp.git
-cd vsmp 
+cd vsmp
 mkdir build && cd build
 cmake -D CMAKE_BUILD_TYPE=Release ..
 make
@@ -190,13 +190,13 @@ On first run `options.json` is written to `~/.vsmp`. Values are.
 * **displaySeconds** Minimum number of seconds to display each frame for.
 * **schedule**
   * **enabled** Enables the schedule. Do not enable this unless you have an active connection to the internet.
-    The Raspberry Pi has no RTC so you must have access to NTP for this to work. 
+    The Raspberry Pi has no RTC so you must have access to NTP for this to work.
   * **hourFrom** Hour of the day to start displaying frames from.
   * **hoursFor** Number of hours each day to display new frames.
 
 Note that e-paper displays are good for a finite number of screen refreshes before developing dead/stuck pixels so be conservative with how often you display new frames.
 
-Change what you need and repeat until the test pattern only just fills the visible area of the screen. 
+Change what you need and repeat until the test pattern only just fills the visible area of the screen.
 
 Once you're happy, drop some `.mp4` files in the configured movies directory and install with.
 
@@ -204,7 +204,7 @@ Once you're happy, drop some `.mp4` files in the configured movies directory and
 sudo make install
 ```
 
-A new `vsmp` systemd service will be installed and enabled at boot. View service logs with. 
+A new `vsmp` systemd service will be installed and enabled at boot. View service logs with.
 
 ```bash
 systemctl status vsmp

@@ -1,9 +1,5 @@
 import { notFound } from 'next/navigation'
 import { allPosts, findPostBySlug } from '@/posts'
-import { components } from '@/components/mdx'
-import { MDXRemote } from 'next-mdx-remote/rsc'
-import remarkGfm from 'remark-gfm'
-import readingTime from 'reading-time'
 
 import {
   Container,
@@ -15,12 +11,6 @@ import {
 } from '@chakra-ui/react'
 import { TimeIcon, CalendarIcon, UserIcon } from '@/components/icons'
 import Date from '@/components/date'
-
-const options = {
-  mdxOptions: {
-    remarkPlugins: [remarkGfm],
-  },
-}
 
 export default async function PostPage({
   params: { slug },
@@ -59,15 +49,10 @@ export default async function PostPage({
           </ListItem>
           <ListItem>
             <ListIcon as={TimeIcon} color="gray.500" />
-            {readingTime(post.content).text}
+            {post.readingTime}
           </ListItem>
         </List>
-
-        <MDXRemote
-          source={post.content}
-          options={options as any}
-          components={components}
-        />
+        {post.content}
       </Container>
     </>
   )

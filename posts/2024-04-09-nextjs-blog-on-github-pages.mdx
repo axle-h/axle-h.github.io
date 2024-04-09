@@ -1,0 +1,404 @@
+---
+title: Next.js on GitHub Pages
+published: true
+---
+
+I've been doing a bit of [Next.js](https://nextjs.org/) recently and really fell for [Chakra UI](https://chakra-ui.com/).
+It does the best job I've seen so far in a UI library at removing the need for CSS (without being Tailwind 🤢).
+I didn't have any other UI stuff lined up to work on so thought I'd port this site over to it.
+Problem is.
+Chakra is a React component library.
+For React to have a decent FCP, to work with SEO or to have a social preview, my experience tells me to use Next.js.
+But Next.js needs a server and that conflicts with my wallet, which would be much happier with static HTML+CSS on [GitHub Pages](https://pages.github.com/).
+
+That just won't do. Every developer needs an over engineered personal blog site. Why else would there be a meme for that.
+
+![power rangers](power-rangers.jpg)
+
+## What about Gatsby?
+
+First I looked at [Gatsby](https://www.gatsbyjs.com/). Let me share my experience.
+
+```shell
+npm init gatsby
+# Enter -> Enter -> defaults etc
+```
+
+> **Nice!** They have a really decent npm template. But it did take a while and why didn't I see a vulnerability audit?
+
+```shell
+cd my-gatsby-site
+npm audit # 😱😱😱😱
+```
+
+![gatsby vulnerabilities](gatsby-vulns.png)
+
+Bearing in mind that this is a freshly templated project, effectively a toy for showcasing the platform,
+there were 23 vulnerabilities, of which 1 was critical and 8 were high.
+I've worked with some crusty old Node projects and the only time I'd ever see anything like that was when dusting off something we hadn't deployed in maybe a year or more.
+
+I had a look myself and the [gatsby package on npm](https://www.npmjs.com/package/gatsby?activeTab=dependencies) has 168 dependencies.
+This is an order of magnitude more than Next.js, which [is currently at 16](https://www.npmjs.com/package/next?activeTab=dependencies).
+Maybe it's just impossible to remain vulnerability free with this many dependencies?
+Whatever the case, it seems Gatsby is at meme status on npm for depending on **EVERYTHING** and so not something I'd fancy maintaining as a dependency.
+
+I read some stuff on Redit about the vulnerabilities not being in the runtime but how would you know?
+It'd be like crying wolf with every report.
+Plus I just couldn't put the poor GitHub dependabot through it 🤖.
+
+## Next.js SSG
+
+Luckily, it turns out that since I last looked, Next.js has a new router, runs on React server components by default and fully supports static site generation.
+That sounds like it'll do the job perfectly then.
+
+```shell
+npx create-next-app@latest
+```
+
+```
+✔ What is your project named? … my-app
+✔ Would you like to use TypeScript? … Yes
+✔ Would you like to use ESLint? … Yes
+✔ Would you like to use Tailwind CSS? … No
+✔ Would you like to use `src/` directory? … No
+✔ Would you like to use App Router? (recommended) … Yes
+✔ Would you like to customize the default import alias (@/*)? … No
+Creating a new Next.js app in /Users/alex/projects/my-app.
+```
+
+How relieved was I to see "found 0 vulnerabilities".
+Plus unlike Gatsby, I didn't have to run an audit myself.
+
+To enable SSG you need to configure Next.js.
+
+```js
+// next.config.mjs
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+    output: 'export'
+};
+
+export default nextConfig;
+```
+
+## MDX
+
+I like the convenience and portability of writing in markdown.
+It takes a bit of setting up in Next.js but I think it's worth it.
+Also, since we're using React we may as well use [MDX](https://mdxjs.com/).
+
+Next.js supports rendering MDX with the app router via [@next/mdx](https://www.npmjs.com/package/@next/mdx).
+But since a blog site would need a "list of posts" abstraction, a better fit would be [MDX remote](https://nextjs.org/docs/app/building-your-application/configuring/mdx#remote-mdx).
+
+Create a `posts` folder as a sibling to the `app` folder and drop a markdown file in with some frontmatter e.g.
+
+```markdown
+---
+# posts/my-first-post.mdx
+title: My first post
+slug: my-first-post
+date: 2024-04-09
+---
+
+This is my *first* post.
+
+Here's a table.
+
+| Month    | Savings |
+| -------- | ------- |
+| January  | $250    |
+| February | $80     |
+| March    | $420    |
+```
+
+Add the dependencies.
+
+```shell
+# Note remark-gfm is optional if you would like to
+# use GitHub flavoured markdown e.g. tables.
+# The pinned version are required as of April 2024
+# as remark-gfm 4.0.0 breaks compatibility with next-mdx-remote.
+npm i next-mdx-remote@^4 remark-gfm@^3
+```
+
+Next we need to read the posts from disc and compile their MDX into a React cache.
+Create this in `posts/index.ts`
+
+```ts
+// posts/index.ts
+import { readdir, readFile } from 'node:fs/promises'
+import path from 'node:path'
+import { compileMDX } from 'next-mdx-remote/rsc'
+import { cache, ReactElement } from 'react'
+import remarkGfm from 'remark-gfm'
+
+interface Post {
+  title: string
+  slug: string
+  date: Date
+  content: ReactElement
+}
+
+type PostFrontmatter = Pick<Post, 'title' | 'slug' | 'date'>
+
+async function getPost(filename: string): Promise<Post> {
+  const source = await readFile(path.join('posts', filename), 'utf8')
+  const { frontmatter, content } = await compileMDX<PostFrontmatter>({
+    source,
+    options: {
+      parseFrontmatter: true,
+      mdxOptions: {
+        remarkPlugins: [remarkGfm],
+      },
+    },
+  })
+
+  return { ...frontmatter, content }
+}
+
+// note this is cached so we can call it as many times as we like
+export const allPosts = cache(async () => {
+  const files = await readdir('posts')
+  const posts = await Promise.all(
+    files.filter((file) => path.extname(file) === '.mdx').map(getPost)
+  )
+  return posts.toSorted((p1, p2) => p2.date.getTime() - p1.date.getTime())
+})
+```
+
+Next we need a list of posts.
+Replace the content of `app/page.tsx` with:
+
+```tsx
+// app/page.tsx
+import { allPosts } from '@/posts'
+import Link from 'next/link'
+
+export default async function PostsPage() {
+  const posts = await allPosts()
+  return (
+    <>
+      <h1>My Blog</h1>
+      {posts.map((post) => (
+        <div key={post.slug}>
+          <Link href={`/posts/${post.slug}`}>{post.title}</Link>
+        </div>
+      ))}
+    </>
+  )
+}
+```
+
+And finally a route for displaying a post.
+
+```tsx
+// app/posts/[slug]/page.tsx
+import { allPosts } from '@/posts'
+import { notFound } from 'next/navigation'
+
+export default async function PostPage({ params }: { params: { slug: string } }) {
+  const posts = await allPosts()
+  const post = posts.find((p) => p.slug === params.slug) || null
+  if (!post) {
+    return notFound()
+  }
+  return (
+    <>
+      <h1>{post.title}</h1>
+      {post.content}
+    </>
+  )
+}
+
+export async function generateStaticParams() {
+  const posts = await allPosts()
+  return posts.map((post) => ({ slug: post.slug }))
+}
+```
+
+Start the app:
+
+```shell
+npm run dev
+```
+
+And navigate to [http://localhost:3000/](http://localhost:3000/).
+You should see something like this:
+
+![posts](posts-page.png)
+
+Click the link and you should see the rendered MDX in all it's glory:
+
+![post](post-page.png)
+
+## Chakra UI
+
+Chakra UI integrates with Next.js easily, first add the dependencies:
+
+```shell
+npm i @chakra-ui/react @chakra-ui/next-js @emotion/react @emotion/styled framer-motion
+```
+
+Chakra UI needs to wrap all content in a `<ChakraProvider>` so you need:
+
+```tsx
+// app/providers.tsx
+'use client'
+
+import { ChakraProvider } from '@chakra-ui/react'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <ChakraProvider>{children}</ChakraProvider>
+}
+```
+
+Next, use the `Providers` component in your layouts.
+
+```tsx
+// app/layout.tsx
+import { Providers } from './providers'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode,
+}) {
+  return (
+    <html lang='en'>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  )
+}
+```
+
+You can plug Chakra components into `next-mdx-remote` by providing a components option.
+
+```tsx
+// posts/mdx-components.tsx
+import { Text, Table, Thead, Tr, Td, Th, Tfoot } from '@chakra-ui/react'
+
+// you can override anything here, this is just an example
+export const components = {
+  p: (props: any) => <Text {...props} my={4} />,
+  table: Table,
+  thead: Thead,
+  tr: Tr,
+  td: Td,
+  th: Th,
+  tfoot: Tfoot,
+}
+```
+
+To wire this up, in `posts/index.ts`, pass the exported `components` object as a property in the object passed to the `compileMDX` function.
+
+Then replace the bare `<h1>` in `app/posts/[slug]/page.tsx` with a Chakra `<Heading>`. Reload and you should see something like this:
+
+![chakra post](chakra-post-page.png)
+
+This is just a start, there's plenty you can do with the MDX rendering to properly support styled headings, lists, Next.js client side links, code highlighting, images etc.
+
+## Static site generation
+
+You should then be able to demo the static site:
+
+```sh
+npm run build
+npx serve out
+```
+
+And navigate to [http://localhost:3000/](http://localhost:3000/).
+
+I'd open the browser console to make sure nothing wacky is going on with the React hydration.
+
+## GitHub pages
+
+Getting started with GtHub pages is pretty easy.
+
+1. Follow the [getting started guide](https://docs.github.com/en/pages/quickstart).
+   This gets you a default site setup with Jekyll. But I hated this as I needed to run Ruby to see it locally.
+2. Set pages up to publish from the `main` branch with [this guide](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
+3. Use this action.
+
+```yaml
+# .github/workflows/main.yml
+name: Deploy to Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: [main]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "21"
+          cache: 'npm'
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          static_site_generator: next
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+          # Generate a new cache whenever packages or source files change.
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+          # If source files changed but packages didn't, rebuild from a prior cache.
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+        env:
+          ENABLE_ANALYTICS: true
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+```
+
+Commit and you should ™️ be able to see on GitHub Actions:
+
+![deploy from action](action.png)
+
+If you need a working example, this site is built with Next.js and deployed to GitHub Pages with GitHub Actions from my repository [https://github.com/axle-h/axle-h.github.io](https://github.com/axle-h/axle-h.github.io).
+
+Happy over-engineered blogging 😀.

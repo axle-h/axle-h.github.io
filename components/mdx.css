@@ -1,0 +1,2 @@
+[data-bright-mode="light"] { box-shadow: 0 1rem 1.5rem rgba(0,0,0,.075); }
+[data-bright-mode="dark"] { box-shadow: 0 1rem 1.5rem rgba(0,0,0,.15); }

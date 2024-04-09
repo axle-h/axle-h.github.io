@@ -122,8 +122,8 @@ export function Hero() {
                 Software Developer
               </Heading>
               <Box my={3}>
-                <Email iconOnly boxSize="2em" />
-                <GitHub iconOnly boxSize="2em" />
+                <Email iconOnly boxSize="2em" mr={2} />
+                <GitHub iconOnly boxSize="2em" mr={2} />
                 <Linkedin iconOnly boxSize="2em" />
               </Box>
               <Text

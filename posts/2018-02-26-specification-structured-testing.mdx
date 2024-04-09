@@ -119,7 +119,7 @@ Imagine that we have a breakfast service that makes bacon sandwiches (because wh
 public class BreakfastService
 {
     private readonly IBaconRepository _baconRepository;
-    
+
     public BreakfastService(IBaconRepository baconRepository)
     {
         _baconRepository = baconRepository;
@@ -306,7 +306,7 @@ public class Spec
 
 These tests all pass and display like this (in Resharper):
 
-![Free Form Tests Success](/specification-structured-testing/free-form-success.png)
+![Free Form Tests Success](free-form-success.png)
 
 This is fine but what happens when we break something. What if some rogue developer starts stealing your bacon sandwiches.
 
@@ -321,14 +321,14 @@ public async Task<BaconSandwich> MakeMeABaconSandwichAsync(bool preferSmokedBaco
     }
 
     var isYummy = bacon.IsSmoked == preferSmokedBacon;
-    
+
     // Malicious code.
     if (isYummy)
     {
         owner = "Alex";
         isYummy = false;
     }
-    
+
     return new BaconSandwich
             {
                 IsYummy = isYummy,
@@ -340,7 +340,7 @@ public async Task<BaconSandwich> MakeMeABaconSandwichAsync(bool preferSmokedBaco
 
 We now get a failure message like this.
 
-![Free Form Tests Fail](/specification-structured-testing/free-form-failure.png)
+![Free Form Tests Fail](free-form-failure.png)
 
 The entire test fails even though some assertions have passed. Here's the assertions from the failing test.
 
@@ -361,9 +361,9 @@ There's two major problems here:
 
 Wouldn't it be nice if we could structure our tests to produce messages like this:
 
-![Specification Tests Fail](/specification-structured-testing/specification-failure.png)
+![Specification Tests Fail](specification-failure.png)
 
-### Specification testing 
+### Specification testing
 
 Specification structured testing is all about maintaining explicit, readable test structure whilst providing richer messaging.
 My specification structured test library, [xunit.spec][github] consists of base classes for deriving specifications depending on whether your service methods are asynchronous and/or return a result. Back to the example, we can create our own coarse specification to inherit from using a `ResultSpec<TSubject, TResult>`, which is asynchronous and whose act step returns a result:
@@ -479,4 +479,4 @@ public class When_mapping_from_PocoSource_to_PocoDestination : ApplicationMappin
 
 So what do you think? *Actually* don't answer that. I really think that the only way to appreciate the concept of specification structured unit tests is to start writing them. Then fast forward a few months, to when you have to revisit a well tested but neglected microservice and be able to jump right back into your unit test project without having to switch gears to cope with unfamiliar frameworks or parse the structure all over again. Just having a standard structure and set of tools will probably get you most of the way there, the specification structure is just a decent way of formalizing the whole thing.
 
-If you haven't already, please check out [xunit.spec][github].  
+If you haven't already, please check out [xunit.spec][github].

@@ -1,9 +1,12 @@
 import { readdir, readFile, access } from 'node:fs/promises'
-import matter from 'gray-matter'
 import path from 'node:path'
-import { cache } from 'react'
+import { cache, ReactElement } from 'react'
+import { compileMDX } from 'next-mdx-remote/rsc'
+import { postComponents } from '@/components/mdx'
+import remarkGfm from 'remark-gfm'
+import readingTime from 'reading-time'
 
-interface PostData {
+interface PostFrontmatter {
   title: string
   published?: boolean
   categories: string[]
@@ -18,56 +21,71 @@ export interface Post {
   slug: string[]
   date: Date
   filename: string
-  content: string
+  content: ReactElement
   logo: string
   banner: string
+  readingTime: string
 }
 
 const POSTS_PATH = 'posts'
-const POST_REGEX = /(\d{4})-(\d{2})-(\d{2})-(.+)\.mdx/
+
+const options = {
+  parseFrontmatter: true,
+  mdxOptions: {
+    remarkPlugins: [remarkGfm],
+  },
+}
 
 async function getPost(filename: string): Promise<Post> {
-  const match = filename.match(POST_REGEX)
+  const match = filename.match(/(\d{4})-(\d{2})-(\d{2})-(.+)\.mdx/)
   if (!match) {
     throw new Error(`invalid post filename ${filename}`)
   }
 
   const filePath = path.join(POSTS_PATH, filename)
-  const postContent = await readFile(filePath, { encoding: 'utf8' })
-  const { data, content } = matter(postContent)
+  const source = await readFile(filePath, { encoding: 'utf8' })
 
-  const postData = data as PostData
+  const name = match[4]
+  const { frontmatter, content } = await compileMDX<PostFrontmatter>({
+    source,
+    options,
+    components: postComponents(name),
+  })
 
-  const slug = (postData.categories ?? []).concat(...match.slice(1))
+  const categories = frontmatter.categories ?? []
+  const slug = categories.concat(...match.slice(1))
   const date = new Date(
     parseInt(match[1]),
     parseInt(match[2]) - 1,
     parseInt(match[3])
   )
 
-  const name = match[4]
   const assetsPath = path.resolve('public', name)
-  const assetsExists = await access(assetsPath).then(() => true).catch(() => false)
+  const assetsExists = await access(assetsPath)
+    .then(() => true)
+    .catch(() => false)
   if (!assetsExists) {
     throw new Error(`${name} requires assets folder at ${assetsPath}`)
   }
 
   const assets = await readdir(assetsPath)
-  const logo = assets.find(f => /logo\.(?:png|jpg)/i.test(f))
+  const logo = assets.find((f) => /logo\.(?:png|jpg)/i.test(f))
   if (!logo) {
     throw new Error(`${name} requires logo.jpg or logo.png at ${assetsPath}`)
   }
 
-  const banner = assets.find(f => /banner\.(?:png|jpg)/i.test(f))
+  const banner = assets.find((f) => /banner\.(?:png|jpg)/i.test(f))
   if (!banner) {
-    throw new Error(`${name} requires banner.jpg or banner.png at ${assetsPath}`)
+    throw new Error(
+      `${name} requires banner.jpg or banner.png at ${assetsPath}`
+    )
   }
 
   return {
-    title: postData.title,
-    published: postData.published || false,
+    title: frontmatter.title,
+    published: frontmatter.published || false,
     name,
-    categories: postData.categories,
+    categories,
     url: '/' + slug.join('/'),
     slug,
     date,
@@ -75,6 +93,7 @@ async function getPost(filename: string): Promise<Post> {
     content,
     logo: `/${name}/${logo}`,
     banner: `/${name}/${banner}`,
+    readingTime: readingTime(source).text, // TODO trim out frontmatter, tables, source code etc
   }
 }
 

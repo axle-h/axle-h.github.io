@@ -225,7 +225,7 @@ We'll have two implementations of this interface; one for the Z80 and one shared
 
 Next we need to implement the memory management unit (MMU) to broker access to the address space. The relationship between CPU, MMU, memory and memory mapped IO devices looks something like the following.
 
-![Simple diagram of the GameBoy MMU](/emulating-the-gameboy-cpu-on-dot-net/MMU.svg)
+![Simple diagram of the GameBoy MMU](MMU.svg)
 
 An MMU should support reading and writing data in various lengths across the entire address space, whilst abstracting away the hardware that is physically attached to each location in the space.
 
@@ -336,7 +336,7 @@ It is the responsibility of the platform to wire up the correct segments and the
 
 A CPU runs on a fetch-decode-execute cycle, called the machine cycle or m-cycle. The CPU will initially fetch a byte, whose location in the address space is pointed to by the program counter register (PC), decode it as an instruction (opcode) and execute it, or contextually use it as a literal for a previous cycle. Opcodes not related to absolute program flow, such as jumps or calls, will end a cycle by incrementing the program counter to point at the next byte in the address space. Opcode length is variable and whilst some operations run in a single cycle, others require multiple fetch-decode-execute cycles to run. Opcodes are specified by the [official Zilog Z80 documentation](/emulating-the-gameboy-cpu-on-dot-net/UM0080.pdf) but you must also consider the [differences in implementation on the GameBoy CPU](http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html). Here's an example of running three simple opcodes on a Z80:
 
-![Example fetch-decode-execute on the Z80](/emulating-the-gameboy-cpu-on-dot-net/CPU.svg)
+![Example fetch-decode-execute on the Z80](CPU.svg)
 
 We're not really concerned with this low level cycle as software cannot control it, but we do need to keep track of how many have occurred so that we have a mechanism to match (read: approximate) platform timing. Our higher level cycle will be based on a concept of an operation, which can be represented by one or more opcodes and optional literals.
 

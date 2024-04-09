@@ -22,13 +22,18 @@ import {
   List,
   ListIcon,
   Image,
-  Center,
+  ImageProps,
 } from '@chakra-ui/react'
 import { Children, ReactElement, ReactNode } from 'react'
-import { LinkIcon, CheckCircleIcon, ExternalLinkIcon } from '@/components/icons'
+import {
+  LinkIcon,
+  CheckCircleIcon,
+  ExternalLinkIcon,
+} from '@/components/icons'
 import NextLink from 'next/link'
 import { Code } from 'bright'
 import { findPostByName } from '@/posts'
+import './mdx.css'
 
 function flatten(text: string, child: ReactNode): string {
   return typeof child === 'string'
@@ -68,12 +73,14 @@ function DocsHeading({ children, ...props }: HeadingProps) {
   )
 }
 
-const protocolRegexp = /^https?:\/\//i
+function hrefIsExternal(href: string) {
+  return /^https?:\/\//i.test(href)
+}
 
-export function AppLink({ children, ...props }: LinkProps) {
+function AppLink({ children, ...props }: LinkProps) {
   const href = props.href
   if (!href) return <></>
-  const isExternal = protocolRegexp.test(href) || href.endsWith('.pdf')
+  const isExternal = hrefIsExternal(href) || href.endsWith('.pdf')
 
   return (
     <Link
@@ -142,7 +149,7 @@ Code.theme = {
   light: 'github-light',
 }
 
-export const components: MDXComponents = {
+const components: MDXComponents = {
   h1: (props) => (
     <Heading
       as="h1"
@@ -240,9 +247,6 @@ export const components: MDXComponents = {
       {...props}
     />
   ),
-  img: (props: any) => (
-    <Image maxW={{ sm: 450, md: 600, lg: 800 }} mx="auto" {...props} />
-  ),
   table: Table,
   thead: Thead,
   tr: Tr,
@@ -263,4 +267,24 @@ export const components: MDXComponents = {
   CheckList,
   CheckListItem,
   NewListItem,
+}
+
+function postImage(name: string) {
+  return function PostImage({ src, ...props }: ImageProps) {
+    return (
+      <Image
+        src={src === 'string' && hrefIsExternal(src) ? src : `/${name}/${src}`}
+        maxW={{ sm: 450, md: 600, lg: 800 }}
+        mx="auto"
+        {...props}
+      />
+    )
+  }
+}
+
+export function postComponents(name: string): MDXComponents {
+  return {
+    ...components,
+    img: postImage(name),
+  }
 }

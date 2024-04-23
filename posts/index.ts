@@ -8,13 +8,11 @@ import readingTime from 'reading-time'
 
 interface PostFrontmatter {
   title: string
-  published?: boolean
-  categories: string[]
+  categories?: string[]
 }
 
 export interface Post {
   title: string
-  published: boolean
   name: string
   categories: string[]
   url: string
@@ -83,7 +81,6 @@ async function getPost(filename: string): Promise<Post> {
 
   return {
     title: frontmatter.title,
-    published: frontmatter.published || false,
     name,
     categories,
     url: '/' + slug.join('/'),
@@ -102,9 +99,7 @@ export const allPosts = cache(async () => {
   const posts = await Promise.all(
     files.filter((file) => path.extname(file) === '.mdx').map(getPost)
   )
-  return posts
-    .filter((p) => p.published)
-    .toSorted((p1, p2) => p2.date.getTime() - p1.date.getTime())
+  return posts.toSorted((p1, p2) => p2.date.getTime() - p1.date.getTime())
 })
 
 export async function findPostBySlug(slug: string[]): Promise<Post | null> {

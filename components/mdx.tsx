@@ -1,39 +1,36 @@
 import { MDXComponents } from 'mdx/types'
 import {
-  Heading,
-  Text,
-  Table,
-  Thead,
-  Tr,
-  Td,
-  Th,
-  Tfoot,
-  LinkBox,
-  LinkOverlay,
-  HStack,
-  HeadingProps,
-  Divider,
-  UnorderedList,
-  OrderedList,
-  ListItem,
-  Link,
-  LinkProps,
   Badge,
-  List,
-  ListIcon,
+  Divider,
+  Heading,
+  HeadingProps,
+  HStack,
   Image,
   ImageProps,
+  Link,
+  LinkBox,
+  LinkOverlay,
+  LinkProps,
+  List,
+  ListIcon,
+  ListItem,
+  OrderedList,
+  Table,
+  Td,
+  Text,
+  Tfoot,
+  Th,
+  Thead,
+  Tr,
+  UnorderedList,
 } from '@chakra-ui/react'
 import { Children, ReactElement, ReactNode } from 'react'
-import {
-  LinkIcon,
-  CheckCircleIcon,
-  ExternalLinkIcon,
-} from '@/components/icons'
+import { CheckCircleIcon, ExternalLinkIcon, LinkIcon } from '@/components/icons'
 import NextLink from 'next/link'
 import { Code } from 'bright'
 import { findPostByName } from '@/posts'
 import './mdx.css'
+import { PintoraDiagram } from '@/components/diagram'
 
 function flatten(text: string, child: ReactNode): string {
   return typeof child === 'string'
@@ -225,14 +222,9 @@ const components: MDXComponents = {
   ),
   a: AppLink,
   ul: (props: any) => (
-    <UnorderedList
-      paddingStart={6}
-      listStyleType="disc"
-      spacing={2}
-      {...props}
-    />
+    <UnorderedList my={6} listStyleType="disc" spacing={2} {...props} />
   ),
-  ol: (props: any) => <OrderedList paddingStart={6} spacing={2} {...props} />,
+  ol: (props: any) => <OrderedList my={6} spacing={2} {...props} />,
   li: (props: any) => <ListItem paddingStart={2} {...props} />,
   blockquote: (props: any) => (
     <Text
@@ -267,6 +259,7 @@ const components: MDXComponents = {
   CheckList,
   CheckListItem,
   NewListItem,
+  PintoraDiagram,
 }
 
 function postImage(name: string) {

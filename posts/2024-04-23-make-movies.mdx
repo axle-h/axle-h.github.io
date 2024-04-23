@@ -1,0 +1,253 @@
+---
+title: Make movies
+---
+
+Make Movies is my (arguably) over-engineered home lab project for making family movie night more accessible for my less-than technical family members.
+
+By the way, if you couldn't tell (lol just don't look at the appendages), I've been messing around with Stable Diffusion XL.
+
+A disclaimer:
+
+> We currently subscribe to Netflix, Amazon Prime & Disney+, pay our TV license and will go to the cinema when there's something we want to watch.
+The legality of using this project is questionable but morally, we are happy to use it to consume niche & unavailable content or content that I already own on physical media but CBA to get out the loft.
+
+## The (first world) problem
+
+> "I'd like to watch this random movie that's not on Netflix"
+>
+> -- <cite>Non technical family member</cite>
+
+Me:
+
+1. Find my laptop, connect to Tor
+2. Search for a decent quality torrent
+3. Add it to transmission
+4. Wait for the download to complete
+5. Move the files to our movie library
+6. Refresh Jellyfin
+
+Surely this can be automated right?
+
+## Pain points
+
+There were some challenges.
+
+### 1. Need a VPN
+
+The only place I would be comfortable running this app is my home network, so I am subject to the UK ISP firewall, which is likely to include all of the (relatively speaking) best torrent sites.
+So I am forced to tunnel connections through a VPN.
+
+I first had a go at using a TOR proxy but found that services would often be using some sort of DDoS protection, which forces TOR exit traffic through a browser check.
+It's beyond the scope of this project to bypass this, so instead, I looked at proxying through a free tier VPN.
+For this I used a combination of a SOCKS5 proxy via [Dante](https://www.inet.no/dante/) on top of OpenVPN and a service called [Proton VPN](https://protonvpn.com/free-vpn).
+
+I opted to run this in a container to simplify configuration i.e. I can tunnel all internet traffic out one container.
+For the convenience of tooling and health checks, I run this on Kubernetes.
+[Here's the helm chart](https://github.com/axle-h/make-movies/tree/main/helm). You can install with.
+
+```shell
+# Create the namespace
+kubectl create namespace make-movies
+
+# Create a secret for OpenVPN from local openvpn.conf
+kubectl --namespace make-movies create secret generic openvpn \
+    --from-file=openvpn.conf=./openvpn.conf
+
+# Install openvpn-proxy chart from github packages
+helm upgrade --namespace make-movies \
+  --install v1 oci://ghcr.io/axle-h/make-movies/openvpn-proxy \
+  --version 0.0.3-9cf8b7b
+```
+
+### 2. Need scraping
+
+Torrent services are unreliable, so to consume them live would mean:
+
+* Availability issues would propagate into the app.
+* There would be no fallback if they disappeared from the internet.
+
+The best option then would be to batch scrape all the data that I need to build this app.
+Luckily I don't even need to sift through HTML (JQuery selectors anyone?), as one site, yts.mx, even has a decent REST API.
+
+### 3. Need storage
+
+We'll need somewhere to store the scraped data with app metadata e.g. whether we already have the movie in our library.
+There's quite a lot of data actually (in the order of 50k movies) and it needs to be both searchable and mutable in big batches (when scraping).
+
+If I were running this app commercially, I'd need to consider scalability, availability and OLTP vs OLAP.
+I'd opt to store the data in a DBMS, preferably MongoDB as the data isn't that relational.
+Then since the MongoDB full text search is both deprecated and terrible, I'd keep a copy of key fields asynchronously maintained in ElasticSearch.
+
+But since I'm running this at home and don't plan to scale it past a single instance, I opted for just keeping the data in memory 😱🤓!
+Searching can then be done within the app process, by whatever is the best natural language search algorithm on NuGet (and I think I tried them all).
+I keep it persistent with a background thread that queues up updates to a JSON file and blocks the app from quitting until it's caught up.
+[Here's the implementation](https://github.com/axle-h/make-movies/blob/main/api/MakeMovies.Api/Db.cs).
+
+> Honestly, I reckon we can apply this [YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it) practise to scalability in more places than we realise.
+The cost of maintaining the infrastructure, team and licenses to do this "right" is not insignificant.
+
+## Architecture
+
+It takes quite a few moving parts.
+
+<PintoraDiagram src={`
+componentDiagram
+[My Family] as family
+
+family --> client : Watch Movies
+family --> nginx : Download Movies
+client --> jellyfin
+
+component "My Server" {
+  [nginx]
+  [API] as api
+  [UI] as ui
+  [Transmission] as transmission
+  [Jellyfin Server] as jellyfin
+  [VPN] as vpn
+
+  nginx --> api : /api
+  nginx --> ui : /
+  api --> jellyfin
+  api --> transmission
+  api --> vpn
+  vpn --> yts.mx
+  api --> TMDB
+  api --> OMDb
+}
+
+component "TV" {
+  [Jellyfin Client] as client
+}
+
+component "Remote APIs" {
+  [TMDB]
+  [OMDb]
+  [yts.mx]
+}
+`} />
+
+#### App components
+* **UI:** Family & mobile friendly UI written in Next.js with:
+  * Start a scrape session
+  * Movie search
+  * Display movie metadata like poster image, year of release, review score
+  * Download a movie
+  * Monitor movie download progress
+* **API:** JSON REST API written in .NET for gluing everything together
+  * Movie torrent scraper
+  * Movie API
+  * Otherwise a proxy for local services like transmission & Jellyfin.
+* **nginx:** Or any reverse proxy for binding these onto the same port with path based routing.
+
+#### Local services
+* **VPN:** Something to tunnel through the great firewall of London.
+* **[Transmission](https://transmissionbt.com/):** Downloads the movie torrents, we can control it via an RPC API (XML 🤢).
+* **[Jellyfin Server](https://jellyfin.org/):** A local movie library server, it has a *vast* REST API, the hardest part of which is figuring out what to call.
+* **[Jellyfin Client](https://www.amazon.com/gp/aw/d/B07TX7Z725):** Something to stream the movies to various devices around our house.
+
+#### Remote services
+* **yts.mx:** The dodgy site that hosts movie torrents, this is what the VPN is for.
+* **TMDB:** Most movie images, they have a decent and free API. We just need to make sure our usage doesn't look like scraping.
+* **OMDb:** Mops up any movie images not available on TMDB.
+
+## Process
+
+TLDR; scraped movies are searchable and downloadable via the UI. Once downloaded, they are available to watch via Jellyfin.
+
+<PintoraDiagram src={`
+sequenceDiagram
+autonumber
+participant [<actor> Family]
+participant App as "Make Movies"
+participant Yts as "yts.mx"
+participant Transmission
+participant Jellyfin
+
+== Scraping ==
+
+Family->>App: Scrape movies
+activate App
+  App->>Yts: Scrape all (via VPN)
+  activate Yts
+    Yts->>App: All movies
+  deactivate Yts
+  App-->>App: Save movies\\nto JSON file
+  App->>Family: Scrape done
+deactivate App
+
+== Downloading ==
+
+Family->>App: Search for movie
+activate App
+  App-->>App: Search JSON file
+  App->>Family: Show movies
+  Family->>App: Download movie
+  App->>Transmission: Download torrent
+  App-->>App: Poll until done
+  App->>Family: Download complete
+  App->>Jellyfin: Update library
+deactivate App
+
+== Movie Night ==
+Family->>Jellyfin: Watch movie
+`} />
+
+## Deploy
+
+Everything needed to run this project is available on [GitHub](https://github.com/axle-h/make-movies).
+In a sanity saving measure, I have opted to deploy most of the services on systemd.
+This was actually more simpler than I thought it would be and the .NET bit even supports `Type=notify` via [Microsoft.Extensions.Hosting.Systemd](https://www.nuget.org/packages/Microsoft.Extensions.Hosting.Systemd).
+
+1. Install the VPN on k3s as above
+2. Install the API via [documentation](https://github.com/axle-h/make-movies/blob/main/api/README.md)
+3. Install the UI via [documentation](https://github.com/axle-h/make-movies/blob/main/ui/README.md)
+4. Install nginx
+    ```shell
+    sudo apt update
+    sudo apt install nginx
+    ```
+5. Configure nginx for path based routing over the API & UI:
+    ```
+    # /etc/nginx/sites-enabled/default
+    server {
+      listen 8080;
+      listen [::]:8080;
+
+      location / {
+            proxy_pass http://localhost:3000;
+      }
+
+      location ~ ^/(api|movie-images)/ /api {
+            proxy_pass http://localhost:5000;
+        }
+    }
+    ```
+6. Restart nginx:
+   ```shell
+   sudo systemctl restart nginx
+   ```
+7. Browse to [http://localhost:8080](http://localhost:8080)
+
+## Simplicity
+
+This could easily have been a massive project spanning multiple microservices, complex messaging, even more complex DBMS, ridiculously complex search engine and all deployed via some horribly complex helm chart.
+
+> Trust me, [I tried it](https://github.com/axle-h/make-movies/pull/19/files).
+
+But after some fun learning all this stuff and some immense satisfaction watching it deploy to k8s with a single command, I had many issues that were much more painful to fix than a project 'for fun' should present.
+Then I had some nasty breaking changes in major version updates.
+I'd already blown *way* past any time I would have saved by using this project so I'd had enough.
+
+I took the approach of stripping it back to an MVP and minimizing dependencies.
+E.g. I used to do scraping asynchronously over a [MassTransit](https://masstransit.io/) bus, now I just lock on a Mutex in a single service.
+This has resulted in a system that, *yes*, wouldn't scale to thousands of concurrent users, would be a bit of a pain to decouple in places and is mostly void of technical showcase but that ... works.
+
+Honestly, I am proud of it *for* it's simplicity.
+I have been on the path to simplistic solutions to complex problems for years now but this experience has been yet another confirmation that (at least) starting with simplicity is fundamental to successful projects.
+
+![simple-meme](simplistic-curve.jpg)
+
+
+
+

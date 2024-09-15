@@ -1,0 +1,159 @@
+---
+title: I learned Rust to make games!
+---
+
+I've always wanted to make a game! In fact, to make a game was the reason I first opened QBasic on my Dad's 486 PC, some 30 years ago.
+A decision that probably had a hand in launching my software development career.
+
+Thing is, I wanted to make a game from scratch, not via some game engine like [Unity](https://unity.com/) or [Godot](https://godotengine.org/) as I appreciate a programming challenge over an art project.
+I didn't want to purchase some particle simulation from some marketplace and drag and drop it into a scene, I wanted to model my own particle simulation, map the textures, manage the lifetimes, you know, feel like I contributed something technical.
+I also really wanted to find an excuse to learn Rust!
+
+All of the code is available on GitHub:
+
+* [Rustris](https://github.com/axle-h/rustris)
+* [Dr Rustario](https://github.com/axle-h/dr-rustario)
+
+> By the way, you can blame ChatGPT for the names, not me.
+
+## Rust
+
+I used to do a bit of C++ for this sort of low level, performance critical stuff, but I don't think I'll go back now that I have tasted Rust as:
+
+* Memory management is compile-time via the borrow checker - this is a MASSIVE learning curve (*"WHY can't I just mutate this damn struct?!"*) but avoids common bugs like null pointers and race conditions.
+* The syntax is modern and different but... familiar. It feels nice to write it and so much cleaner than C++.
+* It's well documented to a degree that is understandable by the average human.
+* TOML aside 🤡, Rust's package manager, Cargo, is 'simply' awesome and the available libraries (crates) are extensive. The last time I tried C++, dealing with CMake and even vcpkg was difficult.
+
+It also might be coincidental based on my experience, but I think LLMs write better Rust than C++.
+
+Honestly, I like Rust so much that I wish I could work with it commercially. It's just so fast and forgiving. And the binaries, they're tiny!
+Unfortunately though, all the Rust jobs on LinkedIn right now seem to be Blockchain/Web3 related...
+
+## SDL2
+
+OK, I am using SDL2 so my games are not truly "from scratch".
+But SDL2 is NOT a game engine.
+All SDL2 provides for me is a cross-platform way to GPU accelerate sprite blitting, reading input state and playing audio samples.
+All of this would be really low level and a total bore to implement myself (e.g. could I be bothered to learn Wayland, Vulkan, Win32... no), so I appreciate the abstraction.
+
+SDL2 is a C library but luckily there are [semi-decent, memory safe bindings for Rust](https://github.com/Rust-SDL2/rust-sdl2).
+They do make building a bit more complicated, but I am familiar with the SDL2 API already and I know it's high performance and stable, so I took the hit.
+
+There is a lot of other cool game engine development going on in Rust, like [Bevy](https://bevyengine.org/) but that didn't interest me as I wanted to learn Rust, not Bevy.
+
+## Rustris (Tetris)
+
+There's probably been a million clones already, but I wanted to start with Tetris as it's a simple, block based game that is crazily well-defined in the [Tetris Guideline](https://tetris.wiki/Tetris_Guideline).
+If you haven't heard about the Tetris Guideline (why would you): right from [the RNG](https://tetris.wiki/Random_Generator) to the [rotation system](https://tetris.wiki/Super_Rotation_System) (which is surprisingly complicated),
+everything that you need to make a Tetris clone that follows the EXACT same rules as the latest official Tetris game is in there.
+
+I started with the game board, and with TDD, defined the Tetrominos, the movement & rotation system and spawn points.
+The fundamental Tetris "physics" were enforced at this layer i.e. no overlapping or overflowing of Tetrominos allowed.
+
+Then on top of that, I built the game rules in a state machine (the states of which were defined for me via the guideline ruleset!).
+That's stuff like the drop rate, getting a line, tracking the score & level, detecting game over etc.
+The API here is high level control based like "move left", "hard drop".
+
+Finally, an SDL2 game loop that each frame:
+1. Reads inputs
+2. Sends inputs to the game
+3. Updates the game state
+4. Draws the updated game state to the screen
+
+I abstracted drawing the game in a way that makes it themeable and such that themes can be switched out during a game.
+I chose to create themes out of assets ripped from the Nintendo Tetris games that I grew up with: GameBoy, NES & SNES.
+This, plus the guideline ruleset, means I basically remade the old games with modern rules - which feels kind of cool & unique.
+I then had a go at making a "nailed it" version of [Tetris Effect](https://www.tetriseffect.game/), which features bass heavy remixes of the Tetris theme, electronic jingles and particles that are flying everywhere.
+
+I got most of the sprites off of [The Spriters Resource](https://www.spriters-resource.com/) and audio off of [Zophar's Domain](https://www.zophar.net/music), which was a major nostalgic hit!
+I bet most 90's kids with even a slight interest in technology has downloaded emulators from Zophar's Domain on a dial-up connection.
+
+The main problem game was the SNES version, where decent uncompressed sprites do not exist and not all the audio is available in high quality, not even in the native SPC format.
+For ripping clean audio, I resorted to the [hidden dev menu](https://www.unseen64.net/2009/10/07/tetris-dr-mario-snes-unused-stuff/), which has a sound test function and is accessible via action replay cheat codes in RetroArch.
+Ripping sprites was also interesting... I used RetroArch with a 1:1 scale, basically the size of a postage stamp on my monitor, played the game and processed the screenshots into sprites.
+
+Here's the themes that I ended up with:
+
+![rustris-themes](rustris-themes.png)
+
+## Dr Rustario (Dr Mario)
+
+I was playing Dr Mario on a NES Classic with a friend (after beating him at Tetris of course), and a comment stood out to me regarding the unbalanced pill fall speed "can't you make them fall faster?".
+Yes. Yes I can.
+
+Dr Mario doesn't look it, but was quite a bit more complex to model and animate than Tetris.
+To scratch the surface, the viruses have an idle dance, a spawn and a death animation.
+Dr Mario throws the pills into the bottle and has animations for winning and losing a match.
+
+Implementing the virus placement algorithm was fun, which is nondeterministic and interesting enough that some people have [dedicated research to it](https://www.researchgate.net/publication/334724493_Dr_Mario_Puzzle_Generation_Theory_Practice_History_FamicomNES).
+
+Dr Rustario would have never worked if I'd of just slapped it into the Rustris engine as, to be honest, it was a bit spaghetti.
+I was learning Rust at the time of writing it and I got away with it as, by design, Tetris is as simple as it gets as a game to model and animate.
+Dr Rustario needed a bit more structure.
+The biggest change was to distribute state across smaller, more specialised state machines for each animation.
+
+I briefly considered building Rustris into my own block based puzzle game engine but Dr Rustario was just different enough to make this more fiddly than I would have liked.
+So I just copied what I needed and cracked on.
+
+I worked hard to make the game themeable again. This time I picked the NES, SNES and N64 versions to rip.
+Plenty of postage stamp sized Retroarch shenanigans were required to rip the SNES and N64 sprites & audio.
+The "modern" theme this time was ripped from a few places:
+
+* The viruses & colours from the defunct [Dr Mario World](https://www.mariowiki.com/Dr._Mario_World).
+  Since I could no longer play the game 😭, I had to rip from gameplay videos on YouTube, cleaning up all the resulting compression artifacts.
+* The Dr Mario animation was from the Wii version.
+  To rip it as a sprite (it's a 3D model in the game), I had to run it in [Dolphin](https://dolphin-emu.org/) with a custom [graphics mod](https://wiki.dolphin-emu.org/index.php?title=Graphics_Mods) to remove the HUD.
+  I then took an uncompressed video of some gameplay and used [ffmpeg](https://www.ffmpeg.org/) to crop the video to Dr Mario's animation and dump the frames.
+  I joined the images into a single sprite sheet, removed the background with Gimp and applied some heavy PNG compression to the result.
+  [Here's an example](https://github.com/axle-h/dr-rustario/blob/main/src/theme/particle/dr/throw.png).
+
+Here's the themes that I ended up with:
+
+![dr-rustario-themes](dr-rustario-themes.png)
+
+## Arcade
+
+The main goal with both of these games was multiplayer support for use on my full-size arcade cabinet.
+For me, there's nothing quite like getting a mate over to beat him at some games that I made.
+
+My arcade machine is running Windows so this was as easy as getting a static build working on Windows and adding it to my frontend.
+
+<SimpleGrid columns={2} gap={2}>
+  <Box>
+    <Image src="/rust-games/arcade-rustris.jpg" alt="arcade-rustris" />
+  </Box>
+  <Box>
+    <Image src="/rust-games/arcade-dr-rustario.jpg" alt="arcade-dr-rustario" />
+  </Box>
+</SimpleGrid>
+
+## Handheld
+
+In an unrelated purchase, I bought a cheap handheld gaming console off of AliExpress, an [Anberic RG353M](https://anbernic.com/en-gb/products/rg353m).
+I was messing with it and discovered that it runs Linux, I can SSH to it and even though it runs an ANCIENT kernel, it has a fairly modern SDL2 to dynamically link to.
+I just had to get my Rust games running on it!
+
+It took a while of learning all about cross compilation and how linking woks in Rust, but I managed it.
+To avoid libc issues, I had to build it on the out-of-support Debian Buster and dynamically link to SDL2 via pkg-config, vcpkg and static linking just would not work on this platform.
+A few changes to the game were also required to fix the controls and the (sadly non-integer) scaling. I put these behind a cargo feature flag to not affect the other platforms.
+
+It works pretty well anyway. I've even played this on an aeroplane!
+
+<SimpleGrid columns={2} gap={2}>
+  <Box>
+    <Image src="/rust-games/handheld-rustris.jpg" alt="handheld-rustris" />
+  </Box>
+  <Box>
+    <Image src="/rust-games/handheld-dr-rustario.jpg" alt="handheld-dr-rustario" />
+  </Box>
+</SimpleGrid>
+
+## Building
+
+You can build these games yourself for your platform via my GitHub:
+
+* [Rustris](https://github.com/axle-h/rustris)
+* [Dr Rustario](https://github.com/axle-h/dr-rustario)
+
+Please do let me know if you end up playing either of these as that'll make my day!

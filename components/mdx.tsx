@@ -1,5 +1,6 @@
 import { MDXComponents } from 'mdx/types'
 import {
+  Box,
   Badge,
   Divider,
   Heading,
@@ -23,6 +24,7 @@ import {
   Thead,
   Tr,
   UnorderedList,
+  SimpleGrid,
 } from '@chakra-ui/react'
 import { Children, ReactElement, ReactNode } from 'react'
 import { CheckCircleIcon, ExternalLinkIcon, LinkIcon } from '@/components/icons'
@@ -260,6 +262,9 @@ const components: MDXComponents = {
   CheckListItem,
   NewListItem,
   PintoraDiagram,
+  SimpleGrid,
+  Box,
+  Image,
 }
 
 function postImage(name: string) {

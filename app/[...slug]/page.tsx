@@ -1,22 +1,16 @@
 import { notFound } from 'next/navigation'
 import { allPosts, findPostBySlug } from '@/posts'
 
-import {
-  Container,
-  Heading,
-  Image,
-  List,
-  ListIcon,
-  ListItem,
-} from '@chakra-ui/react'
+import { Container, Heading, Image, List } from '@chakra-ui/react'
 import { TimeIcon, CalendarIcon, UserIcon } from '@/components/icons'
 import Date from '@/components/date'
 
 export default async function PostPage({
-  params: { slug },
+  params,
 }: {
-  params: { slug: string[] }
+  params: Promise<{ slug: string[] }>
 }) {
+  const { slug } = await params
   const post = await findPostBySlug(slug)
   if (!post) {
     return notFound()
@@ -33,25 +27,31 @@ export default async function PostPage({
         />
       </Container>
 
-      <Container mb={12}>
-        <Heading mt={{ base: 4, md: 6, lg: 12 }} mb={4}>
+      <Container pb={12}>
+        <Heading size="4xl" mt={{ base: 4, md: 6, lg: 12 }} mb={4}>
           {post.title}
         </Heading>
 
-        <List spacing={1} mb={4}>
-          <ListItem>
-            <ListIcon as={CalendarIcon} color="gray.500" />
+        <List.Root gap={1} mb={4} variant="plain">
+          <List.Item>
+            <List.Indicator asChild color="gray.500">
+              <CalendarIcon />
+            </List.Indicator>
             <Date date={post.date} />
-          </ListItem>
-          <ListItem>
-            <ListIcon as={UserIcon} color="gray.500" />
+          </List.Item>
+          <List.Item>
+            <List.Indicator asChild color="gray.500">
+              <UserIcon />
+            </List.Indicator>
             Alex Haslehurst
-          </ListItem>
-          <ListItem>
-            <ListIcon as={TimeIcon} color="gray.500" />
+          </List.Item>
+          <List.Item>
+            <List.Indicator asChild color="gray.500">
+              <TimeIcon />
+            </List.Indicator>
             {post.readingTime}
-          </ListItem>
-        </List>
+          </List.Item>
+        </List.Root>
         {post.content}
       </Container>
     </>

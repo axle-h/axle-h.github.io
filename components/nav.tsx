@@ -1,10 +1,10 @@
 'use client'
 
-import { Box, Button, Flex, Image, useColorMode } from '@chakra-ui/react'
-import { Link } from '@chakra-ui/next-js'
-import { MoonIcon, SunIcon } from '@chakra-ui/icons'
+import { Box, Button, Flex, Image } from '@chakra-ui/react'
+import { Link } from '@/components/link'
 import { usePathname } from 'next/navigation'
-import { ArrowBackIcon } from '@/components/icons'
+import { ArrowBackIcon, MoonIcon, SunIcon } from '@/components/icons'
+import { useColorMode } from '@/components/ui/color-mode'
 
 export function Nav() {
   const pathName = usePathname()
@@ -20,14 +20,13 @@ export function Nav() {
         >
           <Link href="/">
             <Button
-              leftIcon={<ArrowBackIcon />}
               display={isRoot ? 'none' : 'flex'}
               variant="outline"
               color="white"
               _dark={{ color: 'gray.100' }}
               _hover={{ bg: 'gray.600' }}
             >
-              Back
+              <ArrowBackIcon /> Back
             </Button>
           </Link>
         </Flex>

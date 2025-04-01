@@ -4,6 +4,7 @@ import { Rubik } from 'next/font/google'
 import { Nav } from '@/components/nav'
 import { ReactNode } from 'react'
 import Analytics from '@/components/analytics'
+import './global.css'
 
 const rubik = Rubik({
   subsets: ['latin'],
@@ -19,7 +20,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link
           rel="apple-touch-icon"

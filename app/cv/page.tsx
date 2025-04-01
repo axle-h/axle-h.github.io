@@ -1,15 +1,12 @@
 import {
   Box,
   Container,
-  Divider,
+  Separator,
   Heading,
   List,
-  ListItem,
   Stack,
   Text,
   Image,
-  ListIcon,
-  Link,
   HeadingProps,
 } from '@chakra-ui/react'
 import {
@@ -23,6 +20,50 @@ import { DataDefinition, SectionHeading } from '@/components/typography'
 import { AtSignIcon, CalendarIcon } from '@/components/icons'
 import { ReactNode } from 'react'
 import './page.css'
+import { Link } from '@/components/link'
+
+export default function Cv() {
+  return (
+    <Container as="main" mt={6} pb={12}>
+      <Box
+        id="cv"
+        overflow="hidden"
+        p={{ base: 8, md: 12 }}
+        boxShadow="0 1rem 3rem rgba(0,0,0,.2)"
+        bg="gray.50"
+        _dark={{ bg: 'gray.800', boxShadow: '0 1rem 3rem rgba(0,0,0,.4)' }}
+      >
+        <HeaderSection />
+        <Separator my={10} />
+
+        <BlurbSection />
+        <Separator my={10} />
+
+        <TechnologiesSection />
+        <Separator my={10} />
+
+        <Stack
+          direction={{ base: 'column', lg: 'row' }}
+          gap={{ base: 0, lg: 8 }}
+        >
+          <Box flex="1.75 1 0">
+            <ExperienceSection />
+            <Separator my={10} display={{ lg: 'none' }} />
+          </Box>
+          <Box flex="1 1 0">
+            <SkillsSection />
+            <Separator my={10} />
+
+            <EducationSection />
+          </Box>
+        </Stack>
+        <Separator my={10} />
+
+        <Footer />
+      </Box>
+    </Container>
+  )
+}
 
 function MuteHeading(props: HeadingProps) {
   return (
@@ -39,14 +80,14 @@ function MuteHeading(props: HeadingProps) {
 
 function HeaderSection() {
   return (
-    <Stack direction={{ base: 'column', md: 'row' }} spacing="sm">
+    <Stack direction={{ base: 'column', md: 'row' }} gap="sm">
       <Box flex={1} mb={4}>
-        <Heading as="h1" size="2xl">
+        <Heading as="h1" size="5xl">
           Alex Haslehurst
         </Heading>
         <Heading
           as="p"
-          size="md"
+          size="xl"
           fontWeight="normal"
           color="gray.600"
           _dark={{ color: 'gray.400' }}
@@ -55,23 +96,27 @@ function HeaderSection() {
         </Heading>
       </Box>
       <Box>
-        <List color="gray.600" _dark={{ color: 'gray.400' }}>
-          <ListItem>
+        <List.Root
+          variant="plain"
+          color="gray.600"
+          _dark={{ color: 'gray.400' }}
+        >
+          <List.Item>
             <Email />
-          </ListItem>
-          <ListItem>
+          </List.Item>
+          <List.Item>
             <Website />
-          </ListItem>
-          <ListItem>
+          </List.Item>
+          <List.Item>
             <GitHub />
-          </ListItem>
-          <ListItem>
+          </List.Item>
+          <List.Item>
             <Linkedin />
-          </ListItem>
-          <ListItem>
+          </List.Item>
+          <List.Item>
             <GoogleMaps />
-          </ListItem>
-        </List>
+          </List.Item>
+        </List.Root>
       </Box>
     </Stack>
   )
@@ -81,7 +126,7 @@ function BlurbSection() {
   return (
     <Stack
       direction={{ base: 'column', md: 'row' }}
-      spacing="sm"
+      gap="sm"
       alignItems="center"
     >
       <Box id="mugshot" px={{ base: 2, md: 4 }} mb={{ base: 4, md: 0 }}>
@@ -164,29 +209,34 @@ function Experience({
   return (
     <Box mb={8}>
       <MuteHeading>{title}</MuteHeading>
-      <List
-        spacing={0}
+      <List.Root
+        gap={0}
         fontSize="sm"
         mb={2}
         color="gray.600"
         _dark={{ color: 'gray.200' }}
-        stylePosition="outside"
+        listStylePosition="outside"
+        variant="plain"
       >
-        <ListItem>
-          <ListIcon as={AtSignIcon} />
+        <List.Item>
+          <List.Indicator asChild>
+            <AtSignIcon />
+          </List.Indicator>
           {url ? (
-            <Link href={url} isExternal variant="">
+            <Link href={url} external externalIcon={false} variant="plain">
               {place}
             </Link>
           ) : (
             <>{place}</>
           )}
-        </ListItem>
-        <ListItem>
-          <ListIcon as={CalendarIcon} />
+        </List.Item>
+        <List.Item>
+          <List.Indicator asChild>
+            <CalendarIcon />
+          </List.Indicator>
           {date}
-        </ListItem>
-      </List>
+        </List.Item>
+      </List.Root>
       {tech && (
         <Text
           fontSize="sm"
@@ -430,48 +480,5 @@ function Footer() {
       <GitHub />
       <Linkedin />
     </Stack>
-  )
-}
-
-export default function Cv() {
-  return (
-    <Container as="main" mt={6} mb={12}>
-      <Box
-        id="cv"
-        overflow="hidden"
-        p={{ base: 8, md: 12 }}
-        boxShadow="0 1rem 3rem rgba(0,0,0,.2)"
-        bg="gray.50"
-        _dark={{ bg: 'gray.800', boxShadow: '0 1rem 3rem rgba(0,0,0,.4)' }}
-      >
-        <HeaderSection />
-        <Divider my={10} />
-
-        <BlurbSection />
-        <Divider my={10} />
-
-        <TechnologiesSection />
-        <Divider my={10} />
-
-        <Stack
-          direction={{ base: 'column', lg: 'row' }}
-          spacing={{ base: 0, lg: 8 }}
-        >
-          <Box flex="1.75 1 0">
-            <ExperienceSection />
-            <Divider my={10} display={{ lg: 'none' }} />
-          </Box>
-          <Box flex="1 1 0">
-            <SkillsSection />
-            <Divider my={10} />
-
-            <EducationSection />
-          </Box>
-        </Stack>
-        <Divider my={10} />
-
-        <Footer />
-      </Box>
-    </Container>
   )
 }

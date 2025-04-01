@@ -2,42 +2,31 @@ import { MDXComponents } from 'mdx/types'
 import {
   Box,
   Badge,
-  Divider,
+  Separator,
   Heading,
   HeadingProps,
   HStack,
   Image,
   ImageProps,
-  Link,
   LinkBox,
   LinkOverlay,
-  LinkProps,
   List,
-  ListIcon,
-  ListItem,
-  OrderedList,
   Table,
-  Td,
   Text,
-  Tfoot,
-  Th,
-  Thead,
-  Tr,
-  UnorderedList,
   SimpleGrid,
 } from '@chakra-ui/react'
 import { Children, ReactElement, ReactNode } from 'react'
-import { CheckCircleIcon, ExternalLinkIcon, LinkIcon } from '@/components/icons'
-import NextLink from 'next/link'
+import { CheckCircleIcon, LinkIcon } from '@/components/icons'
 import { Code } from 'bright'
 import { findPostByName } from '@/posts'
 import './mdx.css'
 import { PintoraDiagram } from '@/components/diagram'
+import { Link, LinkProps } from '@/components/link'
 
 function flatten(text: string, child: ReactNode): string {
   return typeof child === 'string'
     ? text + child
-    : Children.toArray((child as ReactElement).props.children).reduce(
+    : Children.toArray((child as ReactElement<any>).props.children).reduce(
         flatten,
         text
       )
@@ -58,9 +47,9 @@ function DocsHeading({ children, ...props }: HeadingProps) {
     .replace(/(\/)$/, '') //should not end with a /
 
   return (
-    <LinkBox as="article" role="group">
+    <LinkBox as="article" role="group" className="group">
       <LinkOverlay href={`#${slug}`}>
-        <HStack w="full" spacing={2} align="baseline" justify="flex-start">
+        <HStack w="full" gap={2} align="baseline" justify="flex-start">
           <Heading id={slug} css={{ scrollMarginTop: '24px' }} {...props}>
             {text}
           </Heading>
@@ -79,12 +68,11 @@ function hrefIsExternal(href: string) {
 function AppLink({ children, ...props }: LinkProps) {
   const href = props.href
   if (!href) return <></>
-  const isExternal = hrefIsExternal(href) || href.endsWith('.pdf')
+  const external = hrefIsExternal(href) || href.endsWith('.pdf')
 
   return (
     <Link
-      as={isExternal ? 'a' : NextLink}
-      isExternal={isExternal}
+      external={external}
       fontWeight={500}
       transitionProperty="common"
       transitionDuration="fast"
@@ -102,7 +90,6 @@ function AppLink({ children, ...props }: LinkProps) {
       {...props}
     >
       {children}
-      {isExternal ? <ExternalLinkIcon mx="2px" /> : <></>}
     </Link>
   )
 }
@@ -122,24 +109,30 @@ async function PostLink({
 }
 
 function CheckList({ children }: { children: ReactNode }) {
-  return <List spacing={3}>{children}</List>
+  return (
+    <List.Root gap={2} variant="plain">
+      {children}
+    </List.Root>
+  )
 }
 
 function CheckListItem({ children }: { children: ReactNode }) {
   return (
-    <ListItem>
-      <ListIcon as={CheckCircleIcon} color="green.500" />
+    <List.Item>
+      <List.Indicator asChild color="green.500">
+        <CheckCircleIcon />
+      </List.Indicator>
       {children}
-    </ListItem>
+    </List.Item>
   )
 }
 
 function NewListItem({ children }: { children: ReactNode }) {
   return (
-    <ListItem>
-      <Badge colorScheme="yellow">NEW</Badge>
+    <List.Item>
+      <Badge colorPalette="yellow">NEW</Badge>
       {children}
-    </ListItem>
+    </List.Item>
   )
 }
 
@@ -217,17 +210,14 @@ const components: MDXComponents = {
       fontFamily="body"
       fontWeight="normal"
       fontSize="md"
-      lineHeight={6}
       mb={4}
       {...props}
     />
   ),
-  a: AppLink,
-  ul: (props: any) => (
-    <UnorderedList my={6} listStyleType="disc" spacing={2} {...props} />
-  ),
-  ol: (props: any) => <OrderedList my={6} spacing={2} {...props} />,
-  li: (props: any) => <ListItem paddingStart={2} {...props} />,
+  a: (props: any) => <AppLink {...props} />,
+  ul: (props: any) => <List.Root ms="1em" my={6} gap={2} {...props} />,
+  ol: (props: any) => <List.Root as="ol" ms="1em" my={6} gap={2} {...props} />,
+  li: (props: any) => <List.Item paddingStart={2} {...props} />,
   blockquote: (props: any) => (
     <Text
       as="blockquote"
@@ -241,20 +231,20 @@ const components: MDXComponents = {
       {...props}
     />
   ),
-  table: Table,
-  thead: Thead,
-  tr: Tr,
-  td: Td,
-  th: Th,
-  tfoot: Tfoot,
-  hr: (props) => (
-    <Divider
-      borderColor="gray.200"
-      _dark={{ borderColor: 'gray.600' }}
-      my={{ base: 12, md: 14 }}
+  table: (props: any) => <Table.Root mb={4} variant="line" {...props} />,
+  thead: (props: any) => <Table.Header {...props} />,
+  tr: (props: any) => <Table.Row {...props} />,
+  td: (props: any) => <Table.Cell {...props} />,
+  th: (props: any) => (
+    <Table.ColumnHeader
+      color="brand.700"
+      _dark={{ color: 'brand.200' }}
+      textTransform="uppercase"
       {...props}
     />
   ),
+  tfoot: (props: any) => <Table.Footer {...props} />,
+  hr: (props) => <Separator my={{ base: 12, md: 14 }} {...props} />,
   pre: Code,
   PostLink,
   Badge,
@@ -272,6 +262,7 @@ function postImage(name: string) {
     return (
       <Image
         src={src === 'string' && hrefIsExternal(src) ? src : `/${name}/${src}`}
+        alt={`${name}-${src}`}
         maxW={{ sm: 450, md: 600, lg: 800 }}
         mx="auto"
         {...props}

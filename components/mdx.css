@@ -1,6 +1,6 @@
 [data-bright-mode="light"] { box-shadow: 0 1rem 1.5rem rgba(0,0,0,.075); }
 [data-bright-mode="dark"] { box-shadow: 0 1rem 1.5rem rgba(0,0,0,.15); }
 ul ul, ol ol, ul ol, ol ul {
-  margin-top: var(--chakra-space-2) !important;
-  margin-bottom: var(--chakra-space-2) !important;
+  margin-top: var(--chakra-spacing-2) !important;
+  margin-bottom: var(--chakra-spacing-2) !important;
 }

@@ -1,0 +1,19 @@
+/* Remove Chakra UI Focus*/
+:focus, :focus-visible, *[data-focus] {
+    box-shadow: none !important;
+    outline: none !important;
+    border-color: inherit !important;
+}
+
+.chakra-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 100ch;
+  padding-left: var(--chakra-spacing-4);
+  padding-right: var(--chakra-spacing-4);
+}
+
+li {
+  align-items: center;
+}

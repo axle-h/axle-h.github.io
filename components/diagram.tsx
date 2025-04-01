@@ -71,7 +71,6 @@ export async function ThemedPintoraDiagram({
     throw new Error(`unknown diagram type ${diagramType}`)
   }
 
-
   const palette = isDark ? palettes.dark : palettes.light
   const theme = `
     @param {
@@ -93,13 +92,14 @@ export async function ThemedPintoraDiagram({
     _dark: { display: isDark ? 'block' : 'none' },
     w: '100%',
     h: 'auto',
-    my: 8
+    my: 8,
   }
 
   if (Buffer.isBuffer(result))
     return (
       <Image
         {...displayProps}
+        alt="diagram"
         src={`data:image/png;base64, ${result.toString('base64')}`}
       />
     )

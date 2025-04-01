@@ -12,7 +12,7 @@ export default function PostLogo({ post }: { post: Post }) {
           src={post.logo}
           alt={post.title}
           objectFit="cover"
-          sx={{
+          css={{
             maskImage: {
               base: 'linear-gradient(to bottom, black 50%, rgba(0, 0, 0, 0.3) 100%)',
               sm: 'linear-gradient(to bottom, black 60%, rgba(0, 0, 0, 0.3) 100%)',

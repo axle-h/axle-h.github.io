@@ -1,15 +1,7 @@
-import {
-  Image,
-  Box,
-  Icon,
-  Heading,
-  Text,
-  Link,
-  Button,
-  Container,
-} from '@chakra-ui/react'
-import NextLink from 'next/link'
+import { Image, Box, Icon, Heading, Text, Container } from '@chakra-ui/react'
 import { Email, GitHub, Linkedin } from '@/components/contact'
+import { Link } from '@/components/link'
+import { Button } from '@/components/ui/button'
 
 const bg = 'white'
 const bgDark = 'gray.800'
@@ -39,6 +31,7 @@ export function Hero() {
           border="solid 1px transparent"
         >
           <Icon
+            as="svg"
             display={{
               base: 'none',
               lg: 'block',
@@ -163,10 +156,10 @@ export function Hero() {
                 }}
                 fontWeight="extrabold"
               >
-                <Link as={NextLink} href="/cv">
+                <Link href="/cv">
                   <Button
                     as="span"
-                    colorScheme="brand"
+                    colorPalette="brand"
                     variant="outline"
                     fontSize={{
                       base: 'md',

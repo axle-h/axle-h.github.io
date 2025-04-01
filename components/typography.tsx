@@ -4,7 +4,7 @@ export function SectionHeading(props: HeadingProps) {
   return (
     <Heading
       as="h2"
-      size="lg"
+      size="2xl"
       fontWeight="500"
       paddingStart={4}
       mt={0}
@@ -29,7 +29,7 @@ export function DataDefinition({
     <Stack
       as="dl"
       direction={{ base: 'column', md: 'row' }}
-      spacing={0}
+      gap={0}
       mb={{ base: 3, md: 0 }}
     >
       <Box as="dt" fontWeight="600" w={{ md: '17%' }}>

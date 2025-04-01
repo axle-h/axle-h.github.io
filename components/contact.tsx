@@ -5,22 +5,23 @@ import {
   LinkedinIcon,
   MapMarkerIcon,
 } from '@/components/icons'
-import { ComponentWithAs, Link } from '@chakra-ui/react'
-import { IconProps } from '@chakra-ui/icons'
+import { IconProps } from '@chakra-ui/react'
+import { Link } from '@/components/link'
+import React from 'react'
 
 interface SocialIconProps extends IconProps {
   iconOnly?: boolean
 }
 
 function socialIcon(
-  Icon: ComponentWithAs<'svg', IconProps>,
+  Icon: React.ComponentType<IconProps>,
   href: string,
   label: string,
   isExternal: boolean = true
 ) {
   return function SocialIcon({ iconOnly = false, ...props }: SocialIconProps) {
     return (
-      <Link href={href} isExternal={isExternal}>
+      <Link href={href} external={isExternal} externalIcon={false}>
         <Icon {...props} /> {!iconOnly && label}
       </Link>
     )

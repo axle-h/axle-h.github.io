@@ -1,10 +1,11 @@
-import { Button, Container, Heading, Link, Stack, Text } from '@chakra-ui/react'
+import { Container, Heading, Link, Stack, Text } from '@chakra-ui/react'
 import NextLink from 'next/link'
+import { Button } from '@/components/ui/button'
 
 export default function NotFound() {
   return (
     <Container py={8}>
-      <Stack direction="column" alignItems="center" spacing={4}>
+      <Stack direction="column" alignItems="center" gap={4}>
         <Heading size="4xl" fontWeight="normal">
           404
         </Heading>
@@ -12,7 +13,7 @@ export default function NotFound() {
         <Link as={NextLink} href="/">
           <Button
             as="span"
-            colorScheme="brand"
+            colorPalette="brand"
             variant="outline"
             fontSize={{
               base: 'md',

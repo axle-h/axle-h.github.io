@@ -9,6 +9,7 @@ import readingTime from 'reading-time'
 interface PostFrontmatter {
   title: string
   categories?: string[]
+  legacySlug?: boolean
 }
 
 export interface Post {
@@ -44,14 +45,18 @@ async function getPost(filename: string): Promise<Post> {
   const source = await readFile(filePath, { encoding: 'utf8' })
 
   const name = match[4]
-  const { frontmatter, content } = await compileMDX<PostFrontmatter>({
+  const {
+    frontmatter: { title, categories = [], legacySlug = false },
+    content,
+  } = await compileMDX<PostFrontmatter>({
     source,
     options,
     components: postComponents(name),
   })
 
-  const categories = frontmatter.categories ?? []
-  const slug = categories.concat(...match.slice(1))
+  const slug = legacySlug
+    ? [...categories, ...match.slice(1)]
+    : [...categories, name]
   const date = new Date(
     parseInt(match[1]),
     parseInt(match[2]) - 1,
@@ -80,7 +85,7 @@ async function getPost(filename: string): Promise<Post> {
   }
 
   return {
-    title: frontmatter.title,
+    title,
     name,
     categories,
     url: '/' + slug.join('/'),

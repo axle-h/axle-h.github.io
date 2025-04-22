@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { allPosts, findPostBySlug } from '@/posts'
 
-import { Container, Heading, Image, List } from '@chakra-ui/react'
+import { Container, Flex, Heading, Image, List } from '@chakra-ui/react'
 import { TimeIcon, CalendarIcon, UserIcon } from '@/components/icons'
 import Date from '@/components/date'
 
@@ -17,15 +17,20 @@ export default async function PostPage({
   }
   return (
     <>
-      <Container maxW={1000} px={{ base: 0, md: 4 }} pt={{ base: 0, md: 4 }}>
+      <Flex
+        w="100%"
+        px={{ base: 0, md: 4 }}
+        pt={{ base: 0, md: 4 }}
+        justifyContent="center"
+      >
         <Image
           objectFit="cover"
           src={post.banner}
           w="100%"
-          maxW={{ base: '100%', md: 1000 }}
+          maxW={{ base: '100%', md: 600 }}
           alt={post.title}
         />
-      </Container>
+      </Flex>
 
       <Container pb={12}>
         <Heading size="4xl" mt={{ base: 4, md: 6, lg: 12 }} mb={4}>

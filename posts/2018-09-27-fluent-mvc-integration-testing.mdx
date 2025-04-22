@@ -1,6 +1,7 @@
 ---
 title: Fluent Integration Testing
 categories: [software, development, testing]
+legacySlug: true
 ---
 
 Microsoft have a decent, open source [integration test library for MVC on ASP.NET Core 2.1][mvc-testing], with some pretty in depth [documentation][integration-tests]. In true [post evil][post-evil] Microsoft form, this package provides the bare minimum, lacking opinionated views on structure or choice of testing framework. This is awesome if like me you develop integration tests with a pretty strong opinion. My (current) opinion in this regard is based around a fluent style - I like my tests to be self documenting and built from reusable components. To demonstrate, I have created **xunit-fixture-mvc**, which can be found on [GitHub][github] and [NuGet][nuget].

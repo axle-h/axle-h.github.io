@@ -16,12 +16,15 @@ import {
   SimpleGrid,
 } from '@chakra-ui/react'
 import { Children, ReactElement, ReactNode } from 'react'
-import { CheckCircleIcon, LinkIcon } from '@/components/icons'
+import { CheckCircleIcon, LinkIcon, XIcon } from '@/components/icons'
 import { Code } from 'bright'
 import { findPostByName } from '@/posts'
 import './mdx.css'
 import { PintoraDiagram } from '@/components/diagram'
+import { Latex } from '@/components/latex'
 import { Link, LinkProps } from '@/components/link'
+import { BarChart } from '@/components/chart/bar-chart'
+import { LineChart } from '@/components/chart/line-chart'
 
 function flatten(text: string, child: ReactNode): string {
   return typeof child === 'string'
@@ -121,6 +124,17 @@ function CheckListItem({ children }: { children: ReactNode }) {
     <List.Item>
       <List.Indicator asChild color="green.500">
         <CheckCircleIcon />
+      </List.Indicator>
+      {children}
+    </List.Item>
+  )
+}
+
+function XListItem({ children }: { children: ReactNode }) {
+  return (
+    <List.Item>
+      <List.Indicator asChild color="red.500">
+        <XIcon />
       </List.Indicator>
       {children}
     </List.Item>
@@ -250,11 +264,15 @@ const components: MDXComponents = {
   Badge,
   CheckList,
   CheckListItem,
+  XListItem,
   NewListItem,
   PintoraDiagram,
+  Latex,
   SimpleGrid,
   Box,
   Image,
+  BarChart,
+  LineChart,
 }
 
 function postImage(name: string) {

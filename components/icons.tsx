@@ -7,6 +7,7 @@ import {
   FiClock,
   FiCalendar,
   FiCheckCircle,
+  FiX,
   FiArrowLeft,
   FiAtSign,
   FiGithub,
@@ -34,6 +35,7 @@ export const ExternalLinkIcon = toChakraIcon(FiExternalLink)
 export const TimeIcon = toChakraIcon(FiClock)
 export const CalendarIcon = toChakraIcon(FiCalendar)
 export const CheckCircleIcon = toChakraIcon(FiCheckCircle)
+export const XIcon = toChakraIcon(FiX)
 export const ArrowBackIcon = toChakraIcon(FiArrowLeft)
 export const AtSignIcon = toChakraIcon(FiAtSign)
 export const GitHubIcon = toChakraIcon(FiGithub)

@@ -72,15 +72,15 @@ async function getPost(filename: string): Promise<Post> {
   }
 
   const assets = await readdir(assetsPath)
-  const logo = assets.find((f) => /logo\.(?:png|jpg)/i.test(f))
+  const logo = assets.find((f) => /logo\.(?:png|jpg|gif)/i.test(f))
   if (!logo) {
-    throw new Error(`${name} requires logo.jpg or logo.png at ${assetsPath}`)
+    throw new Error(`${name} requires logo.{png|jpg|gif} at ${assetsPath}`)
   }
 
-  const banner = assets.find((f) => /banner\.(?:png|jpg)/i.test(f))
+  const banner = assets.find((f) => /banner\.(?:png|jpg|gif)/i.test(f))
   if (!banner) {
     throw new Error(
-      `${name} requires banner.jpg or banner.png at ${assetsPath}`
+      `${name} requires banner.{png|jpg|gif} at ${assetsPath}`
     )
   }
 

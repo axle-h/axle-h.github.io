@@ -19,38 +19,38 @@ The Z80 is an 8-bit microprocessor, meaning that each operation is natively perf
 
 Firstly we need some registers. The Intel 8080 and GameBoy CPU have six 8-bit general purpose registers, an accumulator, flags, stack pointer and program counter. 16-bit access is also provided to each general purpose register and the accumulator and flags registers in sequential pairs. Additionally, the Z80 has two more 16-bit index registers, an alternative set of each general purpose, accumulator and flags registers and a few more bits and pieces.
 
-| Register | Size                | Purpose
-| -------- | ------------------- |----
-| AF       | 16-bit or two 8-bit | Accumulator (A) and flag bits (F)
-| BC       | 16-bit or two 8-bit | Data/address
-| DE       | 16-bit or two 8-bit | Data/address
-| HL       | 16-bit or two 8-bit | Accumulator/address
-| SP       | 16-bit              | Stack pointer
-| PC       | 16-bit              | Program counter
+| Register | Size                | Purpose                           |
+|----------|---------------------|-----------------------------------|
+| AF       | 16-bit or two 8-bit | Accumulator (A) and flag bits (F) |
+| BC       | 16-bit or two 8-bit | Data/address                      |
+| DE       | 16-bit or two 8-bit | Data/address                      |
+| HL       | 16-bit or two 8-bit | Accumulator/address               |
+| SP       | 16-bit              | Stack pointer                     |
+| PC       | 16-bit              | Program counter                   |
 
 The Z80 defines alternative/banked versions of `AF`, `BC`, `DE` and `HL` that are accessed via the exchange opcodes and also has some more specialized registers.
 
-| Register | Size                | Purpose
-| -------- | ------------------- |----
-| IX       | 16-bit or two 8-bit | Displacement offset base
-| IY       | 16-bit or two 8-bit | Displacement offset base
-| I        | 8-bit               | Interrupt vector base register
-| R        | 8-bit               | DRAM refresh counter
+| Register | Size                | Purpose                        |
+|----------|---------------------|--------------------------------|
+| IX       | 16-bit or two 8-bit | Displacement offset base       |
+| IY       | 16-bit or two 8-bit | Displacement offset base       |
+| I        | 8-bit               | Interrupt vector base register |
+| R        | 8-bit               | DRAM refresh counter           |
 
 ### Flags register
 
 The flags register is a single byte that contains a bit-mask set according to the last result. Notice that the GameBoy flags register only uses the most significant 4-bits and does not implement the sign or parity/overflow flag. The least significant bits of the GameBoy flags register are always 0.
 
-| 8080/Z80 Bit | GameBoy Bit | Name
-| ------------ | ----------- | ---------------
-| 0            | 4           | Carry
-| 1            | 6           | Subtract
-| 2            | -           | Parity/Overflow
-| 3            | -           | Undocumented
-| 4            | 5           | Half Carry
-| 5            | -           | Undocumented
-| 6            | 7           | Zero
-| 7            | -           | Sign
+| 8080/Z80 Bit | GameBoy Bit | Name            |
+|--------------|-------------|-----------------|
+| 0            | 4           | Carry           |
+| 1            | 6           | Subtract        |
+| 2            | -           | Parity/Overflow |
+| 3            | -           | Undocumented    |
+| 4            | 5           | Half Carry      |
+| 5            | -           | Undocumented    |
+| 6            | 7           | Zero            |
+| 7            | -           | Sign            |
 
 The flags registers are implemented slightly differently on each platform so we'll hide them away behind an interface.
 

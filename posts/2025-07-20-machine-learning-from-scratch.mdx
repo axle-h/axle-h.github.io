@@ -1,0 +1,394 @@
+---
+title: Machine Learning From Scratch
+categories: [ai]
+---
+
+I'm simplifying a bit here but the recent AI boom has not come from one single breakthrough technology.
+There is of course more compute available and new parallel training techniques like [transformers](https://en.wikipedia.org/wiki/Attention_Is_All_You_Need), but the model architecture remains very similar to what was cutting-edge in the 1970s.
+
+For modern (laptop scale) machine learning, it is usual to depend on a library such as [PyTorch](https://pytorch.org/).
+These libraries have massively lowered the barrier to entry into machine learning, they abstract away model architecture & techniques and have you running stuff on your GPU with low effort.
+This is great as anyone with basic Python programming skills and the ability to follow a tutorial (or effectively prompt an LLM), can get started with machine learning.
+I've had a play with PyTorch but left feeling I'd learned more of the abstraction than the underlying concepts.
+So I decided to go back to basics and implement my own machine learning from scratch.
+
+## Target
+
+First I needed a target, preferably a game, since... games are fun.
+I've been making low level games in Rust for fun <PostLink name="rust-games" />.
+They're actually perfect for this project as:
+
+* There is no engine (like [Unity](https://unity.com/) or [Godot](https://godotengine.org/)) so I don't have to worry about bindings or non-machine learning relevant baggage getting in the way.
+* I have direct access to the game loop so slotting an agent is dead easy:
+  ```rust
+  fn game_loop() {
+      let mut game = Game {};
+      let mut agent = AiAgent {};
+      loop {
+          // let input = read_human_controls(); ← humans need not apply
+          let input = agent.act(&game); // ← the agent is playing instead
+          update_game_state(&mut game, input);
+          draw_game(&game);
+      }
+  }
+  ```
+* Rust is so fast that I don't need perfectly optimised code for it to be performant.
+
+I chose a Tetris clone [rustris](https://github.com/axle-h/rustris) for this project.
+
+## Tetris
+
+The game of Tetris is played with a *tetromino* that falls from the top of a *board*.
+When the *tetromino* touches the bottom of the board, or the *stack*, it will enter a lock state,
+where after some timeout without action, it will lock into place and become part of the stack.
+The stack is cleared by arranging lines.
+The maximum number of lines that can be cleared in a single move is 4, which is called a *Tetris*.
+Points are added for various actions and outcomes in the game.
+The game is lost when the stack reaches the top of the board.
+It is expected that every game will eventually be lost, games are classified by the number of lines cleared and the total points scored.
+
+
+<Box maxW={100} flex={1} alignItems="center" justifyContent="middle">
+| Name | Tetromino   |
+|------|-------------|
+| `O`  | ![O](O.png) |
+| `Z`  | ![Z](Z.png) |
+| `S`  | ![S](S.png) |
+| `T`  | ![T](T.png) |
+| `L`  | ![L](L.png) |
+| `J`  | ![J](J.png) |
+| `I`  | ![I](I.png) |
+</Box>
+
+## API
+
+First I need to design the API of the agent. A Tetris playing agent will consume game state to produce actions:
+
+<PintoraDiagram src={`
+componentDiagram
+() "Game State" as state
+[Agent] as agent
+() "Actions" as actions
+state --> agent
+agent --> actions
+`} />
+
+### State
+
+Naively, and with a cluster of GPUs, we would provide the model with raw board state.
+The Tetris board is 10x20 which is 2<sup>200</sup> = 1.6 * 10<sup>60</sup> distinct states.
+Whilst the model having access to this massive raw state provides the best chance of complex strategies emerging in the model, this scale is unfortunately is out of scope.
+I do not have a lot of compute available and am more interested in developing the model from scratch than having something cutting edge.
+
+A decent model, maybe a convolutional neural network, would take this raw board state and after layers of abstraction, would extract significant features that are useful in making strategic decisions.
+So I decided to cut this bit out of the model and roll it by hand.
+
+### Action
+
+A similar argument applies to how actions are interpreted from the model output.
+Tetris uses a spatial control scheme Left, Right, Rotate.
+Humans can naturally interpret a desired placement, for example slotting an `I` tetromino into a gap in the stack, as a series of Left, Right, Rotate commands.
+
+If we expect a model to generate output like this, it must be expected that it has to dedicate significant resources to learning the spatial nature of the game.
+I expect that at the planned scope of my Tetris model, I have a low chance of pulling off something sophisticated enough to handle spatial reasoning.
+Instead, I will use an algorithm that, given the current state of the game, generates all possible placements available and provides them to the model summarised by the features.
+
+## Features
+
+| Feature                           | Description                                                                                                                                                                                                                                   |
+|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ![Stack Height](stack-height.png) | **Maximum Stack Height** <br /> e.g. 3                                                                                                                                                                                                        |
+| ![Roughness](roughness.png)       | **Roughness** <br /> e.g. 2+1+2+1+1+1+2 = 10 <br /> To express the "flatness" of the stack. I played a **LOT** of Tetris for this project and realised that 5/7 Tetromino have a flat side so the optimal stack shape is as flat as possible. |
+| ![Open Hole](open-hole.png)       | **Open Hole** <br /> One or more empty blocks with a stack block above but not on either side. <br /> Can be filled by sliding a Tetromino.                                                                                                   |
+| ![Closed Hole](closed-hole.png)   | **Closed Hole** <br /> One or more empty blocks completely surrounded by stack or walls. <br /> Can only be filled by removing stack blocks above.                                                                                            |
+| ![Pillar](pillar.png)             | **Pillar** <br /> A gap 3 or more blocks tall that can only be filled with an I Tetromino.                                                                                                                                                    |
+
+I take the delta of each feature for each available tetromino placement as I think the model will learn much better if for every action it takes, no matter the existing state of the board, the input parameters will change at the same scale.
+E.g. without taking the delta, if there are 15 holes already and placing a tetromino creates another hole, then the hole feature will change by an amount that is 15x less than what would be observed on an empty board.
+
+I also tell the model when:
+* It has covered a hole.
+* It has cleared a line.
+* It has cleared a Tetris (4 lines).
+* Tetromino altitude - the max y-coordinate of the final position of the tetromino.
+
+## Move Search
+
+The move search algorithm is a breadth-first search over all possible tetromino placements.
+It explores all possible placements of the current tetromino by taking every valid move that results in a new final (locked) position.
+This borders on brute-force but is feasible as the number of placements is limited by the board size.
+There are only 17 possible placements of the `I` tetromino on an empty board for example.
+
+<PintoraDiagram src={`
+activityDiagram
+start
+:start with the Tetromino starting position;
+while (any starting positions left ?) is (yes)
+  :take next move;
+  :drop to floor or stack;
+  if (is new end position ?) then
+    :add move to results;
+    :from initial position\nmove left, right & rotate;
+    :add new starting positions;
+  else (no)
+    :discard move;
+  endif
+endwhile (no)
+end
+`} />
+
+To explore any positions that can only be found by moving the tetromino during the lock phase,
+for example sliding a tetromino left or right into an open hole,
+this algorithm is then run again with the final positions of the first run as the new starting positions.
+
+The entire algorithm is run once for the current tetromino and then again for the 'held' tetromino.
+
+## Linear Model
+
+At this point I was ready for a model but had a load of code that was unit tested (of course) but not integrated, so I chose to start with the simplest possible model, a linear function over all the features.
+
+<Latex src={`
+  Q = P_1\\delta StackHeight + P_2\\delta Roughness + P_3\\delta OpenHole + P_4\\delta ClosedHole + P_5\\delta Pillar
+`} />
+
+> Where `Q` is the quality of the move and `P` are the parameters to be learned.
+
+<CheckList>
+  <CheckListItem>It works surprisingly well!</CheckListItem>
+  <CheckListItem>The model parameters are transparent, they can easily be sense checked e.g. I expect holes to be bad.</CheckListItem>
+  <XListItem>The model is incapable of learning complicated, non-linear strategies e.g. play safe when the stack is high.</XListItem>
+</CheckList>
+
+## Agent
+
+With a simple model in place, I was ready to implement the agent.
+The agent, running directly in the game loop, will take the game state, run the move search algorithm to get all possible placements and use the model to qualify all placements.
+The best placement is then chosen and the action is sent to the game.
+
+<PintoraDiagram src={`
+activityDiagram
+start
+if (check the game state, is there a tetromino in play that is falling ?) then
+  :find all possible placements\nfor the current tetromino\nand the held tetromino;
+  :calculate the delta of each feature\nfor each placement;
+  :calculate the quality of each placement\nusing the model;
+  :choose the placement with the highest quality;
+  :send the action to the game;
+else (no)
+  :do nothing;
+endif
+end
+`} />
+
+## Training
+
+The linear model only has 10 parameters to learn, so I could actually hand-pick them and get a fairly decent result.
+The model will get more complex though so let's do some machine learning anyway.
+
+### Supervised learning
+
+The natural choice for a linear model would be linear regression.
+Linear regression is a supervised machine learning technique that relies on labelled data to (basically) plot a line of best fit for each statistically significant component of the linear function.
+I used to work in credit reference so am pretty familiar with the technique (your credit score is literally just a linear regression over your credit reference data).
+For supervised learning, I needed to label the data. Options are:
+
+* **Record my gameplay**, labelling my actions as `good` moves.
+  This, whilst maybe fun to achieve, would mean that the model would be biased towards my decisions rather than the 'best' decisions.
+I have played a **LOT** of Tetris, but I am not a Tetris master, I probably make hundreds of mistakes in each game and this bias would be learnt by the model.
+* **Collect professional Tetris gameplay**, labelling professional player actions as `good` moves.
+  There are high quality recordings of professional Tetris gameplay available online.
+  I would have to write a tool to extract the game state and actions from the video.
+  Whilst I think this could work well, it would be a lot of work so I have put it aside for now.
+  Also: even professionals make mistakes.
+  TODO: I should do this later.
+
+### Reinforcement learning
+
+Reinforcement learning is a machine learning technique where an agent is free to act in the environment and is given a reward, positive or negative, for each action it takes.
+The model learns to choose the actions that maximise cumulative reward.
+
+I was not overly enthusiastic about reinforcement learning for this project:
+
+I did not want to define a detailed reward function as this risks influencing behaviours based on preconceptions.
+E.g. if I defined a reward for clearing lines that was maybe slightly too high, then the model would learn to clear lines at the expense of all other strategies.
+
+I briefly considered a broader reward function that worked retrospectively.
+E.g. if the game is lost then moves leading up to the loss are penalised, whereas moves leading up to a Tetris clear are rewarded.
+I decided to skip this for now though as it seemed like it would be a mess of hyperparameters and the algorithms weren't massively clear to implement from scratch.
+I will definitely come back to this later though, maybe as an optimisation step for a model pre-trained with unsupervised learning.
+
+### Unsupervised learning
+
+Unsupervised learning is a machine learning technique used to find patterns or structure in unlabeled data.
+It effectively searches for a point in the multidimensional space over the model parameters that maximises some reward function.
+
+I decided to go with this approach to start:
+* Tetris has a native reward function that is a good fit: the game score.
+* This technique requires a lot of data but my Rust implemented game can simulate multiple hours of gameplay per second.
+  My laptop won't be happy with it, but it shouldn't be a problem playing many thousands of games over a typical training run.
+* The unsupervised algorithms are fun to implement e.g. a genetic algorithm is based on evolution.
+
+### Genetic algorithm
+
+A genetic algorithm is an unsupervised learning technique, mimicking the process of evolution.
+It acts a search heuristic for maximising some reward function over the model parameters.
+
+* Survival of the fittest: only the best (fittest) solutions will survive to have a chance of selection.
+* Selection: the fittest solutions are weighted by their fitness and merged into new solutions.
+* Mutation: some solutions are randomly changed to create new solutions.
+
+Like real evolution, it has no concept of gradient decent, it is literally picking random solutions over multiple generations and mutating them in a process that over time causes a "population" to converge on a optimal solution.
+
+<PintoraDiagram src={`
+activityDiagram
+start
+:start with a population of random model parameters;
+while (population not converged ?) is (yes)
+  :evaluate the fitness of each individual;
+  :select the fittest individuals;
+  :crossover the fittest individuals to create new individuals;
+  :mutate some individuals;
+endwhile (no)
+end
+`} />
+
+### Training stability
+
+In Tetris, the next tetromino is randomly chosen from a "bag" containing the 7 tetrominoes.
+Once the bag is empty, the tetrominoes are placed back in the bag and the bag is shuffled.
+This makes a Tetris playing model unstable, which is especially an issue for unsupervised learning algorithms, which rely on (mostly) random chance to find an optimal model.
+If the models are unstable, then training is less likely to converge on something optimal.
+**TLDR;** the randomness of the game means that the quality of the optimal model can deteriorate over time. Whereas we want the opposite!
+
+To solve this, I first seed the random number generator with a fixed value, then I change the seed every 100 generations.
+This gives the training algorithm chance to converge on a model for a single deterministic game.
+My hope is that over time, the most generally optimised models will be selected and the training algorithm will converge on a model that is stable across many games.
+
+## Linear Results
+
+I trained the linear model with a genetic algorithm for 700 generations of 1000 agents.
+
+### Coefficients
+
+Here are the coefficients of the linear model after training:
+
+<BarChart
+  data={[
+      { feature: 'Hole Cover', coefficient: -0.977903 },
+      { feature: 'Closed Holes', coefficient: -0.937491 },
+      { feature: 'Open Holes', coefficient: -0.842758 },
+      { feature: 'Pillars', coefficient: -0.459028 },
+      { feature: 'Roughness', coefficient: -0.086589 },
+      { feature: 'Line Clear', coefficient: -0.050854 },
+      { feature: 'Altitude', coefficient: -0.039745 },
+      { feature: 'Stack Height', coefficient: 0.031847 },
+      { feature: 'Tetris Clear', coefficient: 0.773208 },
+  ]}
+  series="coefficient"
+/>
+
+As expected, the model has learned that:
+* Covering a hole is the worst thing you can do as it makes clearing the hole more difficult.
+* Closed holes are bad.
+* Open holes are bad but not as bad as closed holes as you can sometimes fill them with a sliding tetromino.
+* Pillars are bad as they can only be filled with an `I` tetromino.
+* Tetris clears are good.
+* All the other coefficients are in a fine balance as they all interact with each other.
+  E.g. clearing a line will reduce the stack height, which is good, but the model actually applies a small penalty for a line clear.
+  This looks to be offset by a small preference for a taller stack.
+  Maybe this combination of coefficient values work better for some stack arrangements than others.
+
+### Performance
+
+Here's the plot of the best score over 700 generations:
+
+<LineChart
+  data={[
+    { "Generation": 1, "Score": 420, "Trend": 0 },
+    { "Generation": 10, "Score": 9912, "Trend": 0 },
+    { "Generation": 20, "Score": 26576, "Trend": 653953.585737325 },
+    { "Generation": 30, "Score": 43678, "Trend": 2319516.17168045 },
+    { "Generation": 40, "Score": 91926, "Trend": 3486457.79247964 },
+    { "Generation": 50, "Score": 169886, "Trend": 4385530.53995922 },
+    { "Generation": 60, "Score": 511057, "Trend": 5117039.39219749 },
+    { "Generation": 70, "Score": 3272749, "Trend": 5733738.80027938 },
+    { "Generation": 80, "Score": 7679609, "Trend": 6266825.78918789 },
+    { "Generation": 90, "Score": 8974123, "Trend": 6736289.47328297 },
+    { "Generation": 100, "Score": 12652447, "Trend": 7155710.13688435 },
+    { "Generation": 110, "Score": 7362719, "Trend": 7534736.30061993 },
+    { "Generation": 120, "Score": 9065946, "Trend": 7880469.78740273 },
+    { "Generation": 130, "Score": 9065946, "Trend": 8198289.94667908 },
+    { "Generation": 140, "Score": 9065946, "Trend": 8492369.25197079 },
+    { "Generation": 150, "Score": 9065946, "Trend": 8766009.33771748 },
+    { "Generation": 160, "Score": 9065946, "Trend": 9021867.65356839 },
+    { "Generation": 170, "Score": 9065946, "Trend": 9262114.86278039 },
+    { "Generation": 180, "Score": 9065946, "Trend": 9488546.92275889 },
+    { "Generation": 190, "Score": 9065946, "Trend": 9702666.65624794 },
+    { "Generation": 200, "Score": 9245238, "Trend": 9905744.26661282 },
+    { "Generation": 210, "Score": 7579849, "Trend": 10098863.0004428 },
+    { "Generation": 220, "Score": 13575286, "Trend": 10282954.1280198 },
+    { "Generation": 230, "Score": 13575286, "Trend": 10458824.1068211 },
+    { "Generation": 240, "Score": 13575286, "Trend": 10627175.9348792 },
+    { "Generation": 250, "Score": 13575286, "Trend": 10788626.1243332 },
+    { "Generation": 260, "Score": 13575286, "Trend": 10943718.3308407 },
+    { "Generation": 270, "Score": 13575286, "Trend": 11092934.3996051 },
+    { "Generation": 280, "Score": 13575286, "Trend": 11236703.3942207 },
+    { "Generation": 290, "Score": 13575286, "Trend": 11375409.0348462 },
+    { "Generation": 300, "Score": 13575286, "Trend": 11509395.8705801 },
+    { "Generation": 310, "Score": 10863808, "Trend": 11638974.4360416 },
+    { "Generation": 320, "Score": 10863808, "Trend": 11764425.5863859 },
+    { "Generation": 330, "Score": 10863808, "Trend": 11886004.1629897 },
+    { "Generation": 340, "Score": 10863808, "Trend": 12003942.1101137 },
+    { "Generation": 350, "Score": 10863808, "Trend": 12118451.1383559 },
+    { "Generation": 360, "Score": 10863808, "Trend": 12229725.011748 },
+    { "Generation": 370, "Score": 10863808, "Trend": 12337941.5205635 },
+    { "Generation": 380, "Score": 10863808, "Trend": 12443264.1902792 },
+    { "Generation": 390, "Score": 10863808, "Trend": 12545843.7679354 },
+    { "Generation": 400, "Score": 10863808, "Trend": 12645819.5198064 },
+    { "Generation": 410, "Score": 6398523, "Trend": 12743320.368416 },
+    { "Generation": 420, "Score": 10918397, "Trend": 12838465.892189 },
+    { "Generation": 430, "Score": 10918397, "Trend": 12931367.2071851 },
+    { "Generation": 440, "Score": 10918397, "Trend": 13022127.747221 },
+    { "Generation": 450, "Score": 10918397, "Trend": 13110843.9561182 },
+    { "Generation": 460, "Score": 12253918, "Trend": 13197605.9036914 },
+    { "Generation": 470, "Score": 12288621, "Trend": 13282497.835344 },
+    { "Generation": 480, "Score": 13593990, "Trend": 13365598.6636739 },
+    { "Generation": 490, "Score": 13593990, "Trend": 13446982.4092838 },
+    { "Generation": 500, "Score": 13593990, "Trend": 13526718.5969642 },
+    { "Generation": 510, "Score": 9448686, "Trend": 13604872.6125654 },
+    { "Generation": 520, "Score": 15850174, "Trend": 13681506.0251466 },
+    { "Generation": 530, "Score": 15850222, "Trend": 13756676.8783799 },
+    { "Generation": 540, "Score": 15850222, "Trend": 13830439.9546647 },
+    { "Generation": 550, "Score": 15850222, "Trend": 13902847.0149621 },
+    { "Generation": 560, "Score": 15850222, "Trend": 13973947.0169798 },
+    { "Generation": 570, "Score": 15850222, "Trend": 14043786.314012 },
+    { "Generation": 580, "Score": 15850222, "Trend": 14112408.8364547 },
+    { "Generation": 590, "Score": 15850222, "Trend": 14179856.2577791 },
+    { "Generation": 600, "Score": 15850222, "Trend": 14246168.1465317 },
+    { "Generation": 610, "Score": 15019605, "Trend": 14311382.1057495 },
+    { "Generation": 620, "Score": 15897722, "Trend": 14375533.9010209 },
+    { "Generation": 630, "Score": 15897722, "Trend": 14438657.5782842 },
+    { "Generation": 640, "Score": 15897722, "Trend": 14500785.5723339 },
+    { "Generation": 650, "Score": 15897722, "Trend": 14561948.806903 },
+    { "Generation": 660, "Score": 15897722, "Trend": 14622176.7870909 },
+    { "Generation": 670, "Score": 15897722, "Trend": 14681497.6848325 },
+    { "Generation": 680, "Score": 15897722, "Trend": 14739938.4180248 },
+    { "Generation": 690, "Score": 15897722, "Trend": 14797524.7238691 },
+    { "Generation": 700, "Score": 15897722, "Trend": 14854281.2269291 }
+  ]}
+  x="Generation"
+  y="Score"
+  trend="Trend"
+/>
+
+Observations:
+
+* You can see the dips in quality at every 100th generation, this is when the random seed is changed.
+* The model seems to stagnate before each dip.
+* After the dip, the model performance often recovers to a greater level than the previously stagnated performance.
+  This must mean that the model is learning a more generalised strategy that is not biased towards a particular seeded game.
+* The model converges on a score of around 16,000,000 points, which is pretty close to the current classic NES world record.
+* The trend looks logarithmic i.e. longer training runs probably won't improve the performance of the model much more.
+
+## Neural Networks
+

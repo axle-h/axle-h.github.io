@@ -23,7 +23,7 @@ const palettes: Record<PaletteMode, Palette> = {
   },
 }
 
-type DiagramType = 'componentDiagram' | 'sequenceDiagram'
+type DiagramType = 'componentDiagram' | 'sequenceDiagram' | 'activityDiagram'
 
 const themes: Record<DiagramType, (palette: Palette) => string> = {
   componentDiagram: (palette) => `
@@ -42,6 +42,7 @@ const themes: Record<DiagramType, (palette: Palette) => string> = {
     labelBackground ${palette.bg}
   `,
   sequenceDiagram: (palette) => `
+    fontSize 20
     messageFontSize 20
     mirrorActors false
     messageTextColor ${palette.text}
@@ -52,6 +53,22 @@ const themes: Record<DiagramType, (palette: Palette) => string> = {
     participantBackground ${palette.solid}
     activationBackground ${palette.solid}
     dividerTextColor ${palette.text}
+  `,
+  activityDiagram: (palette) => `
+    fontSize 20
+    edgeType curved
+    actionPaddingX 10
+    actionPaddingY 10
+    actionBackground ${palette.solid}
+    actionBorderColor ${palette.text}
+    groupBackground ${palette.solid}
+    groupBorderColor ${palette.text}
+    textColor ${palette.text}
+    edgeColor ${palette.text}
+    keywordBackground ${palette.solid}
+    noteTextColor ${palette.text}
+    labelTextColor ${palette.text}
+    labelBackground transparent
   `,
 }
 

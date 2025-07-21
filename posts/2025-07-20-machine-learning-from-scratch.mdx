@@ -180,7 +180,7 @@ endif
 end
 `} />
 
-## Training
+## Linear Model Training
 
 The linear model only has 10 parameters to learn, so I could actually hand-pick them and get a fairly decent result.
 The model will get more complex though so let's do some machine learning anyway.
@@ -260,7 +260,7 @@ This makes a Tetris playing model unstable, which is especially an issue for uns
 If the models are unstable, then training is less likely to converge on something optimal.
 **TLDR;** the randomness of the game means that the quality of the optimal model can deteriorate over time. Whereas we want the opposite!
 
-To solve this, I first seed the random number generator with a fixed value, then I change the seed every 100 generations.
+To solve this, I first seed the random number generator with a random (time based) value, then I rotate the seed every 100 generations.
 This gives the training algorithm chance to converge on a model for a single deterministic game.
 My hope is that over time, the most generally optimised models will be selected and the training algorithm will converge on a model that is stable across many games.
 
@@ -268,7 +268,7 @@ My hope is that over time, the most generally optimised models will be selected 
 
 I trained the linear model with a genetic algorithm for 700 generations of 1000 agents.
 
-### Coefficients
+### Linear Coefficients
 
 Here are the coefficients of the linear model after training:
 
@@ -298,7 +298,7 @@ As expected, the model has learned that:
   This looks to be offset by a small preference for a taller stack.
   Maybe this combination of coefficient values work better for some stack arrangements than others.
 
-### Performance
+### Linear Performance
 
 Here's the plot of the best score over 700 generations:
 
@@ -387,8 +387,294 @@ Observations:
 * The model seems to stagnate before each dip.
 * After the dip, the model performance often recovers to a greater level than the previously stagnated performance.
   This must mean that the model is learning a more generalised strategy that is not biased towards a particular seeded game.
-* The model converges on a score of around 16,000,000 points, which is pretty close to the current classic NES world record.
+* The model converges on a score of around 16 million points, which is pretty close to the
+  [current classic NES world record of 16.7 million points](https://www.ndtv.com/feature/15-year-old-gamer-breaks-6-tetris-world-records-with-the-highest-ever-recorded-score-5566253).
 * The trend looks logarithmic i.e. longer training runs probably won't improve the performance of the model much more.
 
-## Neural Networks
+## Neural Network Model
 
+With the linear model working, it's parameters sense checked, the bugs fixed in the genetic algorithm and the agent proven, I was ready to try a more complex model.
+I needed something non-linear that could potentially learn complex strategies, so I went with a neural network.
+To keep the existing, proven agent structure, I needed the network to be a direct replacement for the linear model, with the exact same inputs and outputs.
+The input layer must have one neuron per game feature and the output layer must have a single neuron; the quality of the move.
+
+![neural network](neural-network.svg)
+
+The whole point of this is to provide a model architecture allowing for non-linear behaviour to emerge, so:
+* I give the model the delta of each feature **AND** the absolute values so it has the context of the current action plus the global state of the game.
+* I use multiple hidden layers to allow the model to learn complex relationships between the features.
+* I use a non-linear activation function, the [sigmoid function](https://en.wikipedia.org/wiki/Sigmoid_function).
+
+The neural network topology I settled on is:
+
+* Input layer with 20 neurons
+* 2 fully connected hidden layers with 10 neurons each
+* Fully connected output layer with 1 neuron
+
+This totals to 1,281 parameters. For reference [GPT-4 has 1.8 trillion parameters](https://www.kdnuggets.com/2023/07/gpt4-details-leaked.html), so this is a very small model.
+
+### Hold on, what is a neural network exactly?
+
+> Of course, I could have used a library here like [burn](https://github.com/tracel-ai/burn) (remember I'm using Rust so PyTorch is not a practical option)
+but I wanted to implement a neural network from scratch, as a learning experience.
+
+In my model, a neuron is a mathematical function that:
+
+1. Applies a weighted sum over input values.
+2. Adds a constant value to the result, so that an activation bias is possible.
+3. Passes the result through an activation function, which introduces non-linearity into the model.
+
+Therefore, each neuron has two sets of parameters:
+
+* A weight for each input value.
+* A single bias value.
+
+Neurons are arranged in layers:
+1. The input layer, which takes the model input parameters.
+2. One or more hidden layers, which allow the model to build increasingly complex abstractions over the input parameters.
+3. The output layer, which produces the model output.
+
+The networks I have implemented are fully connected feed-forward networks.
+That means that every neuron in one layer is connected to every neuron in the next layer.
+There are decent strategies for learning a more optimal network topology, such as [NEAT (NeuroEvolution of Augmenting Topologies)](https://en.wikipedia.org/wiki/Neuroevolution_of_augmenting_topologies), but I decided to let the training process decide which connections are not important.
+In training, the weight of useless connections should tend towards 0, which effectively removes them from the model.
+
+This is actually a simplification as it means that I can implement the network with A-level grade matrix multiplication.
+For illustration, given a simple network with two layers:
+
+![neural network](neural-network-2.svg)
+
+Then the output of the network can be expressed as a matrix multiplication of the weights and inputs, plus the biases, all passed through the activation function:
+
+<Latex src={`
+\\begin{bmatrix}
+  x \\\\
+  y
+\\end{bmatrix}
+= \\sigma \\left(
+
+\\begin{bmatrix}
+a_x & b_x & c_x \\\\
+a_y & b_y & c_y
+\\end{bmatrix}
+
+\\otimes
+
+\\begin{bmatrix}
+a \\\\
+b \\\\
+c
+\\end{bmatrix}
++
+\\begin{bmatrix}
+x_{\\text{bias}} \\\\
+y_{\\text{bias}}
+\\end{bmatrix}
+
+\\right)
+`} />
+
+Doing some A-level homework, this can be multiplied out into components:
+
+<Latex src={`
+x = \\sigma(a_x a + b_x b + c_x c + x_{\\text{bias}}) \\\\
+y = \\sigma(a_y a + b_y b + c_y c + y_{\\text{bias}})
+`} />
+
+Ignoring transformers and the attention mechanism, modern LLMs are literally this but turned up to 11.
+They're using trillions of parameters over hundreds of layers but at their lowest level, they are simply tensor (n-dimensional) multiplication.
+It is amazing that reasoning seems to emerge from something so mathematically simple.
+
+## Neural Network Training
+
+It is usual to train a neural network with a supervised learning technique such as backpropagation.
+I did implement backpropagation to test my neural network implementation, but the technique is not applicable, as I lack good quality labeled data.
+
+Since the neural network model is a direct replacement for the linear model, I can use the exact same unsupervised genetic algorithm to train it.
+I appreciate that with this many parameters, unsupervised learning is not the most efficient machine learning technique as a lot of compute is required to traverse such a large search space, but I thought it was worth a shot anyway.
+Maybe I will get lucky...
+
+> At this point, I made a tweak to the genetic algorithm to stop rotating the seed every 100 generations and instead rotate it every 10 stale generations, where the score did not improve.
+  The idea behind this was to prevent the model from stagnating for too long.
+
+## Neural Results
+
+I can't really show how the neural network has learned like I did with the linear model, as it is effectively a black box.
+There are techniques I can use to visualise activation patterns in the network to maybe derive an idea of what's going on, but I haven't done that yet.
+
+I trained this model for literally an entire weekend and boy am I glad I left it running that long!
+I set a limit per game of 10,000 lines and at generation 7,750, after millions of games played, billions of in-game hours, the model FINALLY hit this limit with a score of 647,931,149 points!
+
+<LineChart
+  data={[
+    { "Generation": 1, "Score": 1563 },
+    { "Generation": 50, "Score": 198462 },
+    { "Generation": 100, "Score": 1029210 },
+    { "Generation": 150, "Score": 2472636 },
+    { "Generation": 200, "Score": 6049373 },
+    { "Generation": 250, "Score": 1947177 },
+    { "Generation": 300, "Score": 1490057 },
+    { "Generation": 350, "Score": 895691 },
+    { "Generation": 400, "Score": 1418241 },
+    { "Generation": 450, "Score": 705834 },
+    { "Generation": 500, "Score": 1508576 },
+    { "Generation": 550, "Score": 1436626 },
+    { "Generation": 600, "Score": 986015 },
+    { "Generation": 650, "Score": 1347594 },
+    { "Generation": 700, "Score": 2581067 },
+    { "Generation": 750, "Score": 9335011 },
+    { "Generation": 800, "Score": 3511095 },
+    { "Generation": 850, "Score": 2475585 },
+    { "Generation": 900, "Score": 3036621 },
+    { "Generation": 950, "Score": 5368769 },
+    { "Generation": 1000, "Score": 7552850 },
+    { "Generation": 1050, "Score": 549592 },
+    { "Generation": 1100, "Score": 6794371 },
+    { "Generation": 1150, "Score": 4725814 },
+    { "Generation": 1200, "Score": 3267718 },
+    { "Generation": 1250, "Score": 3313925 },
+    { "Generation": 1300, "Score": 6295872 },
+    { "Generation": 1350, "Score": 2163975 },
+    { "Generation": 1400, "Score": 10529995 },
+    { "Generation": 1450, "Score": 4113292 },
+    { "Generation": 1500, "Score": 7663436 },
+    { "Generation": 1550, "Score": 2604502 },
+    { "Generation": 1600, "Score": 3467638 },
+    { "Generation": 1650, "Score": 1540164 },
+    { "Generation": 1700, "Score": 3202302 },
+    { "Generation": 1750, "Score": 1810409 },
+    { "Generation": 1800, "Score": 5013269 },
+    { "Generation": 1850, "Score": 6113731 },
+    { "Generation": 1900, "Score": 6198942 },
+    { "Generation": 1950, "Score": 5573719 },
+    { "Generation": 2000, "Score": 2329012 },
+    { "Generation": 2050, "Score": 2407383 },
+    { "Generation": 2100, "Score": 5109661 },
+    { "Generation": 2150, "Score": 1990602 },
+    { "Generation": 2200, "Score": 2744490 },
+    { "Generation": 2250, "Score": 14070727 },
+    { "Generation": 2300, "Score": 2959180 },
+    { "Generation": 2350, "Score": 11982169 },
+    { "Generation": 2400, "Score": 8367161 },
+    { "Generation": 2450, "Score": 6789957 },
+    { "Generation": 2500, "Score": 3949844 },
+    { "Generation": 2550, "Score": 10878051 },
+    { "Generation": 2600, "Score": 4552998 },
+    { "Generation": 2650, "Score": 2289486 },
+    { "Generation": 2700, "Score": 2165050 },
+    { "Generation": 2750, "Score": 6796945 },
+    { "Generation": 2800, "Score": 3588585 },
+    { "Generation": 2850, "Score": 4250512 },
+    { "Generation": 2900, "Score": 6446556 },
+    { "Generation": 2950, "Score": 5279696 },
+    { "Generation": 3000, "Score": 6007547 },
+    { "Generation": 3050, "Score": 3166626 },
+    { "Generation": 3100, "Score": 4655111 },
+    { "Generation": 3150, "Score": 10819594 },
+    { "Generation": 3200, "Score": 6756600 },
+    { "Generation": 3250, "Score": 2570083 },
+    { "Generation": 3300, "Score": 7279365 },
+    { "Generation": 3350, "Score": 10164928 },
+    { "Generation": 3400, "Score": 6710126 },
+    { "Generation": 3450, "Score": 6692447 },
+    { "Generation": 3500, "Score": 3570785 },
+    { "Generation": 3550, "Score": 3034798 },
+    { "Generation": 3600, "Score": 3794383 },
+    { "Generation": 3650, "Score": 3742456 },
+    { "Generation": 3700, "Score": 3396388 },
+    { "Generation": 3750, "Score": 8582194 },
+    { "Generation": 3800, "Score": 9814025 },
+    { "Generation": 3850, "Score": 2148926 },
+    { "Generation": 3900, "Score": 5810884 },
+    { "Generation": 3950, "Score": 1940527 },
+    { "Generation": 4000, "Score": 1804544 },
+    { "Generation": 4050, "Score": 3269937 },
+    { "Generation": 4100, "Score": 6289540 },
+    { "Generation": 4150, "Score": 7340521 },
+    { "Generation": 4200, "Score": 5884774 },
+    { "Generation": 4250, "Score": 3126303 },
+    { "Generation": 4300, "Score": 2849886 },
+    { "Generation": 4350, "Score": 4238725 },
+    { "Generation": 4400, "Score": 1030084 },
+    { "Generation": 4450, "Score": 1324473 },
+    { "Generation": 4500, "Score": 1960228 },
+    { "Generation": 4550, "Score": 6651497 },
+    { "Generation": 4600, "Score": 9815333 },
+    { "Generation": 4650, "Score": 10547320 },
+    { "Generation": 4700, "Score": 7533692 },
+    { "Generation": 4750, "Score": 8212291 },
+    { "Generation": 4800, "Score": 4329025 },
+    { "Generation": 4850, "Score": 3257280 },
+    { "Generation": 4900, "Score": 3085796 },
+    { "Generation": 4950, "Score": 2001286 },
+    { "Generation": 5000, "Score": 6903991 },
+    { "Generation": 5050, "Score": 7673814 },
+    { "Generation": 5100, "Score": 15012472 },
+    { "Generation": 5150, "Score": 2643426 },
+    { "Generation": 5200, "Score": 3297152 },
+    { "Generation": 5250, "Score": 2505654 },
+    { "Generation": 5300, "Score": 3604482 },
+    { "Generation": 5350, "Score": 1648476 },
+    { "Generation": 5400, "Score": 3659845 },
+    { "Generation": 5450, "Score": 1597138 },
+    { "Generation": 5500, "Score": 8843754 },
+    { "Generation": 5550, "Score": 2854083 },
+    { "Generation": 5600, "Score": 3315276 },
+    { "Generation": 5650, "Score": 3392593 },
+    { "Generation": 5700, "Score": 8406901 },
+    { "Generation": 5750, "Score": 2791784 },
+    { "Generation": 5800, "Score": 3389008 },
+    { "Generation": 5850, "Score": 8392212 },
+    { "Generation": 5900, "Score": 6729655 },
+    { "Generation": 5950, "Score": 14868625 },
+    { "Generation": 6000, "Score": 34536750 },
+    { "Generation": 6050, "Score": 140493930 },
+    { "Generation": 6100, "Score": 10368608 },
+    { "Generation": 6150, "Score": 48119777 },
+    { "Generation": 6200, "Score": 70698106 },
+    { "Generation": 6250, "Score": 16176094 },
+    { "Generation": 6300, "Score": 52881372 },
+    { "Generation": 6350, "Score": 42406964 },
+    { "Generation": 6400, "Score": 23537060 },
+    { "Generation": 6450, "Score": 84767421 },
+    { "Generation": 6500, "Score": 33068565 },
+    { "Generation": 6550, "Score": 346157670 },
+    { "Generation": 6600, "Score": 41211374 },
+    { "Generation": 6650, "Score": 23624279 },
+    { "Generation": 6700, "Score": 63362543 },
+    { "Generation": 6750, "Score": 48452039 },
+    { "Generation": 6800, "Score": 11474511 },
+    { "Generation": 6850, "Score": 114359366 },
+    { "Generation": 6900, "Score": 102050180 },
+    { "Generation": 6950, "Score": 36784803 },
+    { "Generation": 7000, "Score": 63180457 },
+    { "Generation": 7050, "Score": 34660151 },
+    { "Generation": 7100, "Score": 8706550 },
+    { "Generation": 7150, "Score": 12580431 },
+    { "Generation": 7200, "Score": 87977330 },
+    { "Generation": 7250, "Score": 158558877 },
+    { "Generation": 7300, "Score": 190751811 },
+    { "Generation": 7350, "Score": 64514220 },
+    { "Generation": 7400, "Score": 70400698 },
+    { "Generation": 7450, "Score": 57926547 },
+    { "Generation": 7500, "Score": 32599793 },
+    { "Generation": 7550, "Score": 20928915 },
+    { "Generation": 7600, "Score": 87132923 },
+    { "Generation": 7650, "Score": 169557757 },
+    { "Generation": 7700, "Score": 206158913 },
+    { "Generation": 7750, "Score": 647931149 }
+  ]}
+  x="Generation"
+  y="Score"
+/>
+
+There was definitely a breakthrough at around generation 6,000 that allowed the model to start scoring in the hundreds of millions.
+This is amazing but demonstrates the drawbacks of using unsupervised learning for a problem as complex as Tetris.
+I'm not sure of the timing, but I think it took over 30 hours to get to generation 6,000.
+I could have easily turned it off before then and missed out on this breakthrough.
+
+## Demo
+
+TODO record the 647931149 score run, maybe exclusively in GB mode, upload to YT
+
+## Next Steps

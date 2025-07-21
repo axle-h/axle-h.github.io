@@ -20,7 +20,11 @@ export function LineChart({
   x,
   y,
   trend,
-}: Pick<UseChartProps<any>, 'data'> & { y: string; x: string; trend: string }) {
+}: Pick<UseChartProps<any>, 'data'> & {
+  y: string
+  x: string
+  trend?: string
+}) {
   const color = useColorModeValue('blue.300', 'blue.600')
   const chart = useChart({
     data,
@@ -55,14 +59,16 @@ export function LineChart({
                   />
                 )}
               />
-              <Line
-                type="monotone"
-                dataKey={trend}
-                stroke={chart.color(item.color)}
-                dot={false}
-                activeDot={false}
-                legendType="none"
-              />
+              {trend && (
+                <Line
+                  type="monotone"
+                  dataKey={trend}
+                  stroke={chart.color(item.color)}
+                  dot={false}
+                  activeDot={false}
+                  legendType="none"
+                />
+              )}
             </>
           ))}
         </ComposedChart>

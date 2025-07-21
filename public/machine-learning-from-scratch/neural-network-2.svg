@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg"
+     style="background: transparent; background-color: transparent; color-scheme: light dark;"
+     xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="245px" height="351px" viewBox="-0.5 -0.5 245 351">
+  <defs/>
+  <g>
+    <g>
+      <g>
+        <g>
+          <g>
+            <path d="M 85 45 L 154.05 100.99" fill="none" stroke="#000000" stroke-miterlimit="10"
+                  pointer-events="stroke" style="stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+            <path d="M 158.13 104.3 L 150.49 102.61 L 154.05 100.99 L 154.9 97.17 Z" fill="#000000" stroke="#000000"
+                  stroke-miterlimit="10" pointer-events="all"
+                  style="fill: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+          </g>
+        </g>
+        <g>
+          <g>
+            <path d="M 85 45 L 156.79 239.03" fill="none" stroke="#000000" stroke-miterlimit="10"
+                  pointer-events="stroke" style="stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+            <path d="M 158.61 243.95 L 152.9 238.6 L 156.79 239.03 L 159.47 236.17 Z" fill="#000000" stroke="#000000"
+                  stroke-miterlimit="10" pointer-events="all"
+                  style="fill: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+          </g>
+        </g>
+        <g>
+          <g>
+            <ellipse cx="45" cy="45" rx="40" ry="40" fill="#ffffff" stroke="#000000" pointer-events="all"
+                     style="fill: light-dark(#ffffff, var(--ge-dark-color, #121212)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+          </g>
+          <g>
+            <g transform="translate(-0.5 -0.5)">
+                <text x="45" y="49" fill="light-dark(#000000, #ffffff)" font-family="&quot;Helvetica&quot;"
+                      font-size="12px" text-anchor="middle">a
+                </text>
+            </g>
+          </g>
+        </g>
+        <g>
+          <g>
+            <path d="M 85 175 L 154.37 109.38" fill="none" stroke="#000000" stroke-miterlimit="10"
+                  pointer-events="stroke" style="stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+            <path d="M 158.19 105.77 L 155.51 113.12 L 154.37 109.38 L 150.7 108.04 Z" fill="#000000" stroke="#000000"
+                  stroke-miterlimit="10" pointer-events="all"
+                  style="fill: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+          </g>
+        </g>
+        <g>
+          <g>
+            <path d="M 85 175 L 154.37 240.62" fill="none" stroke="#000000" stroke-miterlimit="10"
+                  pointer-events="stroke" style="stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+            <path d="M 158.19 244.23 L 150.7 241.96 L 154.37 240.62 L 155.51 236.88 Z" fill="#000000" stroke="#000000"
+                  stroke-miterlimit="10" pointer-events="all"
+                  style="fill: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+          </g>
+        </g>
+        <g>
+          <g>
+            <ellipse cx="45" cy="175" rx="40" ry="40" fill="#ffffff" stroke="#000000" pointer-events="all"
+                     style="fill: light-dark(#ffffff, var(--ge-dark-color, #121212)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+          </g>
+          <g>
+            <g transform="translate(-0.5 -0.5)">
+                <text x="45" y="179" fill="light-dark(#000000, #ffffff)" font-family="&quot;Helvetica&quot;"
+                      font-size="12px" text-anchor="middle">b
+                </text>
+            </g>
+          </g>
+        </g>
+        <g>
+          <g>
+            <path d="M 85 305 L 156.79 110.97" fill="none" stroke="#000000" stroke-miterlimit="10"
+                  pointer-events="stroke" style="stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+            <path d="M 158.61 106.05 L 159.47 113.83 L 156.79 110.97 L 152.9 111.4 Z" fill="#000000" stroke="#000000"
+                  stroke-miterlimit="10" pointer-events="all"
+                  style="fill: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+          </g>
+        </g>
+        <g>
+          <g>
+            <path d="M 85 305 L 150.17 249.14" fill="none" stroke="#000000" stroke-miterlimit="10"
+                  pointer-events="stroke" style="stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+            <path d="M 154.15 245.73 L 151.11 252.94 L 150.17 249.14 L 146.56 247.63 Z" fill="#000000" stroke="#000000"
+                  stroke-miterlimit="10" pointer-events="all"
+                  style="fill: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+          </g>
+        </g>
+        <g>
+          <g>
+            <ellipse cx="45" cy="305" rx="40" ry="40" fill="#ffffff" stroke="#000000" pointer-events="all"
+                     style="fill: light-dark(#ffffff, var(--ge-dark-color, #121212)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+          </g>
+          <g>
+            <g transform="translate(-0.5 -0.5)">
+
+                <text x="45" y="309" fill="light-dark(#000000, #ffffff)" font-family="&quot;Helvetica&quot;"
+                      font-size="12px" text-anchor="middle">c
+                </text>
+            </g>
+          </g>
+        </g>
+        <g>
+          <g>
+            <ellipse cx="199" cy="105" rx="40" ry="40" fill="#ffffff" stroke="#000000" pointer-events="all"
+                     style="fill: light-dark(#ffffff, var(--ge-dark-color, #121212)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+          </g>
+          <g>
+            <g transform="translate(-0.5 -0.5)">
+                <text x="199" y="109" fill="light-dark(#000000, #ffffff)" font-family="&quot;Helvetica&quot;"
+                      font-size="12px" text-anchor="middle">x
+                </text>
+            </g>
+          </g>
+        </g>
+        <g>
+          <g>
+            <ellipse cx="199" cy="245" rx="40" ry="40" fill="#ffffff" stroke="#000000" pointer-events="all"
+                     style="fill: light-dark(#ffffff, var(--ge-dark-color, #121212)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+          </g>
+          <g>
+            <g transform="translate(-0.5 -0.5)">
+                <text x="199" y="249" fill="light-dark(#000000, #ffffff)" font-family="&quot;Helvetica&quot;"
+                      font-size="12px" text-anchor="middle">y
+                </text>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

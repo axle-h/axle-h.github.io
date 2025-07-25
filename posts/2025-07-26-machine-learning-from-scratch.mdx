@@ -15,11 +15,11 @@ So I decided to go back to basics and implement my own machine learning from scr
 ## Target
 
 First I needed a target, preferably a game, since... games are fun.
-I've been making low level games in Rust for fun <PostLink name="rust-games" />.
+I've been making low level games in Rust: <PostLink name="rust-games" />.
 They're actually perfect for this project as:
 
 * There is no engine (like [Unity](https://unity.com/) or [Godot](https://godotengine.org/)) so I don't have to worry about bindings or non-machine learning relevant baggage getting in the way.
-* I have direct access to the game loop so slotting an agent is dead easy:
+* I have direct access to the game loop so integrating an agent into the game is dead easy:
   ```rust
   fn game_loop() {
       let mut game = Game {};
@@ -40,13 +40,14 @@ I chose a Tetris clone [rustris](https://github.com/axle-h/rustris) for this pro
 
 The game of Tetris is played with a *tetromino* that falls from the top of a *board*.
 When the *tetromino* touches the bottom of the board, or the *stack*, it will enter a lock state,
-where after some timeout without action, it will lock into place and become part of the stack.
+where after some timeout and without action, it will lock into place and become part of the stack.
 The stack is cleared by arranging lines.
 The maximum number of lines that can be cleared in a single move is 4, which is called a *Tetris*.
 Points are added for various actions and outcomes in the game.
 The game is lost when the stack reaches the top of the board.
 It is expected that every game will eventually be lost, games are classified by the number of lines cleared and the total points scored.
 
+Every tetromino has a name:
 
 <Box maxW={100} flex={1} alignItems="center" justifyContent="middle">
 | Name | Tetromino   |
@@ -77,21 +78,11 @@ agent --> actions
 
 Naively, and with a cluster of GPUs, we would provide the model with raw board state.
 The Tetris board is 10x20 which is 2<sup>200</sup> = 1.6 * 10<sup>60</sup> distinct states.
-Whilst the model having access to this massive raw state provides the best chance of complex strategies emerging in the model, this scale is unfortunately is out of scope.
-I do not have a lot of compute available and am more interested in developing the model from scratch than having something cutting edge.
+Whilst the model having access to this massive amount of raw state would provide the best chance of complex strategies emerging, this scale is unfortunately out of scope.
+I am looking for something more laptop scale than RTX 5090.
+I am also **much** more interested in developing the model from scratch than having something cutting edge.
 
-A decent model, maybe a convolutional neural network, would take this raw board state and after layers of abstraction, would extract significant features that are useful in making strategic decisions.
-So I decided to cut this bit out of the model and roll it by hand.
-
-### Action
-
-A similar argument applies to how actions are interpreted from the model output.
-Tetris uses a spatial control scheme Left, Right, Rotate.
-Humans can naturally interpret a desired placement, for example slotting an `I` tetromino into a gap in the stack, as a series of Left, Right, Rotate commands.
-
-If we expect a model to generate output like this, it must be expected that it has to dedicate significant resources to learning the spatial nature of the game.
-I expect that at the planned scope of my Tetris model, I have a low chance of pulling off something sophisticated enough to handle spatial reasoning.
-Instead, I will use an algorithm that, given the current state of the game, generates all possible placements available and provides them to the model summarised by the features.
+So I decided to pre-optimise the game state into "features".
 
 ## Features
 
@@ -103,14 +94,25 @@ Instead, I will use an algorithm that, given the current state of the game, gene
 | ![Closed Hole](closed-hole.png)   | **Closed Hole** <br /> One or more empty blocks completely surrounded by stack or walls. <br /> Can only be filled by removing stack blocks above.                                                                                            |
 | ![Pillar](pillar.png)             | **Pillar** <br /> A gap 3 or more blocks tall that can only be filled with an I Tetromino.                                                                                                                                                    |
 
-I take the delta of each feature for each available tetromino placement as I think the model will learn much better if for every action it takes, no matter the existing state of the board, the input parameters will change at the same scale.
-E.g. without taking the delta, if there are 15 holes already and placing a tetromino creates another hole, then the hole feature will change by an amount that is 15x less than what would be observed on an empty board.
+I take the delta of each feature for each available tetromino placement.
+I think this is important as the model will learn much better when for every action it takes, no matter the existing state of the board, the input parameters will change at the same scale.
+E.g. without taking the delta, if there are 15 holes already and placing a tetromino creates another hole, then the hole feature will change by an amount that is 15x less than what would have been observed on an empty board.
 
 I also tell the model when:
 * It has covered a hole.
 * It has cleared a line.
 * It has cleared a Tetris (4 lines).
 * Tetromino altitude - the max y-coordinate of the final position of the tetromino.
+
+### Action
+
+Another scaling issue applies to how actions are interpreted from the model output.
+Tetris uses a spatial control scheme Left, Right, Rotate.
+Humans can naturally interpret a desired placement, for example slotting an `I` tetromino into a gap in the stack, as a series of Left, Right, Rotate commands.
+
+If we expect a model to generate output like this, it must be expected that it has to dedicate significant resources to learning the spatial nature of the game.
+I am sure that I have a low chance of pulling off something sophisticated enough to handle spatial reasoning.
+Instead, I will use an algorithm that, given the current state of the game, generates all possible placements available and provides them to the model summarised by their features.
 
 ## Move Search
 
@@ -137,15 +139,17 @@ endwhile (no)
 end
 `} />
 
-To explore any positions that can only be found by moving the tetromino during the lock phase,
-for example sliding a tetromino left or right into an open hole,
-this algorithm is then run again with the final positions of the first run as the new starting positions.
 
-The entire algorithm is run once for the current tetromino and then again for the 'held' tetromino.
+The move search algorithm is then run again with the final positions of the first run as the new starting positions.
+This is to explore any positions that can only be found by moving the tetromino during the lock phase,
+for example sliding a tetromino left or right into an open hole.
+
+This entire process is run once for the current tetromino and then again for the 'held' tetromino.
 
 ## Linear Model
 
-At this point I was ready for a model but had a load of code that was unit tested (of course) but not integrated, so I chose to start with the simplest possible model, a linear function over all the features.
+At this point, I was ready to implement a model.
+I had a load of code that was unit tested (of course) but not integrated, so I chose to start with the simplest possible model, a linear function over all the features.
 
 <Latex src={`
   Q = P_1\\delta StackHeight + P_2\\delta Roughness + P_3\\delta OpenHole + P_4\\delta ClosedHole + P_5\\delta Pillar
@@ -155,30 +159,18 @@ At this point I was ready for a model but had a load of code that was unit teste
 
 <CheckList>
   <CheckListItem>It works surprisingly well!</CheckListItem>
-  <CheckListItem>The model parameters are transparent, they can easily be sense checked e.g. I expect holes to be bad.</CheckListItem>
+  <CheckListItem>The model parameters are transparent, they can easily be sense checked e.g. I expect holes to be a good indicator of bad play, so I therefore expect the hole coefficient to be highly negative.</CheckListItem>
   <XListItem>The model is incapable of learning complicated, non-linear strategies e.g. play safe when the stack is high.</XListItem>
 </CheckList>
 
 ## Agent
 
 With a simple model in place, I was ready to implement the agent.
-The agent, running directly in the game loop, will take the game state, run the move search algorithm to get all possible placements and use the model to qualify all placements.
-The best placement is then chosen and the action is sent to the game.
+The agent, running directly in the game loop, will:
 
-<PintoraDiagram src={`
-activityDiagram
-start
-if (check the game state, is there a tetromino in play that is falling ?) then
-  :find all possible placements\nfor the current tetromino\nand the held tetromino;
-  :calculate the delta of each feature\nfor each placement;
-  :calculate the quality of each placement\nusing the model;
-  :choose the placement with the highest quality;
-  :send the action to the game;
-else (no)
-  :do nothing;
-endif
-end
-`} />
+1. With the game state, run the move search algorithm to get all possible placements
+2. Use the model to qualify each placement
+3. Take game actions to execute the best placement (e.g. left, rotate, drop)
 
 ## Linear Model Training
 
@@ -188,19 +180,21 @@ The model will get more complex though so let's do some machine learning anyway.
 ### Supervised learning
 
 The natural choice for a linear model would be linear regression.
-Linear regression is a supervised machine learning technique that relies on labelled data to (basically) plot a line of best fit for each statistically significant component of the linear function.
+Linear regression is a supervised machine learning technique that relies on labelled data to (basically) plot a line of best fit for each statistically significant component.
+Think `y = mx + c` from GCSE.
+
 I used to work in credit reference so am pretty familiar with the technique (your credit score is literally just a linear regression over your credit reference data).
-For supervised learning, I needed to label the data. Options are:
+For supervised learning, I needed to label the data. My options are:
 
 * **Record my gameplay**, labelling my actions as `good` moves.
-  This, whilst maybe fun to achieve, would mean that the model would be biased towards my decisions rather than the 'best' decisions.
-I have played a **LOT** of Tetris, but I am not a Tetris master, I probably make hundreds of mistakes in each game and this bias would be learnt by the model.
+  This, whilst maybe fun to achieve, would mean that the model would be biased towards my decisions rather than the actual 'best' decisions.
+  I have played a **LOT** of Tetris, but I am not a Tetris master, I probably make hundreds of mistakes in each game and this bias would be learnt by the model.
 * **Collect professional Tetris gameplay**, labelling professional player actions as `good` moves.
   There are high quality recordings of professional Tetris gameplay available online.
   I would have to write a tool to extract the game state and actions from the video.
-  Whilst I think this could work well, it would be a lot of work so I have put it aside for now.
-  Also: even professionals make mistakes.
-  TODO: I should do this later.
+  Whilst I think this could work well, it would be a lot of work, so I have put it aside for now.
+
+> Also: even professionals make mistakes.
 
 ### Reinforcement learning
 
@@ -213,7 +207,7 @@ I did not want to define a detailed reward function as this risks influencing be
 E.g. if I defined a reward for clearing lines that was maybe slightly too high, then the model would learn to clear lines at the expense of all other strategies.
 
 I briefly considered a broader reward function that worked retrospectively.
-E.g. if the game is lost then moves leading up to the loss are penalised, whereas moves leading up to a Tetris clear are rewarded.
+E.g. when a game is lost, all placements leading up to the final placement before loss are penalised, whereas placements leading up to a Tetris clear are rewarded.
 I decided to skip this for now though as it seemed like it would be a mess of hyperparameters and the algorithms weren't massively clear to implement from scratch.
 I will definitely come back to this later though, maybe as an optimisation step for a model pre-trained with unsupervised learning.
 
@@ -222,7 +216,7 @@ I will definitely come back to this later though, maybe as an optimisation step 
 Unsupervised learning is a machine learning technique used to find patterns or structure in unlabeled data.
 It effectively searches for a point in the multidimensional space over the model parameters that maximises some reward function.
 
-I decided to go with this approach to start:
+I decided to go with this approach to start because:
 * Tetris has a native reward function that is a good fit: the game score.
 * This technique requires a lot of data but my Rust implemented game can simulate multiple hours of gameplay per second.
   My laptop won't be happy with it, but it shouldn't be a problem playing many thousands of games over a typical training run.
@@ -231,13 +225,13 @@ I decided to go with this approach to start:
 ### Genetic algorithm
 
 A genetic algorithm is an unsupervised learning technique, mimicking the process of evolution.
-It acts a search heuristic for maximising some reward function over the model parameters.
+It acts like a search heuristic for maximising some reward function over the model parameters.
 
-* Survival of the fittest: only the best (fittest) solutions will survive to have a chance of selection.
-* Selection: the fittest solutions are weighted by their fitness and merged into new solutions.
-* Mutation: some solutions are randomly changed to create new solutions.
+* **Survival of the fittest:** only the best (fittest) solutions will survive to have a chance of selection.
+* **Selection:** the fittest solutions are weighted by their fitness and merged into new solutions.
+* **Mutation:** some solutions are randomly changed to create new solutions.
 
-Like real evolution, it has no concept of gradient decent, it is literally picking random solutions over multiple generations and mutating them in a process that over time causes a "population" to converge on a optimal solution.
+Like real evolution, it has no concept of gradient decent, it is literally picking random solutions over multiple generations and mutating them in a process that over time (hopefully) causes a "population" to converge on an optimal solution.
 
 <PintoraDiagram src={`
 activityDiagram
@@ -254,8 +248,8 @@ end
 
 ### Training stability
 
-In Tetris, the next tetromino is randomly chosen from a "bag" containing the 7 tetrominoes.
-Once the bag is empty, the tetrominoes are placed back in the bag and the bag is shuffled.
+In Tetris, the next tetromino is randomly chosen from a "bag" containing all 7 shapes.
+Once the bag is empty, the tetromino shapes are placed back in the bag and the bag is shuffled.
 This makes a Tetris playing model unstable, which is especially an issue for unsupervised learning algorithms, which rely on (mostly) random chance to find an optimal model.
 If the models are unstable, then training is less likely to converge on something optimal.
 **TLDR;** the randomness of the game means that the quality of the optimal model can deteriorate over time. Whereas we want the opposite!
@@ -266,7 +260,7 @@ My hope is that over time, the most generally optimised models will be selected 
 
 ## Linear Results
 
-I trained the linear model with a genetic algorithm for 700 generations of 1000 agents.
+I trained the linear model with a genetic algorithm for 700 generations of 1000 models each.
 
 ### Linear Coefficients
 
@@ -290,11 +284,11 @@ Here are the coefficients of the linear model after training:
 As expected, the model has learned that:
 * Covering a hole is the worst thing you can do as it makes clearing the hole more difficult.
 * Closed holes are bad.
-* Open holes are bad but not as bad as closed holes as you can sometimes fill them with a sliding tetromino.
+* Open holes are bad but not as bad as closed holes, since you can sometimes fill them with a sliding tetromino.
 * Pillars are bad as they can only be filled with an `I` tetromino.
 * Tetris clears are good.
 * All the other coefficients are in a fine balance as they all interact with each other.
-  E.g. clearing a line will reduce the stack height, which is good, but the model actually applies a small penalty for a line clear.
+  E.g. you would imagine that clearing a line would be a good action to take, but the model actually applies a small penalty for a line clear, which seems weird in isolation.
   This looks to be offset by a small preference for a taller stack.
   Maybe this combination of coefficient values work better for some stack arrangements than others.
 
@@ -401,14 +395,14 @@ The input layer must have one neuron per game feature and the output layer must 
 ![neural network](neural-network.svg)
 
 The whole point of this is to provide a model architecture allowing for non-linear behaviour to emerge, so:
-* I give the model the delta of each feature **AND** the absolute values so it has the context of the current action plus the global state of the game.
+* I give the model the delta of each feature **AND** the absolute values, so it has the context of the current action, plus the global state of the game available.
 * I use multiple hidden layers to allow the model to learn complex relationships between the features.
 * I use a non-linear activation function, the [sigmoid function](https://en.wikipedia.org/wiki/Sigmoid_function).
 
 The neural network topology I settled on is:
 
 * Input layer with 20 neurons
-* 2 fully connected hidden layers with 10 neurons each
+* 2 fully connected hidden layers with 20 neurons each
 * Fully connected output layer with 1 neuron
 
 This totals to 1,281 parameters. For reference [GPT-4 has 1.8 trillion parameters](https://www.kdnuggets.com/2023/07/gpt4-details-leaked.html), so this is a very small model.
@@ -416,13 +410,13 @@ This totals to 1,281 parameters. For reference [GPT-4 has 1.8 trillion parameter
 ### Hold on, what is a neural network exactly?
 
 > Of course, I could have used a library here like [burn](https://github.com/tracel-ai/burn) (remember I'm using Rust so PyTorch is not a practical option)
-but I wanted to implement a neural network from scratch, as a learning experience.
+  but I wanted to implement a neural network from scratch, as a learning experience.
 
 In my model, a neuron is a mathematical function that:
 
-1. Applies a weighted sum over input values.
+1. Applies a weighted sum over input values, mostly the results from other neurons.
 2. Adds a constant value to the result, so that an activation bias is possible.
-3. Passes the result through an activation function, which introduces non-linearity into the model.
+3. Passes the result through an activation function, which introduces non-linearity into the neuron.
 
 Therefore, each neuron has two sets of parameters:
 
@@ -491,7 +485,7 @@ It is usual to train a neural network with a supervised learning technique such 
 I did implement backpropagation to test my neural network implementation, but the technique is not applicable, as I lack good quality labeled data.
 
 Since the neural network model is a direct replacement for the linear model, I can use the exact same unsupervised genetic algorithm to train it.
-I appreciate that with this many parameters, unsupervised learning is not the most efficient machine learning technique as a lot of compute is required to traverse such a large search space, but I thought it was worth a shot anyway.
+I appreciate that with this many parameters, unsupervised learning is not the most efficient machine learning technique, as a lot of compute is required to traverse such a large search space, but I thought it was worth a shot anyway.
 Maybe I will get lucky...
 
 > At this point, I made a tweak to the genetic algorithm to stop rotating the seed every 100 generations and instead rotate it every 10 stale generations, where the score did not improve.
@@ -503,7 +497,7 @@ I can't really show how the neural network has learned like I did with the linea
 There are techniques I can use to visualise activation patterns in the network to maybe derive an idea of what's going on, but I haven't done that yet.
 
 I trained this model for literally an entire weekend and boy am I glad I left it running that long!
-I set a limit per game of 10,000 lines and at generation 7,750, after millions of games played, billions of in-game hours, the model FINALLY hit this limit with a score of 647,931,149 points!
+I set a limit per game of 10,000 lines and at generation 7,750, after millions of games played, billions of in-game hours, the model **FINALLY** hit this limit with a score of 647,931,149 points!
 
 <LineChart
   data={[
@@ -668,13 +662,99 @@ I set a limit per game of 10,000 lines and at generation 7,750, after millions o
   y="Score"
 />
 
-There was definitely a breakthrough at around generation 6,000 that allowed the model to start scoring in the hundreds of millions.
-This is amazing but demonstrates the drawbacks of using unsupervised learning for a problem as complex as Tetris.
+There was definitely a breakthrough at around generation 6,000 that allowed the model to start scoring in the hundreds of millions of points.
+This is amazing, but the massive lag before the breakthrough demonstrates the drawbacks of using unsupervised learning for a problem as complex as Tetris.
 I'm not sure of the timing, but I think it took over 30 hours to get to generation 6,000.
 I could have easily turned it off before then and missed out on this breakthrough.
 
 ## Demo
 
-TODO record the 647931149 score run, maybe exclusively in GB mode, upload to YT
+Using the same seed that produced the 10,000 line run, I let the model play for as long as possible.
+It managed to play for 3 hours, clearing 10,840 lines and scoring 760,264,498 points.
+I recorded the playthrough and uploaded it to YouTube for your viewing pleasure 😀:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/KRohCEPzE4Y?si=r1fviG2kq8r3bOe_" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Next Steps
+
+I've managed to, somewhat luckily, grind superhuman performance out of a model-free unsupervised learning technique.
+Where do I go from here?
+
+### A better agent
+
+You may have noticed that I have not documented any attempt to lookahead, classifying actions by their future consequences or opportunities.
+That doesn't mean that I did not attempt to, just that my attempts were unsuccessful.
+
+The issue I could not solve acceptably was the sheer amount of compute required.
+For example, the `I` tetromino shape can be placed in 17 different positions on an empty board.
+If the next tetromino is the `L` shape, then there are 35 further placements to be considered... for every one of the initial 17 placements.
+Also, at each placement, you have to consider the held tetromino, further branching the tree.
+This results in an exponentially increasing number of placements to consider for each level of lookahead.
+
+The increased compute meant that training was significantly slower.
+Coupled with inefficient unsupervised learning, this resulted in an unacceptable rate of convergence.
+
+I tried to solve this by:
+
+* **Pruning the tree of placements that were obviously bad.**
+  I could not remove enough of them to make a difference and the heuristics I used were not free to compute, so I think in some cases I actually made it worse.
+* **Training the model without lookahead and then "enlightening" it with the feature once deployed.**
+  This seemed to cause the models to perform even worse than in training without lookahead enabled.
+  My theory is that the models learned something about, or became reliant on the scales of the feature values.
+  For example, in training the model was typically dealing with, "if I make this placement then I will create one hole", but then in deployment it might have had to deal with, "if I make this placement then I will create 10 holes".
+
+I am not sure that lookahead is even required for a perfect Tetris strategy (one that can play forever) so it might not be worth the effort.
+Maybe I might still revisit this later but with some serious pruning and a way to isolate it from the current model parameters.
+One approach might be to provide the model with another, much more limited set of features for lookahead placements.
+
+### Tuning model parameters
+
+I can tune the model parameters to improve the performance of the model or redirect its behaviour towards something more desirable.
+
+If you watched any of the demo video then you may have noticed some weird behaviour where `I` tetromino shapes are stacked up on the RHS column.
+This was actually an experiment gone wrong where I added the height of the RHS column as a game feature, hoping that the model would learn to slam big Tetris clears by keeping it free 😎.
+However, this didn't work out and the model actually learned to do the total opposite, resulting in the stacking of `I` tetromino on the RHS column instead ☹️.
+I am not sure of the evolutionary advantage that this technique provided.
+Maybe it had no positive or negative effects so it was never actively selected against, and it was random chance that it remained in the final model?
+
+I could either:
+
+* Double down and give it the heights of every column, maybe then the model will derive its own features and abstractions over the hidden layers?
+  This will probably require massive training runs with the genetic algorithm though as there will be a lot of noise to sift through.
+* Derive a new feature that somehow describes the behaviour I want e.g. leaving a single column open for big Tetris clears.
+
+### More intelligent unsupervised learning
+
+The genetic algorithm I am using is basically brute force on steroids.
+
+There is no intelligence in how mutation changes the weights so no guarantee that any particular mutation will result in a better model.
+Maybe, via some gradient descent technique, I can bias mutation to move weights in the right direction more often?
+I don't know, I haven't seen anything on the internet that discusses this in depth.
+
+There are other, much better documented, techniques available to level up the genetic algorithm.
+For example, I could introduce speciation to allow it to explore multiple strategies at once.
+
+### Longer training runs
+
+Every single game of Tetris ever played by every model I've ever trained has ended in a game over.
+
+That must mean that the model still hasn't gotten good enough to play a perfect game of Tetris.
+I've not got any proof that a perfect game is possible, but I suspect that it is possible to play for much longer than 10,000 lines.
+
+The unsupervised learning process had a massive breakthrough after many hours of training, so maybe it might make another one after a longer training run?
+
+### Optimizing for Score
+
+The models still haven't learnt the canonical strategies of master Tetris players, who tend to optimize for Tetris clears.
+I think the reason for this is that for any non-Tetris optimized strategy, a longer game will usually result in a higher score.
+So a survival orientated strategy has received a higher selection pressure over more risky techniques that may have resulted in higher scores if they were explored further.
+
+I think I can address this by taking a survival optimized model and then either:
+
+* Training it with a supervised learning technique to optimize for Tetris clears or to mimic professional play styles.
+* Further training it with unsupervised learning but limit game time to force more efficient scoring strategies.
+
+## The Code
+
+All the code for this project, and most of the failed attempts, can be found on the `ai` branch of [Rustris](https://github.com/axle-h/rustris).
+This has been a massive undertaking, so please if anyone has read this far and is interested then do check it out and give it a star ⭐.

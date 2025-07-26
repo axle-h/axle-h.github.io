@@ -3,14 +3,17 @@ title: Machine Learning From Scratch
 categories: [ai]
 ---
 
-I'm simplifying a bit here but the recent AI boom has not come from one single breakthrough technology.
-There is of course more compute available and new parallel training techniques like [transformers](https://en.wikipedia.org/wiki/Attention_Is_All_You_Need), but the model architecture remains very similar to what was cutting-edge in the 1970s.
+The recent AI boom started around 2017 with the paper ["Attention Is All You Need"](https://en.wikipedia.org/wiki/Attention_Is_All_You_Need),
+which introduced the [Transformer Architecture](https://en.wikipedia.org/wiki/Transformer_(deep_learning_architecture)),
+making models like [ChatGPT](https://en.wikipedia.org/wiki/ChatGPT) possible (the `T` in `GPT` stands for transformer).
+This is groundbreaking stuff but is still based on the feedforward neural network, which was cutting edge in the 1970s and is literally just (lots of) tensor multiplication.
 
 For modern (laptop scale) machine learning, it is usual to depend on a library such as [PyTorch](https://pytorch.org/).
-These libraries have massively lowered the barrier to entry into machine learning, they abstract away model architecture & techniques and have you running stuff on your GPU with low effort.
+These libraries have massively lowered the barrier to entry into machine learning by abstracting away the mathematics behind it, having you running big models on your GPU with little effort.
 This is great as anyone with basic Python programming skills and the ability to follow a tutorial (or effectively prompt an LLM), can get started with machine learning.
 I've had a play with PyTorch but left feeling I'd learned more of the abstraction than the underlying concepts.
-So I decided to go back to basics and implement my own machine learning from scratch.
+
+As a learning exercise and of course *for fun*, I decided to go back to basics and implement my own machine learning from scratch.
 
 ## Target
 

@@ -1,0 +1,41 @@
+/*
+ * Code blocks, highlighted at build time by @shikijs/rehype in dual-theme mode.
+ * Metrics ported from the markup `bright` used to emit (border-radius 4px, pre padding 1em 0,
+ * line padding 0 1em, margin 1em 0).
+ */
+.shiki {
+  box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.075);
+  border-radius: 4px;
+  margin: 1em 0;
+  padding: 1em;
+  overflow-x: auto;
+}
+
+/*
+ * Shiki emits the light theme inline and the dark theme as --shiki-dark* custom properties.
+ * `.dark` is the class next-themes puts on <html>.
+ *
+ * Note this is a deliberate fix, not just a port: bright emitted a `[data-theme="light"]` selector
+ * while next-themes here is configured with attribute="class", so that selector never matched and
+ * code blocks were stuck dark even in light mode.
+ */
+.dark .shiki {
+  box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.15);
+}
+
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+ul ul,
+ol ol,
+ul ol,
+ol ul {
+  margin-top: var(--chakra-spacing-2) !important;
+  margin-bottom: var(--chakra-spacing-2) !important;
+}

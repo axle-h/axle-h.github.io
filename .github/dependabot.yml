@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # These move in lockstep; separate PRs just fight each other.
+      tanstack:
+        patterns: ['@tanstack/*']
+      react:
+        patterns: ['react', 'react-dom', '@types/react', '@types/react-dom']
+      chakra:
+        patterns: ['@chakra-ui/*', '@emotion/*']
+      mdx:
+        patterns: ['@mdx-js/*', 'remark-*', 'rehype-*', 'shiki', '@shikijs/*']
+      dev-tooling:
+        patterns:
+          [
+            'eslint*',
+            'typescript*',
+            'prettier',
+            'vite',
+            '@vitejs/*',
+            '@types/*',
+          ]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

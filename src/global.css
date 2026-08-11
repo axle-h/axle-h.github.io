@@ -1,0 +1,36 @@
+/*
+ * Replaces next/font/google's Rubik. @fontsource-variable/rubik self-hosts the font (imported in
+ * the root route); the Chakra theme reads this variable for its heading/body tokens.
+ */
+:root {
+  --font-rubik: 'Rubik Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Remove Chakra UI Focus*/
+:focus,
+:focus-visible,
+*[data-focus] {
+  box-shadow: none !important;
+  outline: none !important;
+  border-color: inherit !important;
+}
+
+.chakra-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 100ch;
+  padding-left: var(--chakra-spacing-4);
+  padding-right: var(--chakra-spacing-4);
+}
+
+li {
+  align-items: center;
+}
+
+iframe.youtube {
+  aspect-ratio: 16 / 9;
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}

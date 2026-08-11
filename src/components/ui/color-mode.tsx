@@ -1,19 +1,31 @@
-import type { IconButtonProps, SpanProps } from '@chakra-ui/react'
-import { ClientOnly, IconButton, Skeleton, Span } from '@chakra-ui/react'
-import { ThemeProvider, useTheme } from 'next-themes'
-import type { ThemeProviderProps } from 'next-themes'
-import * as React from 'react'
-import { LuMoon, LuSun } from 'react-icons/lu'
-
-export type ColorModeProviderProps = ThemeProviderProps
-
-export function ColorModeProvider(props: ColorModeProviderProps) {
-  return (
-    <ThemeProvider attribute="class" disableTransitionOnChange {...props} />
-  )
-}
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react'
 
 export type ColorMode = 'light' | 'dark'
+
+const STORAGE_KEY = 'theme'
+
+/**
+ * Blocking inline script, rendered into <head> ahead of everything else.
+ *
+ * It applies the persisted (or system) colour mode to <html> before first paint, so the page never
+ * flashes the wrong theme. Nothing in React can do this — by the time components run, the browser
+ * has already painted.
+ *
+ * The class it sets is the source of truth that the store below reads back.
+ */
+export const COLOR_MODE_SCRIPT = `(function(){try{
+var s=localStorage.getItem(${JSON.stringify(STORAGE_KEY)});
+var m=(s==='light'||s==='dark')?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+var r=document.documentElement;
+r.classList.remove('light','dark');r.classList.add(m);r.style.colorScheme=m;
+}catch(e){}})()`
 
 export interface UseColorModeReturn {
   colorMode: ColorMode
@@ -21,85 +33,118 @@ export interface UseColorModeReturn {
   toggleColorMode: () => void
 }
 
+/* -------------------------------------------------------------------------------------------- */
+/* Store — <html>'s class is the state; React just subscribes to it.                              */
+/* -------------------------------------------------------------------------------------------- */
+
+const listeners = new Set<() => void>()
+
+function currentMode(): ColorMode {
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
+function subscribe(onStoreChange: () => void) {
+  listeners.add(onStoreChange)
+
+  // Follow the OS while the visitor hasn't made an explicit choice.
+  const query = window.matchMedia('(prefers-color-scheme: dark)')
+  const onSystemChange = () => {
+    if (readStoredMode()) return
+    applyColorMode(query.matches ? 'dark' : 'light')
+  }
+  query.addEventListener('change', onSystemChange)
+
+  return () => {
+    listeners.delete(onStoreChange)
+    query.removeEventListener('change', onSystemChange)
+  }
+}
+
+/**
+ * Undefined during SSR *and* during the first client render, so hydration matches the prerendered
+ * HTML exactly. React swaps to the live snapshot immediately afterwards.
+ */
+function getServerSnapshot(): ColorMode | undefined {
+  return undefined
+}
+
+function readStoredMode(): ColorMode | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored === 'light' || stored === 'dark' ? stored : null
+  } catch {
+    return null
+  }
+}
+
+/** Applies the mode to <html>, suppressing transitions so the switch doesn't animate. */
+function applyColorMode(mode: ColorMode) {
+  const root = document.documentElement
+  const style = document.createElement('style')
+  style.appendChild(
+    document.createTextNode(
+      '*,*::before,*::after{transition:none!important;animation:none!important}'
+    )
+  )
+  document.head.appendChild(style)
+
+  root.classList.remove('light', 'dark')
+  root.classList.add(mode)
+  root.style.colorScheme = mode
+
+  // Force a reflow so the no-transition rule covers the change above, then drop it.
+  void window.getComputedStyle(style).opacity
+  document.head.removeChild(style)
+
+  listeners.forEach((listener) => listener())
+}
+
+/* -------------------------------------------------------------------------------------------- */
+
+const ColorModeContext = createContext<UseColorModeReturn>({
+  colorMode: undefined as unknown as ColorMode,
+  setColorMode: () => {},
+  toggleColorMode: () => {},
+})
+
+export function ColorModeProvider({ children }: { children: ReactNode }) {
+  const colorMode = useSyncExternalStore(
+    subscribe,
+    currentMode,
+    getServerSnapshot
+  )
+
+  const setColorMode = useCallback((mode: ColorMode) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, mode)
+    } catch {
+      // private mode / storage disabled — the theme still applies for this page view
+    }
+    applyColorMode(mode)
+  }, [])
+
+  const value = useMemo<UseColorModeReturn>(
+    () => ({
+      colorMode: colorMode as ColorMode,
+      setColorMode,
+      toggleColorMode: () =>
+        setColorMode(currentMode() === 'dark' ? 'light' : 'dark'),
+    }),
+    [colorMode, setColorMode]
+  )
+
+  return (
+    <ColorModeContext.Provider value={value}>
+      {children}
+    </ColorModeContext.Provider>
+  )
+}
+
 export function useColorMode(): UseColorModeReturn {
-  const { resolvedTheme, setTheme } = useTheme()
-  const toggleColorMode = () => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
-  }
-  return {
-    colorMode: resolvedTheme as ColorMode,
-    setColorMode: setTheme,
-    toggleColorMode,
-  }
+  return useContext(ColorModeContext)
 }
 
 export function useColorModeValue<T>(light: T, dark: T) {
   const { colorMode } = useColorMode()
   return colorMode === 'dark' ? dark : light
 }
-
-export function ColorModeIcon() {
-  const { colorMode } = useColorMode()
-  return colorMode === 'dark' ? <LuMoon /> : <LuSun />
-}
-
-type ColorModeButtonProps = Omit<IconButtonProps, 'aria-label'>
-
-export const ColorModeButton = React.forwardRef<
-  HTMLButtonElement,
-  ColorModeButtonProps
->(function ColorModeButton(props, ref) {
-  const { toggleColorMode } = useColorMode()
-  return (
-    <ClientOnly fallback={<Skeleton boxSize="8" />}>
-      <IconButton
-        onClick={toggleColorMode}
-        variant="ghost"
-        aria-label="Toggle color mode"
-        size="sm"
-        ref={ref}
-        {...props}
-        css={{
-          _icon: {
-            width: '5',
-            height: '5',
-          },
-        }}
-      >
-        <ColorModeIcon />
-      </IconButton>
-    </ClientOnly>
-  )
-})
-
-export const LightMode = React.forwardRef<HTMLSpanElement, SpanProps>(
-  function LightMode(props, ref) {
-    return (
-      <Span
-        color="fg"
-        display="contents"
-        className="chakra-theme light"
-        colorPalette="gray"
-        colorScheme="light"
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
-
-export const DarkMode = React.forwardRef<HTMLSpanElement, SpanProps>(
-  function DarkMode(props, ref) {
-    return (
-      <Span
-        color="fg"
-        display="contents"
-        className="chakra-theme dark"
-        colorPalette="gray"
-        colorScheme="dark"
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)

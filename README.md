@@ -15,11 +15,15 @@ pnpm dev          # http://localhost:3000
 
 ```bash
 pnpm build        # prerenders every page into .output/public
-pnpm serve        # serve the built output exactly as Pages will
+pnpm preview      # serve the built output
 pnpm typecheck
 pnpm lint
 pnpm format
 ```
+
+Note that `pnpm preview` does **not** reproduce GitHub Pages' URL resolution — it answers `200`
+for `/ai/diffy/`, where Pages answers `404`. It is fine for checking behaviour, but not for
+checking URLs; for that, compare the emitted file layout (see below).
 
 ## Writing a post
 
@@ -66,6 +70,16 @@ Most of the interesting work happens at build time, in Node, and ships zero runt
 - **Syntax highlighting** is done by `@shikijs/rehype` during MDX compilation, in dual
   light/dark themes.
 - **`build/seo.ts`** writes `sitemap.xml`, `robots.txt` and `rss.xml` after the build.
+
+### Colour mode
+
+`src/components/ui/color-mode.tsx` owns light/dark. `<html>`'s `light`/`dark` class is the state;
+React subscribes to it via `useSyncExternalStore`. `COLOR_MODE_SCRIPT` is inlined into `<head>` by
+the root route and applies the stored (or system) mode before first paint — without it the page
+would flash the wrong theme, and no React code can run early enough to prevent that.
+
+The store reports `undefined` during SSR and on the first client render so hydration matches the
+prerendered HTML exactly; the real value lands immediately after.
 
 ### URLs are load-bearing
 

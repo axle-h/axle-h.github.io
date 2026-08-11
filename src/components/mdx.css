@@ -13,11 +13,11 @@
 
 /*
  * Shiki emits the light theme inline and the dark theme as --shiki-dark* custom properties.
- * `.dark` is the class next-themes puts on <html>.
+ * `.dark` is the class our colour-mode script puts on <html>.
  *
  * Note this is a deliberate fix, not just a port: bright emitted a `[data-theme="light"]` selector
- * while next-themes here is configured with attribute="class", so that selector never matched and
- * code blocks were stuck dark even in light mode.
+ * while the site toggles a class on <html>, so that selector never matched and code blocks were
+ * stuck dark even in light mode.
  */
 .dark .shiki {
   box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.15);

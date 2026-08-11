@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Providers } from '@/components/providers'
 import { Nav } from '@/components/nav'
 import { NotFound } from '@/components/not-found'
+import { COLOR_MODE_SCRIPT } from '@/components/ui/color-mode'
 import { site } from '@/config'
 
 import '@fontsource-variable/rubik'
@@ -48,6 +49,8 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Must run before paint, and before anything else in <head>, to avoid a theme flash. */}
+        <script dangerouslySetInnerHTML={{ __html: COLOR_MODE_SCRIPT }} />
         <HeadContent />
       </head>
       <body>

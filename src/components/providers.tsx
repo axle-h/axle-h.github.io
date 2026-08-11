@@ -18,8 +18,8 @@ const system = createSystem(
     theme: {
       tokens: {
         fonts: {
-          heading: { value: 'var(--font-rubik)' },
-          body: { value: 'var(--font-rubik)' },
+          heading: { value: 'var(--font-body)' },
+          body: { value: 'var(--font-body)' },
         },
         colors: {
           brand: {

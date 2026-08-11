@@ -4,6 +4,7 @@ import { Center } from '@chakra-ui/react'
 import {
   Bar,
   BarChart as ReBarChart,
+  ResponsiveContainer,
   XAxis,
   YAxis,
   Tooltip,
@@ -24,25 +25,29 @@ export function BarChart({
   return (
     <Center>
       <Chart.Root chart={chart} maxW={800} m={3} mb={5}>
-        <ReBarChart data={chart.data}>
-          <XAxis
-            dataKey="feature"
-            interval={0}
-            angle={-15}
-            textAnchor="end"
-            dy={10}
-          />
-          <YAxis dataKey="coefficient" />
-          <Tooltip />
-          <ReferenceLine y={0} />
-          {chart.series.map((item) => (
-            <Bar
-              key={item.name as any}
-              dataKey={chart.key(item.name) as any}
-              fill={chart.color(item.color)}
+        {/* @chakra-ui/charts >=3.3x no longer wraps children in a ResponsiveContainer,
+            so the chart must supply its own or recharts renders with no dimensions. */}
+        <ResponsiveContainer width="100%" height="100%">
+          <ReBarChart data={chart.data}>
+            <XAxis
+              dataKey="feature"
+              interval={0}
+              angle={-15}
+              textAnchor="end"
+              dy={10}
             />
-          ))}
-        </ReBarChart>
+            <YAxis dataKey="coefficient" />
+            <Tooltip />
+            <ReferenceLine y={0} />
+            {chart.series.map((item) => (
+              <Bar
+                key={item.name as any}
+                dataKey={chart.key(item.name) as any}
+                fill={chart.color(item.color)}
+              />
+            ))}
+          </ReBarChart>
+        </ResponsiveContainer>
       </Chart.Root>
     </Center>
   )

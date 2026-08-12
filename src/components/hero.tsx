@@ -111,7 +111,7 @@ export function Hero() {
                   color: 'brand.400',
                 }}
               >
-                Software Developer
+                AI Software Engineer
               </Heading>
               <Box my={3}>
                 <Email iconOnly boxSize="2em" mr={2} />
@@ -137,9 +137,10 @@ export function Hero() {
                 }}
                 color="gray.500"
               >
-                Hi, I&apos;m Alex, a software developer with over 15 years
+                Hi, I&apos;m Alex, a software developer with over 15 years&apos;
                 experience across many industries, platforms and within
-                government.
+                government. I&apos;m currently building agentic AI applications
+                and working daily with AI coding agents.
               </Text>
               <Box
                 mt={{

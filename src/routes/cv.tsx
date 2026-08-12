@@ -93,7 +93,7 @@ function HeaderSection() {
           color="gray.600"
           _dark={{ color: 'gray.400' }}
         >
-          Software Developer
+          AI Software Engineer
         </Heading>
       </Box>
       <Box>
@@ -139,14 +139,19 @@ function BlurbSection() {
         />
       </Box>
       <Box flex={1} px={4}>
-        Hi, I&apos;m Alex, a software developer with over 15 years experience
-        across many industries, platforms and within government. I have led
-        multiple teams and delivered many full stack projects from design to
-        production. I have a strong background in mathematics, statistics and
-        data science, which has accelerated my career through some really
-        interesting and complex projects. Most of all, I enjoy designing simple,
-        scalable solutions to complex problems in an agile team. I like wearing
-        shorts, running and retro gaming. I have over 650 stars on GitHub.
+        Hi, I&apos;m Alex, a software developer with over 15 years&apos;
+        experience across many industries, platforms and within government. I
+        have led multiple teams and delivered many full stack projects from
+        design to production. I have a strong background in mathematics,
+        statistics and data science, which has accelerated my career through
+        some really interesting and complex projects. The rise of AI has totally
+        transformed my career. I now build agentic applications and the
+        platforms that run them; chat interfaces, retrieval over large knowledge
+        bases, data exploration and coding tools. It has changed how I build
+        software just as much as what I build, and I work alongside coding
+        agents every day. I enjoy designing simple, scalable solutions to
+        complex problems in an agile team. I like wearing shorts, running and
+        retro gaming. I have over 650 stars on GitHub.
       </Box>
     </Stack>
   )
@@ -164,7 +169,11 @@ function TechnologiesSection() {
 
       <DataDefinition
         title="AI"
-        value="Claude Code, Amazon Bedrock, OpenAI, MCP, Skills, RAG, Agentic application development, Prompt evaluation, Machine learning (neural networks, genetic algorithms, linear regression etc)"
+        value="Claude Code, Amazon Bedrock, OpenAI, MCP, Skills, RAG, Agentic application development, Prompt evaluation"
+      />
+      <DataDefinition
+        title="Machine learning"
+        value="Neural networks, genetic algorithms, linear regression, anomaly detection"
       />
       <DataDefinition
         title="Python"
@@ -273,9 +282,13 @@ function ExperienceSection() {
         date="SEP 2025 - PRESENT"
         tech="Agentic AI, MCP, RAG, Python, OpenAI, Bedrock, React"
       >
-        I am currently working a software engineer contract in an AI Platform
-        Team for HMRC via Equal Experts.
-        I am developing agentic applications to support business processes.
+        I am currently working on a software engineering contract in an AI
+        Platform Team for HMRC via Equal Experts. I build agentic applications
+        to support business processes; chat interfaces, RAG over very large
+        vector databases, data exploration and coding tools. I also work on the
+        platform underneath them, including an LLM proxy providing request
+        routing, rate limiting and consolidated cost control across multiple
+        departments.
       </Experience>
 
       <Experience
@@ -285,8 +298,9 @@ function ExperienceSection() {
         date="FEB 2022 - SEP 2025"
         tech="Kotlin, Clojure, Java, Kubernetes, Oracle, Solace, OpenShift, Legacy"
       >
-        Completed a successful migration of a 30 year old legacy system for Citi,
-        including middleware and client migration without downtime onto a modern stack.
+        I was technical lead on a successful migration of a 30 year old legacy
+        system for Citi, moving both middleware and clients onto a modern stack
+        without downtime.
       </Experience>
 
       <Experience
@@ -327,14 +341,11 @@ function ExperienceSection() {
         tech=".NET, Angular, Vue.js, JQuery, AWS, Terraform, Rancher, Android, iOS"
       >
         Westfield Health is a not-for-profit provider of contributory health
-        schemes and health & wellbeing services. I joined them to help migrate
-        their legacy business processes online. I provided technical leadership
-        for a feature team responsible for multiple microservices and the
-        ownership of their domain. I also led decisions that directed the
-        platform as a whole and distributed libraries, processes and training to
-        build conformance across all teams. I became the primary contact and
-        technical owner for all things security, platform, serverless, UX/client
-        technologies and mobile development.
+        schemes. I joined to help migrate their legacy business processes
+        online, providing technical leadership for a feature team owning
+        multiple microservices. I became the technical owner for security and
+        platform, distributing libraries, processes and training to build
+        conformance across all teams.
       </Experience>
 
       <Experience
@@ -345,50 +356,25 @@ function ExperienceSection() {
         tech="Scala, Spark, Cassandra, Kafka, .NET, Angular, JQuery, MongoDB, MS Sql Server, Docker Swarm"
       >
         At t-mac, I provided technical leadership for a big data focussed team
-        responsible for processing IoT time series data at scale, presenting
-        analytics onto customer dashboards and providing automated insights into
-        portfolio performance. I led the project to architect the platform that
-        supported all of this, which was built from technologies such as
-        Cassandra, Spark and Kafka. I used primarily Scala based JDK software to
-        deploy a mixture of custom and off-the-shelf machine learning algorithms
-        at scale. I also worked on a modern microservice stack including .NET
-        Core on Docker Swarm and Angular on the front end.
+        processing IoT time series data at scale, presenting analytics onto
+        customer dashboards and providing automated insights into portfolio
+        performance. I architected the Cassandra, Spark and Kafka platform
+        behind it and used Scala to deploy a mixture of custom and off-the-shelf
+        machine learning algorithms at scale.
       </Experience>
 
       <Experience
-        title="Software Developer"
-        place="Alpharooms"
-        date="MAR 2014 - NOV 2015"
-        tech=".NET, MongoDB, AWS, JQuery"
+        title="Earlier career"
+        place="Alpharooms, Technolog, Experian"
+        date="JUL 2010 - NOV 2015"
+        tech=".NET, Java, Spring, C++, MongoDB, Cassandra, Oracle, AWS, JQuery"
       >
-        Alpharooms was an online travel agent with a stack built on .NET
-        Framework, SQL Server and MongoDB. Major challenges were operating
-        efficiently at scale on AWS, maintaining SEO performance, managing
-        asynchronous, external processes at scale and presenting everything with
-        a UX aligned to maximising revenue.
-      </Experience>
-
-      <Experience
-        title="Software Engineer"
-        place="Technolog"
-        url="https://www.technolog.com/"
-        date="DEC 2012 - MAR 2014"
-        tech="Java, Spring, Swing, .NET, C++, Cassandra, Oracle, JQuery"
-      >
-        I took my first software development job in a multi-disciplined team at
-        Technolog, an electronics manufacturer in the utilities industry. I
-        worked primarily with software supporting IoT data.
-      </Experience>
-
-      <Experience
-        title="Statistical Analyst"
-        place="Experian"
-        url="https://www.experian.co.uk/"
-        date="JUL 2010 - DEC 2012"
-      >
-        I started my career as an Analyst at Experian Decision Analytics. At
-        Experien I realised that what little software development I was
-        responsible for was what kept me driven and set me apart from my peers.
+        I started my career as an analyst at Experian Decision Analytics, where
+        I realised that what little software development I was responsible for
+        was what kept me driven and set me apart from my peers. I moved into
+        development proper at Technolog, an electronics manufacturer working
+        with IoT data, then to Alpharooms, an online travel agent operating at
+        scale on AWS.
       </Experience>
     </>
   )
@@ -399,21 +385,33 @@ function SkillsSection() {
     <>
       <SectionHeading>Skills</SectionHeading>
 
+      <MuteHeading>AI</MuteHeading>
+      <Text mb={3}>
+        I build agentic applications and the platforms underneath them; tool use
+        and MCP, RAG over large vector stores, progressive disclosure through
+        skills, and evaluation harnesses. I also use coding agents every day,
+        which has changed how I work more than any other tool in my entire
+        career.
+      </Text>
+
       <MuteHeading>Architecture</MuteHeading>
       <Text mb={3}>
-        I am a tech leader, I have designed, lead and delivered many successful
+        I am a tech leader, I have designed, led and delivered many successful
         projects on modern and legacy infrastructure.
       </Text>
 
       <MuteHeading>Code</MuteHeading>
       <Text mb={3}>
-        I like to diversify my platform experience but no mater the idioms; I
+        I like to diversify my platform experience but no matter the idioms; I
         build simple solutions to complex problems with a TDD methodology.
+        Working with coding agents has made me lean on that harder than ever; a
+        good test suite is both the brief an agent works to and the proof it got
+        there.
       </Text>
 
       <MuteHeading>Agile</MuteHeading>
       <Text mb={3}>
-        I prefer the agile approach to minimising project risk of aiming for
+        I prefer the agile approach of minimising project risk by aiming for
         smaller releases on a frequent, regular cadence. I will build tooling,
         processes and team culture to achieve this.
       </Text>
@@ -438,12 +436,13 @@ function SkillsSection() {
         I have developed machine learning at scale with open source tools. My
         strong background in statistics means I am equally confident in the
         development of custom algorithms as I am with dropping in off-the-shelf
-        solutions.
+        solutions, and it is what I now lean on to measure whether an AI system
+        actually works.
       </Text>
 
       <MuteHeading>Big data</MuteHeading>
       <Text mb={3}>
-        I have lead projects moving massive databases into modern scalable
+        I have led projects moving massive databases into modern scalable
         platforms.
       </Text>
 

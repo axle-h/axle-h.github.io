@@ -164,6 +164,15 @@ const system = createSystem(
             },
             emphasized: { value: '{colors.brand.300}' },
             focusRing: { value: '{colors.brand.500}' },
+            // Chakra ships a `border` token for every built-in palette, but `brand` is ours, so we
+            // have to supply it. Without it, outline buttons fall back to the global gray palette
+            // and their border vanishes against the dark background.
+            border: {
+              value: {
+                _light: '{colors.brand.500}',
+                _dark: '{colors.brand.400}',
+              },
+            },
           },
         },
       },

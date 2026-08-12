@@ -139,7 +139,7 @@ function BlurbSection() {
         />
       </Box>
       <Box flex={1} px={4}>
-        Hi, I&apos;m Alex, a software developer with over 10 years experience
+        Hi, I&apos;m Alex, a software developer with over 15 years experience
         across many industries, platforms and within government. I have led
         multiple teams and delivered many full stack projects from design to
         production. I have a strong background in mathematics, statistics and
@@ -163,6 +163,14 @@ function TechnologiesSection() {
       </Text>
 
       <DataDefinition
+        title="AI"
+        value="Claude Code, Amazon Bedrock, OpenAI, MCP, Skills, RAG, Agentic application development, Prompt evaluation, Machine learning (neural networks, genetic algorithms, linear regression etc)"
+      />
+      <DataDefinition
+        title="Python"
+        value="FastAPI, SQLAlchemy, Alembic, Google ADK, Posit, Running python in production"
+      />
+      <DataDefinition
         title="JDK"
         value="Kotlin, Java, Scala, Clojure, http4k, Ktor, Spring, Hibernate, Gradle, Maven"
       />
@@ -173,7 +181,7 @@ function TechnologiesSection() {
       <DataDefinition title="Node.js" value="Typescript, Nest.js" />
       <DataDefinition
         title="UI"
-        value="React, Next.js, Angular, Vue.js, Android, iOS, legacy browser support, JQuery, GDS (gov.uk), Redux"
+        value="React, Next.js, Angular, Vue.js, Android, iOS, legacy browser support, JQuery, GDS (gov.uk)"
       />
       <DataDefinition
         title="Cloud"
@@ -259,14 +267,26 @@ function ExperienceSection() {
       <SectionHeading>Experience</SectionHeading>
 
       <Experience
+        title="AI Software Engineer (Contract)"
+        place="Equal Experts"
+        url="https://www.equalexperts.com/"
+        date="SEP 2025 - PRESENT"
+        tech="Agentic AI, MCP, RAG, Python, OpenAI, Bedrock, React"
+      >
+        I am currently working a software engineer contract in an AI Platform
+        Team for HMRC via Equal Experts.
+        I am developing agentic applications to support business processes.
+      </Experience>
+
+      <Experience
         title="Software Developer (Contract)"
         place="JUXT"
         url="https://www.juxt.pro/"
-        date="FEB 2022 - PRESENT"
-        tech="Kotlin, Clojure, Java, Kubernetes, Oracle, ScyllaDB"
+        date="FEB 2022 - SEP 2025"
+        tech="Kotlin, Clojure, Java, Kubernetes, Oracle, Solace, OpenShift, Legacy"
       >
-        I am currently working a software development contract for a tier one
-        banking client.
+        Completed a successful migration of a 30 year old legacy system for Citi,
+        including middleware and client migration without downtime onto a modern stack.
       </Experience>
 
       <Experience

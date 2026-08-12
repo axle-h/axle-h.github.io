@@ -137,7 +137,7 @@ export function Hero() {
                 }}
                 color="gray.500"
               >
-                Hi, I&apos;m Alex, a software developer with over 10 years
+                Hi, I&apos;m Alex, a software developer with over 15 years
                 experience across many industries, platforms and within
                 government.
               </Text>

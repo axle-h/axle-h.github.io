@@ -1,7 +1,6 @@
 import { Image, Box, Icon, Heading, Text, Container } from '@chakra-ui/react'
 import { Email, GitHub, Linkedin } from '@/components/contact'
-import { Link } from '@/components/link'
-import { Button } from '@/components/ui/button'
+import { ButtonLink } from '@/components/button-link'
 
 const bg = 'white'
 const bgDark = 'gray.800'
@@ -156,25 +155,22 @@ export function Hero() {
                 }}
                 fontWeight="extrabold"
               >
-                <Link href="/cv">
-                  <Button
-                    as="span"
-                    colorPalette="brand"
-                    variant="outline"
-                    fontSize={{
-                      base: 'md',
-                      md: 'lg',
-                    }}
-                    px={{
-                      base: 8,
-                      md: 10,
-                    }}
-                    size="lg"
-                    w="full"
-                  >
-                    About Me
-                  </Button>
-                </Link>
+                <ButtonLink
+                  href="/cv"
+                  colorPalette="brand"
+                  variant="outline"
+                  fontSize={{
+                    base: 'md',
+                    md: 'lg',
+                  }}
+                  px={{
+                    base: 8,
+                    md: 10,
+                  }}
+                  size="lg"
+                >
+                  About Me
+                </ButtonLink>
               </Box>
             </Box>
           </Box>

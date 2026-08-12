@@ -1,5 +1,6 @@
 import { Box, Button, Flex, Image } from '@chakra-ui/react'
 import { Link } from '@/components/link'
+import { ButtonLink } from '@/components/button-link'
 import { useRouterState } from '@tanstack/react-router'
 import { ArrowBackIcon, MoonIcon, SunIcon } from '@/components/icons'
 import { useColorMode } from '@/components/ui/color-mode'
@@ -16,17 +17,16 @@ export function Nav() {
           justifyContent="flex-start"
           display={{ base: 'flex', md: isRoot ? 'none' : 'flex' }}
         >
-          <Link href="/">
-            <Button
-              display={isRoot ? 'none' : 'flex'}
-              variant="outline"
-              color="white"
-              _dark={{ color: 'gray.100' }}
-              _hover={{ bg: 'gray.600' }}
-            >
-              <ArrowBackIcon /> Back
-            </Button>
-          </Link>
+          <ButtonLink
+            href="/"
+            display={isRoot ? 'none' : 'flex'}
+            variant="outline"
+            color="white"
+            _dark={{ color: 'gray.100' }}
+            _hover={{ bg: 'gray.600' }}
+          >
+            <ArrowBackIcon /> Back
+          </ButtonLink>
         </Flex>
 
         <Flex>

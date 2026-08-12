@@ -1,6 +1,5 @@
 import { Container, Heading, Stack, Text } from '@chakra-ui/react'
-import { Link } from '@/components/link'
-import { Button } from '@/components/ui/button'
+import { ButtonLink } from '@/components/button-link'
 
 export function NotFound() {
   return (
@@ -10,25 +9,22 @@ export function NotFound() {
           404
         </Heading>
         <Text>Page cannot be found</Text>
-        <Link href="/">
-          <Button
-            as="span"
-            colorPalette="brand"
-            variant="outline"
-            fontSize={{
-              base: 'md',
-              md: 'lg',
-            }}
-            px={{
-              base: 8,
-              md: 10,
-            }}
-            size="lg"
-            w="full"
-          >
-            Back Home
-          </Button>
-        </Link>
+        <ButtonLink
+          href="/"
+          colorPalette="brand"
+          variant="outline"
+          fontSize={{
+            base: 'md',
+            md: 'lg',
+          }}
+          px={{
+            base: 8,
+            md: 10,
+          }}
+          size="lg"
+        >
+          Back Home
+        </ButtonLink>
       </Stack>
     </Container>
   )

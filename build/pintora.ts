@@ -46,6 +46,7 @@ const themes: Record<DiagramType, (palette: Palette) => string> = {
     hideGroupType true
     diagramPadding 0
     fontSize 20
+    ranksep 65
     groupBackground transparent
     groupBorderWidth 1
     componentBackground ${palette.solid}
@@ -88,7 +89,7 @@ const themes: Record<DiagramType, (palette: Palette) => string> = {
 
 const CACHE_DIR = path.join(ROOT, 'node_modules/.cache/pintora')
 /** Bump when palettes or theme params change, to invalidate the on-disk cache. */
-const CACHE_VERSION = 'v1'
+const CACHE_VERSION = 'v9'
 
 /** Dedupes within a single process; the disk cache covers the client/SSR/prerender passes. */
 const memo = new Map<string, Promise<string>>()

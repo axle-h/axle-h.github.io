@@ -86,14 +86,14 @@ async function readPost(filename: string): Promise<PostMetaJson> {
   }
 
   const assets = await readdir(assetsPath)
-  const logo = assets.find((f) => /logo\.(?:png|jpg|gif)/i.test(f))
+  const logo = assets.find((f) => /logo\.(?:png|jpg|gif|webp)/i.test(f))
   if (!logo) {
-    throw new Error(`${name} requires logo.{png|jpg|gif} at ${assetsPath}`)
+    throw new Error(`${name} requires logo.{png|jpg|gif|webp} at ${assetsPath}`)
   }
 
-  const banner = assets.find((f) => /banner\.(?:png|jpg|gif)/i.test(f))
+  const banner = assets.find((f) => /banner\.(?:png|jpg|gif|webp)/i.test(f))
   if (!banner) {
-    throw new Error(`${name} requires banner.{png|jpg|gif} at ${assetsPath}`)
+    throw new Error(`${name} requires banner.{png|jpg|gif|webp} at ${assetsPath}`)
   }
 
   return {

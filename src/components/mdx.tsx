@@ -234,7 +234,13 @@ const components: MDXComponents = {
       {...props}
     />
   ),
-  table: (props: any) => <Table.Root mb={4} variant="line" {...props} />,
+  table: (props: any) => (
+    // Wide tables (the IOC list, mostly) blow out the page on mobile unless the overflow is
+    // contained here rather than left to the document.
+    <Table.ScrollArea mb={4} maxW="full">
+      <Table.Root variant="line" minW="max-content" {...props} />
+    </Table.ScrollArea>
+  ),
   thead: (props: any) => <Table.Header {...props} />,
   tr: (props: any) => <Table.Row {...props} />,
   td: (props: any) => <Table.Cell {...props} />,

@@ -5,7 +5,7 @@ categories: [security]
 
 I got hacked big time.
 
-Some less than pleasant people mined cryptocurrency on my home NAS, the same machine that hosts my home movies and photos, for 17 days before I noticed.
+My home NAS mined cryptocurrency for 17 days before I noticed.
 The attack arrived through a little app I wrote last year `diffy`: <PostLink name="diffy" />.
 
 I panicked, killed it, tidied up, realised the attack was contained to just compute/electricity theft and immediately
@@ -33,7 +33,7 @@ I fully expected this to be an issue but, using Claude Fable 5 & Opus 5 I only c
 ## That annoying fan noise
 
 I noticed something was wrong because it was 30c in my office and the fans on my tiny NAS box were spinning all day long.
-I put investigating it off for days until I finally logged in and... what. wtf is this.
+I put off investigating it for days until I finally logged in and... what. wtf is this.
 
 ```
 PID     %CPU  %MEM  RSS       COMMAND
@@ -48,9 +48,9 @@ PID that resolved to `next-server` ("wasn't there a 10.0 CVE in next.js?") and t
 /proc/2487160/exe -> /tmp/XXdApBNJ (deleted)
 ```
 
-Too many red flags, Claude convinced me it was a cryptominer.
+Got to be a cryptominer.
 
-I scanned all child processes of this compromised next server and found the RCE vector used:
+I scanned all child processes of the compromised next server and found the RCE vector used:
 57 `sh` → `base64` → `sh` triples, decoding a payload over the internet and piping it to a shell.
 
 ```
@@ -71,13 +71,13 @@ I scanned all child processes of this compromised next server and found the RCE 
 Two miner generations back to back.
 `XXpiGAAE` ran for about 17 days at ~367% CPU, then on 2026-08-10 they swapped it for `XXdApBNJ`, which was the one I caught.
 
-I find it interesting that the attacker chose to hide some processes behind benign names like `.kworkerd`,
+I find it interesting that the attacker chose to hide some processes behind benign names like `.kworkerd` (a kernel thread),
 `redis-server re` (although I have no Redis on this host), `init.sh`, `ssl_client` but the miner itself, the process I'd
 actually spot, had a seriously suspicious name that looked like a randomly generated password.
 
 ## Not my code
 
-The vulnerable application shipped `next@15.3.0` for some unknown reason pinned 🤦.
+The vulnerable application shipped `next@15.3.0`, which was for some unknown reason pinned 🤦.
 
 ```json
 // package.json
@@ -128,7 +128,7 @@ Content-Disposition: form-data; name="2"
 ```
 
 This example echos the environment of the running process in the response body encoded in base64.
-Running this (even against my own host) I felt like a hacker from a movie or something.
+Running this (even against my own host) I felt like a hacker from a movie or something 😎.
 
 ## Exfiltration
 
@@ -164,7 +164,7 @@ I found just 4 unique base64 encoded responses:
 | busybox `set` output    | 1     | 6384 B |
 | full `process.env` JSON | 2     | 6850 B |
 
-Remember those first two, we'll come back to those later big time!
+Remember those first two, we'll come back to them later big time!
 
 The last one is the whole container environment, including, unfortunately, my `GEMINI_API_KEY`.
 
@@ -544,7 +544,7 @@ Start to finish.
 
 ## Where it all came from
 
-I ran every remote address through reverse DNS, Team Cymru's IP to ASN whois and the Tor exit lists, hoping for a story.
+I ran every remote address through reverse DNS, [Team Cymru's IP](https://www.team-cymru.com/) and ASN whois, hoping for a story.
 There isn't one.
 
 Almost all of it is cheap VPS.
@@ -556,7 +556,7 @@ It would be great to say the traffic came from somewhere in particular. It didn'
 The one real signal is in the browser payload, which deliberately skips visitors whose browser language is Russian or
 Ukrainian, and that only tells you who the operator doesn't want to hit.
 
-I also checked all 99 addresses against the Tor exit lists, using CollecTor's hourly archive.
+I also checked all 99 addresses against the Tor exit lists, using [CollecTor's hourly archive](https://metrics.torproject.org/collector.html).
 Not a single hit, not even a non exit relay.
 Nobody involved in any of this bothered with Tor at all, which surprised me.
 

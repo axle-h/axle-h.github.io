@@ -1,0 +1,221 @@
+---
+title: Rustris AI revisited
+categories: [ai]
+---
+
+Last summer I trained a tiny neural network to play Tetris with a genetic algorithm, all from scratch in Rust: <PostLink name="machine-learning-from-scratch" />.
+That project ended with the model clearing over 10k lines on one lucky seed and me wondering whether a perfect, never ending game of Tetris was even possible.
+
+Since then I have merged both of my Rust games into a single repo, [Dr. Rustario vs. Rustris](https://github.com/axle-h/dr-rustario-vs-rustris),
+packaged it as a proper [PortMaster](https://portmaster.games) port,
+got it running in the browser via [emscripten](https://emscripten.org/) and,
+whilst wiring the AI into the new launcher, found a bug in the agent that had been making the model look a **LOT** worse than it actually is.
+
+> TLDR; the model from the last post could already play forever, it was the agent driving it that kept dying.
+
+## Misalignment
+
+Whilst testing the AI in the merged game, I noticed that the same model, playing the same seed, was scoring differently every run.
+That should be impossible.
+The tetromino sequence is seeded, the model is a pure function and there is no randomness in the agent... or so I thought.
+There were two major issues breaking this assumption:
+
+* **The move search was not deterministic.** Candidate placements were sometimes incorrectly pruned from the search due to compounding issues caused by the non-deterministic ordering of a `HashMap` and that wall kicks were not always considered.
+* **The hold decision was inverted.** The agent compares the best placement of the current tetromino against the best placement of the held one, and it had the comparison the wrong way round: it only swapped to the held tetromino when that scored *worse* or the same. 🤦
+
+Due to these bugs, all of my previous training, over hot weekends of my laptop continuously spinning it's fans, were evaluated via a faulty agent, producing a misaligned model.
+I suspect that once the fitness score reached a gameplay threshold where a placement glitch was likely, the genetic
+algorithm was inadvertently selecting for models that somehow best optimised the stack to avoid triggering a placement glitch.
+
+## How lucky was that big scoring game?
+
+The best model/seed pair managed 10,840 lines before it died.
+To find out how representative that actually was, I dug out the pre-fix code, pointed the old agent at the exact same model and seed, and let it play 10 times headless:
+
+| Runs | Lines |
+|------|-------|
+| 7    | 2,104 |
+| 1    | 2,935 |
+| 1    | 8,872 |
+| 1    | 10,840 |
+
+So the game I recorded and published was, over many millions of candidate models and seeds, a one in ten lucky draw.
+I could've easily discarded this model but I was lucky that it didn't glitch until >10k lines on the one run it was evaluated on.
+
+## Scoring in the billions
+
+The [2009 Tetris Design Guideline](https://tetris.wiki/Tetris_Guideline) plays 15 levels: Marathon ends at level 15, the fall speed curve is only defined up to level 15, and since scoring multiplies by the level, the multiplier stops there too.
+The standalone Rustris in the last post kept levelling up forever, e.g. that 10,840 line game above ended on level 1,084.
+
+I've fixed that now so the level now caps at 15 as the guideline says, and past the cap the level, the speed and the score multiplier all hold, which is what real guideline games do in endless marathons.
+Every score in this post is on that scale, which makes them look tiny next to the last post's numbers: the fair comparison between the two posts is lines, not points.
+
+## Same seed, fixed agent
+
+I wanted to check how the apparently misaligned model would perform on the fixed agent, so I gave it the same seed again,
+no line cap, and left it running headless for as long as I could stand it:
+
+| Lines                           | Score (fixed)  | Tetrominoes | Game time | Wall time |
+|---------------------------------|----------------|-------------|-----------|-----------|
+| 10,840 (where the video ended)  | 20,549,412     | 35,314      | 2h 14m    | 1m 11s    |
+| 100,000                         | 191,457,704    | 325,627     | 20h 34m   | 10m 46s   |
+| 1,000,000                       | 1,915,903,781  | 3,254,317   | 205h 33m  | 1h 48m    |
+| 1,715,000 (when I stopped it)   | 3,286,524,745  | 5,581,499   | 352h 26m  | 3h 05m    |
+
+Game time is what the game clock would have said with a 60 Hz update and the line clear animations included, i.e. how long you would have been sat watching it.
+
+So this model can play Tetris at super-human speed, continuously for over two weeks straight without losing.
+It is not this seed either: the same model on 12 other seeds all hit a 100,000 line cap, over 20 hours of game time each, without a single game over.
+
+This tiny network with a handful of hand picked features, seems to be able to play Tetris forever.
+It just needed an agent that wasn't sabotaging it.
+
+## Training for Tetris clears
+
+With survival solved, the unfinished business from the last post was that the model never learned to play like a human, i.e. stacking up and clearing four lines at a time.
+My theory then was that survival simply had far more selection pressure than scoring.
+
+So training is now in two phases:
+
+1. **Survival:** a game that is not over beats any game that is, then higher score wins.
+   Train from scratch with big mutations until any member of the population survives 10,000 lines.
+2. **Score:** seed a new population from that survivor and train it to maximise the number of lines cleared as part of a Tetris, within a budget of 1,000 tetrominoes.
+   The mutations are much gentler so it can't forget how to survive, and each game is played over 3 seeds and averaged to stop it overfitting a lucky sequence.
+
+Every generation now also plays a fresh set of seeds, elites included, so nothing can sit at the top of the population by having memorised one sequence.
+
+The run took 24 hours on my 12 core machine.
+
+The result is a second model that, as expected, has sacrificed some survival strategy for stacking and higher scoring.
+On the same seed as above it died after 2,942 lines, but 2,108 of those lines came from 527 Tetris clears.
+For reference, the survival model had managed 4 Tetris clears by 2,000 lines.
+
+Here's a comparison of score against lines cleared for both models playing the same seed:
+
+<LineChart
+  data={[
+    { "Lines": 0, "Survival": 0 },
+    { "Lines": 0, "Tetris": 0 },
+    { "Lines": 300, "Survival": 450880 },
+    { "Lines": 302, "Tetris": 674108 },
+    { "Lines": 500, "Survival": 838054 },
+    { "Lines": 503, "Tetris": 1238474 },
+    { "Lines": 801, "Survival": 1406530 },
+    { "Lines": 801, "Tetris": 2041110 },
+    { "Lines": 1000, "Survival": 1788974 },
+    { "Lines": 1000, "Tetris": 2594810 },
+    { "Lines": 1300, "Tetris": 3425190 },
+    { "Lines": 1301, "Survival": 2368069 },
+    { "Lines": 1500, "Survival": 2756585 },
+    { "Lines": 1501, "Tetris": 4022650 },
+    { "Lines": 1800, "Survival": 3345363 },
+    { "Lines": 1802, "Tetris": 4851860 },
+    { "Lines": 2001, "Survival": 3726245 },
+    { "Lines": 2002, "Tetris": 5394218 },
+    { "Lines": 2300, "Survival": 4320291 },
+    { "Lines": 2301, "Tetris": 6226032 },
+    { "Lines": 2500, "Survival": 4691627 },
+    { "Lines": 2500, "Tetris": 6779024 },
+    { "Lines": 2800, "Survival": 5260040 },
+    { "Lines": 2800, "Tetris": 7619310 },
+    { "Lines": 2942, "Tetris": 8024965 },
+    { "Lines": 3000, "Survival": 5644462 },
+    { "Lines": 3300, "Survival": 6217112 },
+    { "Lines": 3501, "Survival": 6605774 },
+    { "Lines": 3800, "Survival": 7163585 },
+    { "Lines": 4000, "Survival": 7531723 },
+    { "Lines": 4301, "Survival": 8116083 },
+    { "Lines": 4500, "Survival": 8495521 },
+    { "Lines": 4800, "Survival": 9070570 },
+    { "Lines": 5001, "Survival": 9457754 }
+  ]}
+  x="Lines"
+  y={['Survival', 'Tetris']}
+  yLabel="Score"
+  numericX
+  yMillions
+/>
+
+The Tetris clear model races ahead on points, over 40% up at the same line count, right up until it kills itself at 2,942 lines with 8,024,965 points.
+The survival model plods past that score at around 4,300 lines and would probably keep going forever.
+
+I ship the Tetris clear model as the default in the game for the AI opponent (slowed down obviously) as it is much more effective in a 2-player battle,
+all those Tetris clears send piles of garbage over to the other player. It also looks like a real pro playing the game.
+
+## One game
+
+In my previous article: <PostLink name="rust-games" /> I wrote that I briefly considered building a shared engine for
+both games but that Dr Rustario was just different enough to make it fiddly, so I copied what I needed and cracked on.
+Well, coding agents have gotten so good since then, that I went ahead with it.
+
+The single repo is a Cargo workspace with an `engine` crate holding everything that isn't game rules: the SDL app shell, menus, high scores, config, input, themes, particles, animations, the audio mixer and the match session.
+A game is then just an implementation of an `engine::game::Game` trait, a headless board of cells that emits engine events, plus a render implementation and its themes as data.
+`dr-rustario` is the pills and viruses, `rustris` is the board, SRS and scoring (and the AI), and the `launcher` binary ties them together with a pre-menu of three modes:
+
+* **Rustris** and **Dr. Rustario** as they were, with their own menus, music and themes.
+* **Dr. Rustario vs. Rustris**, a multiplayer focussed playlist over both games: a theme race, or marathons over different orderings of levels.
+  The games have an attack API so for example, garbage from Rustris lands in the Dr. Rustario bottle in random colours.
+
+Along the way I also threw out every SDL2 satellite library (SDL2_mixer, SDL2_ttf, SDL2_image, SDL2_gfx)
+since I could do these easily through the base SDL2 APIs with pure Rust, making the app more easily portable to platforms like emscripten and PortMaster.
+
+## PortMaster
+
+I used to get Rustris and Dr. Rustario running on an ARM based Linux handheld by cross compiling on an ancient Debian container (to keep the libc old enough) and with my own tooling.
+It worked, but it was a hack.
+
+[PortMaster](https://portmaster.games) is the proper way to do this.
+It is a package manager for native game ports on Linux handhelds (ROCKNIX, ArkOS, muOS, Knulli...) and the porting rules
+are reasonable: build against the porters' baseline of Ubuntu 20.04 (glibc 2.31), dynamically link the firmware's own
+`libSDL2-2.0.so.0` rather than shipping one, and provide a launcher script plus some metadata.
+
+I have a single script now that builds the PortMaster zip file:
+.
+```shell
+./build-portmaster.sh                          # -> dist/dr-rustario-vs-rustris.zip
+DEPLOY_HOST=root@rocknix ./build-portmaster.sh # ... and copy it to the device
+```
+
+I didn't bother submitting this to PortMaster propper due to licensing issues with the baked in Nintendo assets,
+but I am perfectly happy to use the PortMaster tooling for my own convenience.
+Here it is running on the (excellent) [Anbernic rg35xxsp](https://anbernic.com/en-gb/products/rg35xxsp) in [muOS](https://muos.dev/):
+
+![handheld-dr-rustario-vs-rustris](muos.webp)
+
+## In the browser
+
+Emscripten ships an SDL2 port (`-sUSE_SDL=2`), so with only core SDL2 left the whole game also compiles to wasm, behind a `browser` cargo feature.
+It took some restructuring, e.g. the app had to be refactored to run on emscripten callbacks and some effects were broken due to a lack of support for reading back the webgl buffer.
+Config and the high score tables persist to IndexedDB, and the AI opponent and demo mode are in there too (training is not).
+
+All of the assets are embedded so it's a pretty big download.
+
+> By the way, this needs a keyboard, so it's not going to work on a phone.
+> The PortMaster port is for handheld devices!
+
+The keyboard controls:
+
+| Key        | Menu      | Game                                    |
+|------------|-----------|-----------------------------------------|
+| Arrow keys | navigate  | move, soft drop (down), hard drop (up)  |
+| X          | select    | rotate clockwise                        |
+| Z          |           | rotate anticlockwise                    |
+| Left Shift |           | hold                                    |
+| Return     | start     |                                         |
+| F1         |           | pause                                   |
+| F2         |           | next theme                              |
+| Escape     | back/quit | quit                                    |
+
+If you want to see the AI working go: rustris -> players = 1-player ai demo -> start -> mode = marathon -> start.
+
+<PlayBrowser
+  js="/rustris-ai-revisited/game/dr-rustario-vs-rustris.js"
+  wasm="/rustris-ai-revisited/game/dr_rustario_vs_rustris.wasm"
+  size={42799960}
+  note="~43 MB download"
+/>
+
+## The code
+
+Everything is still on GitHub, in [dr-rustario-vs-rustris](https://github.com/axle-h/dr-rustario-vs-rustris), with the history of both games preserved.
+The old `dr-rustario` repo is archived with a pointer here and the old `rustris` links redirect.

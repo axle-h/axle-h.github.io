@@ -25,6 +25,7 @@ import { Link } from '@/components/link'
 import type { LinkProps } from '@/components/link'
 import { BarChart } from '@/components/chart/bar-chart'
 import { LineChart } from '@/components/chart/line-chart'
+import { PlayBrowser } from '@/components/play-browser'
 
 function flatten(text: string, child: ReactNode): string {
   return typeof child === 'string'
@@ -255,6 +256,7 @@ const components: MDXComponents = {
   tfoot: (props: any) => <Table.Footer {...props} />,
   hr: (props) => <Separator my={{ base: 12, md: 14 }} {...props} />,
   PostLink,
+  PlayBrowser,
   Badge,
   CheckList,
   CheckListItem,
@@ -278,6 +280,7 @@ function postImage(name: string) {
         src={src === 'string' && hrefIsExternal(src) ? src : `/${name}/${src}`}
         alt={`${name}-${src}`}
         maxW={{ sm: 450, md: 600, lg: 800 }}
+        maxH={600}
         mx="auto"
         {...props}
       />

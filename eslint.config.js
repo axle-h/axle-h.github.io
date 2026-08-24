@@ -10,6 +10,10 @@ export default tseslint.config(
       'dist/**',
       'node_modules/**',
       'src/routeTree.gen.ts',
+      // Static assets shipped as-is, including vendored/generated bundles.
+      'public/**',
+      // Local-only incident scratch space, see .gitignore.
+      'diffy-incident/**',
     ],
   },
   js.configs.recommended,

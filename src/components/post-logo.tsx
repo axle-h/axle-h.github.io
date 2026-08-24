@@ -23,9 +23,21 @@ export default function PostLogo({ post }: { post: Post }) {
         />
       </Link>
 
+      <Box
+        pos="absolute"
+        bottom="0"
+        left="0"
+        right="0"
+        h="50%"
+        pointerEvents="none"
+        bgImage="linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.85) 80%)"
+      />
+
       <Box pos="absolute" bottom="0" left="0" p={4} color="white">
         <Heading fontSize={{ base: 'md', md: 'lg' }}>
-          <Link href={post.url}>{post.title}</Link>
+          <Link href={post.url} color="gray.200">
+            {post.title}
+          </Link>
         </Heading>
         <Text fontSize={{ base: 'sm', md: 'md' }}>
           <CalendarIcon mr={2} />

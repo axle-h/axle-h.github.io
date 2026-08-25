@@ -15,10 +15,14 @@ or a result, ask Alex for it or leave an explicit `TODO:` marker. A plausible so
 fabrication is worse than a gap, because a gap gets filled and a fabrication gets published.
 
 Before drafting anything, read two or three of the recent posts in `posts/` end to end
-(`2025-07-29-machine-learning-from-scratch.mdx`, `2024-09-15-rust-games.mdx`,
-`2025-04-22-diffy.mdx` are the best calibration). The posts from 2020 onwards carry the tone
-Alex wants. The 2017 and 2018 posts are useful for how he handles heavy technical explanation
-(registers, opcodes, code walkthroughs) but their long, dense paragraphs are not the target.
+(`2026-08-24-rustris-ai-revisited.mdx`, `2026-08-14-honeypotting-cryptojackers.mdx` and
+`2025-07-29-machine-learning-from-scratch.mdx` are the best calibration, they are the newest
+voice; `2024-09-15-rust-games.mdx` and `2025-04-22-diffy.mdx` are also good). The posts from
+2020 onwards carry the tone Alex wants. The 2017 and 2018 posts are useful for how he handles
+heavy technical explanation (registers, opcodes, code walkthroughs) but their long, dense
+paragraphs are not the target. For a security post, `2026-08-14-honeypotting-cryptojackers.mdx`
+is the model: `categories: [security]`, an IOC table of hashes and infrastructure near the end,
+and an explicit note on what is deliberately not published (no samples, no replay script).
 
 ## Interview first
 
@@ -52,12 +56,16 @@ categories: [ai]
 * Body images resolve against that folder, so `![roughness](roughness.png)` loads
   `/<name>/roughness.png`.
 * Components available in MDX: `PostLink`, `PintoraDiagram`, `Latex`, `BarChart`, `LineChart`,
-  `CheckList` / `CheckListItem` / `XListItem` / `NewListItem`, plus Chakra's `Box`, `Image`,
-  `Badge` and `SimpleGrid`. See `src/components/mdx.tsx`.
+  `CheckList` / `CheckListItem` / `XListItem` / `NewListItem`, `PlayBrowser` (embeds an
+  emscripten wasm build with a size warning, see the rustris-ai-revisited post), plus Chakra's
+  `Box`, `Image`, `Badge` and `SimpleGrid`. See `src/components/mdx.tsx`.
 * Cross reference other posts with `<PostLink name="rust-games" />` rather than a raw URL.
 
-**One sentence per line.** Every post from 2020 onwards is written with semantic line breaks,
-one sentence to a line, no wrapping mid sentence. Match it exactly, it keeps the diffs readable.
+**Semantic line breaks.** Every post from 2020 onwards starts each new sentence on a new line,
+it keeps the diffs readable. The 2025 and earlier posts leave long sentences unwrapped on one
+line; the 2026 posts wrap them at roughly 110 to 120 characters, ideally at a clause boundary.
+Either is fine in a new draft, just never put two sentences on one line, and when editing an
+existing post match whichever style it already uses rather than rewrapping it.
 
 Links are inline in the modern posts (`[rustris](https://github.com/axle-h/rustris)`). The
 reference style link block at the top of the 2017 and 2018 posts is legacy, do not copy it.
@@ -82,11 +90,15 @@ shape:
    *"Please do let me know if you end up playing either of these as that'll make my day!"*,
    *"give it a star ⭐"*, *"Happy over-engineered blogging 😀."*, *"What do you think?"*
 
-Headings are short noun phrases, two or three words: `## Dithering`, `## Move Search`,
-`## Pain points`, `## The package`, `## Massive diffs`. Sentence case is the default. Title
-case appears on genuinely technical section names (`## Linear Model Training`) and is fine, but
-never title case an ordinary English phrase. Never write a `## Conclusion` or an
-`## Introduction`.
+Headings come in two flavours. Short noun phrases, two or three words: `## Dithering`,
+`## Move Search`, `## Pain points`, `## The package`, `## Massive diffs`. And, common in the
+2026 posts, a narrative clause that tells the story beat: `## The rootkit that did basically
+nothing`, `## They stole and leaked my Gemini API Key`, `## Two cryptominers in fifteen
+minutes`, even a question, `## How lucky was that big scoring game?`. Sentence case is the
+default. Title case appears on genuinely technical section names (`## Linear Model Training`)
+and is fine, but never title case an ordinary English phrase. Never write a `## Conclusion` or
+an `## Introduction`. `###` subsections are fine inside a big section
+(`### The miner crew`, `### The implant crew`).
 
 Do not follow a heading with a one line restatement of the heading. Get into the content.
 
@@ -126,8 +138,10 @@ What makes that sound like him:
 * **`e.g.` and `i.e.` constantly**, mid sentence, to expand a point rather than starting a new one.
 * **Emphasis for tone of voice**, sparingly but genuinely: `**LOT**`, `**MASSIVE**`, `*way*`,
   `*yes*`, `**FINALLY**`, `**never silently swallow an error**`.
-* **Emoji as a reaction at the end of a sentence**, never decorating a heading or a bullet:
-  😱🤓, 🤢, 🤡, 😤, 😀, ⭐, 🤣, 😭. One or two per post is normal. Zero is also fine.
+* **Emoji as a reaction at the end of a sentence**: 😱🤓, 🤢, 🤡, 😤, 😀, ⭐, 🤣, 😭, 🤦, 😎.
+  One or two per post is normal. Zero is also fine. That includes the end of a sentence inside
+  a bullet ("...it had the comparison the wrong way round. 🤦"). What is banned is decorative
+  emoji prefixing a heading or a bullet label.
 * **Parenthetical asides and trailing ellipses.** "(lol just don't look at the appendages)",
   "Maybe I will get lucky...", "all the Rust jobs on LinkedIn right now seem to be
   Blockchain/Web3 related..."
@@ -147,7 +161,7 @@ vendor blog post.
 
 ## Punctuation
 
-* **No em dashes or en dashes. Ever.** There is not a single one in thirteen posts and this is a
+* **No em dashes or en dashes. Ever.** There is not a single one in fifteen posts and this is a
   hard rule, not a preference. Alex's dash is a **spaced hyphen** ` - ` and he uses it for the
   same job: *"Memory management is compile-time via the borrow checker - this is a MASSIVE
   learning curve"*. Use that, a comma, a colon, brackets, or a full stop and a new sentence.
@@ -161,12 +175,16 @@ vendor blog post.
   file: `// posts/index.ts`, `# .github/workflows/main.yml`, `// next.config.mjs`.
 * Shell blocks are `shell` or `bash` and are the real commands, in order, with the output shown
   when the output is the point.
-* Blockquotes are used as **asides**, not as quotations. Four recurring jobs:
-  * a TLDR: `> TLDR; the entire project was a bait & switch.`
+* Blockquotes are used as **asides**, not as quotations. Five recurring jobs:
+  * a TLDR: `> TLDR; the entire project was a bait & switch.` (a TLDR can also sit inline in
+    the opening prose, as in the honeypotting post)
   * a disclaimer or caveat about legality, cost or scope
   * a by-the-way: `> By the way, you can blame ChatGPT for the names, not me.`
   * a claim he is about to argue with: `> "It's a popular, open source package, if it fails then
     someone will just fork it."`
+  * a direct instruction to the reader with a bold lead-in, sometimes repeated word for word at
+    the close to bookend the post: `> **First of all** if you're running Next.js anywhere on the
+    public internet, go and check what version is deployed right now.` ... `> **Once again:** ...`
 * Numbered lists for anything sequential (install steps, a game loop, an algorithm).
 * Tables for reference data (registers, features, frontmatter fields, tetromino names).
 * `<CheckList>` with `<CheckListItem>` and `<XListItem>` for a pros and cons list.
@@ -222,7 +240,7 @@ These patterns get a draft rejected. They are the tells that matter most for thi
     time" for "now", "it is important to note that", "has the ability to" for "can".
 19. **Sycophancy and chat artifacts.** "Great question!", "I hope this helps", "Let me know if
     you'd like me to expand on any section", "Certainly!". None of this belongs in a post.
-20. **Curly quotes, title case headings, and emoji on headings or bullet points.**
+20. **Curly quotes, title case headings, and emoji decorating headings or bullet labels.**
 21. **Diff narration.** The post describes the project as it is, not as a changelog against a
     previous draft, unless the post is genuinely about what changed.
 
@@ -234,7 +252,8 @@ Generic anti-AI-writing guidance would flag some things he actually does. Keep t
   `* **VPN:** Something to tunnel through the great firewall of London.` and
   `* **Pruning the tree of placements that were obviously bad.**` followed by the explanation.
   The rule to enforce is that the bold label carries real information, not that it disappears.
-* **Emoji.** Allowed, at the end of sentences, as reactions. Never on headings or bullets.
+* **Emoji.** Allowed, at the end of sentences, as reactions, including inside bullets. Never
+  decorating a heading or prefixing a bullet.
 * **Bold and italic for emphasis.** Allowed and characteristic. What is banned is mechanical
   bolding of key terms throughout a paragraph.
 * **Short emphatic fragments.** Allowed. "Epic." "Python is so slow." "Yes. Yes I can."
@@ -251,7 +270,7 @@ Generic anti-AI-writing guidance would flag some things he actually does. Keep t
 Run this check on the draft:
 
 * [ ] Zero `—` and zero `–` in the file.
-* [ ] One sentence per line.
+* [ ] Every sentence starts on a new line, never two sentences on one line.
 * [ ] Every factual claim, number, link and repo path came from Alex or from a source, not from
       you. Any gap is marked `TODO:` rather than filled with a guess.
 * [ ] Frontmatter valid, filename `YYYY-MM-DD-<name>.mdx`, asset folder flagged if missing.

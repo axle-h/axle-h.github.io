@@ -13,10 +13,10 @@ My wife now reckons she's a Claude widow. 🤣
 
 The small stuff is great.
 The big stuff though...
-Once a project gets to around 50k lines, Claude seems to over document the project into a state that I've started calling `documentation hell`.
+Once a project gets to around 50k lines, Claude seems to over document the project into a state that I've started calling documentation hell.
 So I wrote a skill to get out of it, [compact-docs](https://github.com/axle-h/skills/tree/main/compact-docs).
 
-## Documentation hell
+## How it happens
 
 I find documentation grows way too fast with a vibe coded project.
 Every agent that touches the repo leaves a bit more prose behind than it found, but hardly ever deletes any of it:
@@ -29,24 +29,26 @@ Every agent that touches the repo leaves a bit more prose behind than it found, 
   Or stuff an agent could easily rediscover from the code.
 
 This is all empirical (I have no evals) but under documentation hell I notice:
+
 * Responses get massive and convoluted, to the point where I can't make sense of them without reading the entire thing.
-* Contexts get big fast, filled with all the documentation, so the agent seems less capable and seems more likely to tell me a task is finished when it isn't.
+* Contexts get big fast, filled with all the documentation, so the agent seems less capable and more likely to tell me a task is finished when it isn't.
 
 ## An example
 
-In a time before decent AI coding tools, I wrote (yet another) Game Boy emulator in rust: [gb](https://github.com/axle-h/gb).
+In a time before decent AI coding tools, I wrote (yet another) Game Boy emulator in Rust: [gb](https://github.com/axle-h/gb).
 I was happy with the documentation as it was hand rolled.
-I then (mostly) vibe coded an agent over the top of it capable of playing Pokémon Red entirely through text so that I could hand it over to an LLM.
+I then (mostly) vibe coded a text interface over the top of it, so that an LLM could play Pokémon Red.
 
-When I measured it, there were 67k lines of code and 33k lines of comments.
-One comment for every two lines of code in a project where the core of it was hand-rolled!
+When I measured it, there were 67k lines of Rust and 33k lines of comments.
+One comment line for every two lines of code in a project where the core of it was hand rolled!
 
-The longest single comment block was 205 lines (twice as long as this article), around 800 comments cited a plan and the markdown had 279 ⚠️ and 70 `⭐` in it.
+The longest single comment block was 205 lines (twice as long as this article), around 800 comments cited a plan and the markdown had 279 ⚠️ and 70 ⭐ in it.
 
 ## Wading through slop
 
-I find (again empirically) that the more cluttered with documentation a large project gets, the more weird language creeps in.
-I don't know how many times I've read things like "A xyz nobody asked for ...", I call it the **nobody tic**.
+I find that the more cluttered with documentation a large project gets, the more weird language creeps in.
+I don't know how many times I've read something like "a [thing] nobody asked for".
+I call it the **nobody tic**.
 Here's some examples taken from vibe coded commit messages, documentation and code comments in [gb](https://github.com/axle-h/gb):
 
 - "A cleanup that pays for a fix is still a cleanup nobody measured, so it is measured here."
@@ -58,14 +60,16 @@ Here's some examples taken from vibe coded commit messages, documentation and co
 - "Nobody is listening, so nothing is synthesised"
 
 My throwaway kids game [make-believe](https://github.com/axle-h/make-believe) has the same "nobody" tic **EVERYWHERE I LOOK**:
+
 - "...and nobody ends up standing inside anybody."
 - "Nobody presses start, nobody..."
 - "The floor asks for something, and nobody waits a turn"
 
 Other (non-nobody) funnies I found:
+
 - "Ten things to do, and not one of them a turn"
 - "The island shrinks, and the crown will not sit still"
-- "⚠️ The load-bearing case is the pair." This one sits on a test called a_label_for_somewhere_out_of_reach_is_greyed_and_says_so.
+- "⚠️ The load-bearing case is the pair." This one sits on a test called `a_label_for_somewhere_out_of_reach_is_greyed_and_says_so`.
 
 The problem is that the more of this garbage you have in your code base, the more the LLM will vomit it back at you in response to a prompt.
 
@@ -73,6 +77,7 @@ The problem is that the more of this garbage you have in your code base, the mor
 
 I've been asking Claude to clean up documentation with bespoke prompts for a while now but the last time I did it in the `gb` repo,
 it turned out that a **lot** of it shouldn't exist.
+Here's the before and after from that first pass, which only looked at the Rust:
 
 | Measure                      | Before | After  |
 |------------------------------|--------|--------|
@@ -83,47 +88,47 @@ it turned out that a **lot** of it shouldn't exist.
 | Comments citing a plan       | ~800   | 0      |
 | Markdown lines               | 6,259  | 1,083  |
 
-## Distilling into a SKILL
+## Distilling it into a skill
 
-I thought this worked well so asked the agent to distil what we'd done into a global skill.
+I thought this worked well so I asked the agent to distil what we'd done into a global skill.
 It's a `SKILL.md` and a `measure.py` with no dependencies.
-The script counts code, comment and markdown lines in every language in the repo, only across files git tracks so `node_modules` and `dist` never count,
+The script counts code, comment and markdown lines in every language in the repo, only across files git doesn't ignore so `node_modules` and `target` never count,
 and reports the worst files, the longest blocks and the noise, i.e. plan ids, dates, "used to" and emoji markers.
+I checked the measurement script against eight of my other projects covering stacks I use for work and personal projects (Python, React, Vue, .NET, Next.js, node).
 
 The skill then runs a loop:
 
 1. Measure and save the baseline.
 2. Prune code and files that should not exist.
-3. Refactor verbose comments and documents into one of two outcomes:
-   * It's junk: delete it
-   * It's too verbose, compact into a statement
+3. Rewrite every comment and document to one of two outcomes:
+   * It's junk, delete it.
+   * It's too verbose, replace it with a plain statement.
 4. Re-measure against the baseline.
 5. Repeat 3 and 4 until the targets hold.
 
 The targets are pass/fail, e.g. comments at most 0.15 of code, no comment block over 12 lines, markdown at most 0.05 of code
 and zero plan references.
 
-
 The skill finishes by leaving a short set of ground rules in `CLAUDE.md` so the next agent doesn't undo it all.
-One of my favourite that produces immediate results is that plans live in `docs/PLAN-*.md`, are excluded from git and deleted when they're done,
+One of my favourites, and the one with the most immediate effect, is that plans live in `docs/PLAN-*.md`, are excluded from git and are deleted when they're done,
 and **nothing outside a plan may cite it**.
 
-I checked the measurement script against eight of my other projects (Python, React, Vue, .NET, Next.js, vanilla node).
 
 ## Running it again
 
 I ran the finished skill over the `gb` repository and it found a load more.
 The first pass had been Rust focussed, but the skill measures every language, so the k8s config, CI and the web UI had barely been touched,
 e.g. the k8s configmap went from 180 comment lines to 20.
-Over the whole repo the ratio went from 0.18 to 0.11 and another 262 plan ids, dates, history and ⚠️ went from the comments.
+Over the whole repo the ratio went from 0.18 (the 0.17 above was Rust only) to 0.11 and another 262 plan ids, dates, history and ⚠️ came out of the comments.
 
-The pass also found about 40 doc comments attached to the wrong item or describing code that no longer existed and some actual bugs.
+The pass also found about 40 doc comments attached to the wrong item or describing code that no longer existed, and some actual bugs.
+Five string literals had lost their backslash line continuation, so a run of indentation had become part of the text, one of them in a tool description sent to the LLM on every turn.
 
-The skill says not to fix logic in a comment pass, so these went into a fresh plan and a fresh agent fixed them.
+The skill says not to fix logic in a comment pass, so these went into a separate plan and another agent fixed them.
 
 ## Another repository
 
-I then ran it over [https://github.com/axle-h/make-believe](make-believe):
+I then ran it over [make-believe](https://github.com/axle-h/make-believe):
 
 | Measure                                         | Before             | After        | Target |
 |-------------------------------------------------|--------------------|--------------|--------|
@@ -135,7 +140,7 @@ I then ran it over [https://github.com/axle-h/make-believe](make-believe):
 
 ## Final thoughts
 
-Vibe coding in these clean projects definitely "seems" more responsive, faster and successful but again I have no evals, I'm just going on the vibes.
+Vibe coding in these clean projects seems more responsive, faster and more successful, but again I have no evals, I'm just going on the vibes.
 
 The skill is on GitHub at [axle-h/skills](https://github.com/axle-h/skills), copy it into `~/.claude/skills/` and ask your agent to compact your docs.
 If you give it a go I'd love to know what ratio you started on 😀.

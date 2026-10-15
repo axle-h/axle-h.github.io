@@ -56,9 +56,8 @@ categories: [ai]
 * Body images resolve against that folder, so `![roughness](roughness.png)` loads
   `/<name>/roughness.png`.
 * Components available in MDX: `PostLink`, `PintoraDiagram`, `Latex`, `BarChart`, `LineChart`,
-  `CheckList` / `CheckListItem` / `XListItem` / `NewListItem`, `PlayBrowser` (embeds an
-  emscripten wasm build with a size warning, see the rustris-ai-revisited post), plus Chakra's
-  `Box`, `Image`, `Badge` and `SimpleGrid`. See `src/components/mdx.tsx`.
+  `CheckList` / `CheckListItem` / `XListItem` / `NewListItem`, plus Chakra's `Box`,
+  `Image`, `Badge` and `SimpleGrid`. See `src/components/mdx.tsx`.
 * Cross reference other posts with `<PostLink name="rust-games" />` rather than a raw URL.
 
 **Semantic line breaks.** Every post from 2020 onwards starts each new sentence on a new line,

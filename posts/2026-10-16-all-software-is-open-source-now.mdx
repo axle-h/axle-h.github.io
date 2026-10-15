@@ -1,0 +1,174 @@
+---
+title: Is all software open source now?
+categories: [ai]
+---
+
+The hot take in AI news this week is that [all software is now open source](https://kuber.studio/blog/AI/all-software-is-open-source-now).
+People are pointing coding agents at [video games](https://www.tomshardware.com/video-games/pc-gaming/gta-v-playable-in-browser-immediately-nuked-unofficial-webassembly-port-built-with-ai-gets-taken-down-within-hours-of-going-live), at the [entire Adobe creative suite](https://getartcraft.com/apps/), at whatever closed binary they can find, and getting working reimplementations back out the other end.
+This has generated a lot of noise around an MCP server called REA, "Reverse Engineer Anything".
+
+I spent a decent chunk of my last week of "off hours" getting Claude to put this to the test and I am blown away.
+
+> TLDR; the models really are that good at it, but the tools are mostly nothing new.
+
+## Reverse Engineer Anything
+
+[REA](https://github.com/morluto/rea) is an MIT licensed MCP server and CLI that plugs coding agents into reverse engineering tools.
+For native binaries that's mostly going to be Ghidra (or maybe IDA), then there's a load of other stuff for platforms I currently don't care about like Android, Java and .NET.
+It's sitting at nearly 270k GitHub stars as I write this, only six months after it was created, so it's probably one of the [fastest growing](https://www.star-history.com/#morluto/rea&Date) GitHub repositories ever. The growth is amazing but I am yet to see a standout demo and none of the tools are new.
+
+Ghidra was released in 2019, IDA in the 90s, and Ghidra has had both a headless mode and an MCP server ([GhidraMCP](https://github.com/LaurieWired/GhidraMCP)) for a while now.
+I didn't use REA at all.
+I used a [ghidra skill](https://github.com/mitsuhiko/agent-stuff/tree/main/skills/ghidra) from a much less popular skills library on GitHub, which is a shell script around Ghidra's `analyzeHeadless` plus a handful of Java scripts that export the decompiled functions, strings, call graph and symbols to files.
+The agent picked it up and used it just fine.
+
+REA is a nicely packaged connector, and the packaging clearly matters to a lot of people, but the capability was already sitting there and waiting for the current frontier models to get a hold of it.
+
+## Burning a free weekly reset
+
+The hype got me curious, but what actually got me going was Anthropic giving me a free weekly usage reset that I needed to burn before it expired.
+The reversing news got me thinking about the most obscure abandonware that I actually have nostalgia for, and three came to mind:
+
+* **[Reunion](https://github.com/axle-h/reunion-remastered):** a 1994 DOS space strategy game by Amnesty Design, published by Grandslam.
+* **[Encarta Premium 2009](https://github.com/axle-h/encarta-remastered):** Microsoft's encyclopedia, the last version before they killed it.
+* **[The Way Things Work](https://github.com/axle-h/the-way-things-work-remastered):** Dorling Kindersley's 1994 CD-ROM of David Macaulay's book, for Windows 3.1.
+
+Reunion came first, and between how well that went and my regular weekly limit resetting, I went on a bit of a splurge into the other two.
+I did all three with very little oversight, just a strong initial prompt, a reference to the previous project and Claude Opus 5.5 agents working in parallel, a few hours at a time.
+Most of the elapsed time was actually spent waiting for the 5 hourly usage limit to reset.
+I also made sure that each agent could validate its work by first spiking out a way to run the original software in an emulator or a VM that can be scripted.
+
+This burned through tokens fast, I'd used 100% of my weekly Max subscription just 48 hours into a fresh usage week.
+So I was quick to enforce a couple of rules: sub agents are never forks (a fork inherits the parent agent's entire context, so every one of them starts out expensive), and each task has to say up front whether it needs "significant" reasoning, and if not it runs on a cheaper model.
+
+Here are the timelines from the git history.
+These are wall clock times for each milestone, not effort, and for the last couple of days all three were running at once:
+
+| Project | Milestone | Time |
+|---|---|---|
+| Reunion | every unit ported & matching the original under emulation | ~4 days |
+| | cross platform, bug fixes & improvements | +3.5 days |
+| Encarta | converters, server, web client and k8s deployment | ~6 hours |
+| | atlas, 3D tours, the Flash games running under [Ruffle](https://ruffle.rs), Kids mode & polish | +1.75 days |
+| The Way Things Work | whole disc playable in the browser, desktop app | ~21.5 hours |
+
+For comparison, [OpenTTD](https://www.openttd.org/news/2024/03/06/happy-birthday.html) started out as one person reverse engineering Transport Tycoon Deluxe (written entirely in x86 assembly) into C.
+He'd been at it for over a year and a half before the first release in March 2004.
+
+## Reunion
+
+I loved Reunion as a child.
+I rediscovered it on an abandonware site maybe 15 years ago and have replayed it pretty much every year since.
+There has never been a re-release or a sequel, the developer and publisher are both long gone, and it is a real pain to get running properly.
+In fact, to run this particular game was the reason I got into building era correct retro gaming PCs.
+
+Reunion was my first real attempt and my plan was to simply:
+1. Decompile the DOS executable (~240 KB of Borland Pascal 7.0 real mode code) with Ghidra and rewrite it in C, unit by unit.
+2. Continuously prove it works against the original. Keep the x86 real mode memory layout at first, so each function can be validated byte for byte against the original running under [Unicorn](https://www.unicorn-engine.org/) (a CPU emulator framework).
+3. Rewrite into modern, portable C (dropping things like Pascal strings, real mode memory emulation).
+4. Fix bugs, add features.
+
+I hadn't considered a clean room process at this point.
+The classic clean room, e.g. Phoenix cloning the IBM PC BIOS, used two separate teams: one read the original and wrote a spec, the other only ever saw the spec.
+In hindsight I think working straight from the decompiled code was the right approach for Reunion anyway, as it meant every function could be checked byte for byte against the original before it was rewritten.
+
+The port fixes 18 of the original's 30+ year old bugs and adds 8 new quality of life features that I could only dream of before I had working source code.
+Every fix and feature has a switch, and with them all off it plays exactly like the original, bugs and all.
+
+You need your own copy of the game, but you can even [play it in the browser](https://axle-h.github.io/reunion-remastered/).
+
+![Reunion running in the browser](reunion.webp)
+
+## Obsolete but awesome edutainment
+
+By the time I got to Encarta I had started thinking about clean room properly.
+Both of the edutainment projects have a `CLEAN_ROOM.md` ([Encarta](https://github.com/axle-h/encarta-remastered/blob/main/docs/CLEAN_ROOM.md), [The Way Things Work](https://github.com/axle-h/the-way-things-work-remastered/blob/main/docs/CLEAN_ROOM.md)) which boils down to:
+
+1. **Decompiler output lives in a gitignored folder.**
+   It is never pasted into the repo and never machine translated into the new code.
+2. **Specification first.** Every format and behaviour gets written up in `docs/formats/` in our own words.
+   Function addresses are allowed as provenance, decompiled function bodies are not.
+3. **Implement from the spec**, not with the decompiler open alongside it, with our own names and structure.
+4. **Validate against the data and the original's behaviour**, not its code, e.g. decoding the whole disc and comparing screenshots against the original running under Wine or in a Windows XP VM.
+5. **No original bytes in git.** You bring your own disc.
+6. **Linting.** The build fails if decompiler identifiers like `FUN_`, `DAT_`, `iVar` or `param_` turn up in the app code.
+
+### Encarta
+
+Encarta Premium 2009 is a 2.9 GB DVD and it turns out nothing on it is encrypted, every opaque format is just compression.
+The article bodies are XML squashed with a custom Huffman codec, and all of the 600k+ records (just over 2 GB) now decode to well-formed XML.
+The atlas is nearly half a million raster tiles plus vector data in yet another custom codec, and it now renders in [MapLibre](https://maplibre.org) as a globe and a flat map in Encarta's own styles.
+The original UI was XML and XSL templates rendered in an embedded Internet Explorer.
+The new client is React, backed by a Rust server with [tantivy](https://github.com/quickwit-oss/tantivy) for search, and all ten of the Flash board games play through to the end under Ruffle.
+
+Here's the home page, running in the browser:
+
+![Encarta Premium home page running in the browser](encarta.webp)
+
+### The Way Things Work
+
+The original is a small generic engine, `TWTW.EXE`, driven entirely by data on the disc: a compiled page database (called `TWTW.PNG`, despite not being a PNG), 8-bit `.DIB` bitmaps, DK's own `.ANI` animation format and MS-ADPCM sounds.
+The remake decodes those files directly in TypeScript and draws them to a `<canvas>` at the original 640×480 in 256 colours.
+It runs in the browser on desktops, tablets and phones, and there's an Electron desktop app that reads your disc image directly.
+Every screen is checked against the original running under Wine or DOSBox-X with Windows 3.1.
+
+Here's the title screen:
+
+![The Way Things Work title screen running in the browser](twtw.webp)
+
+Due to the copyright issues of sharing the content, both of these edutainment projects are hosted for personal use only. You can easily download your own copy from The Internet Archive and get it working yourself.
+
+* [Reunion](https://archive.org/details/reunion-msdos-1995)
+* [Encarta](https://archive.org/details/microsoftencartapremiumedition2009)
+* [The Way Things Work](https://archive.org/details/the-way-things-work-cdrom)
+
+My kids played The Way Things Work for the first time this morning.
+That's a 1994 Windows 3.1 CD-ROM entertaining a whole new generation. 😀
+
+## REA doesn't do clean room
+
+I'd assumed REA did something like this, and the [REA FAQ](https://github.com/morluto/rea#readme) saying that native analysis *"returns pseudocode and assembly"* made me think it was handing the agent something other than real decompiled code.
+That isn't the case.
+Ghidra's decompiler output **is** C-like pseudocode, so that's just the decompiled code.
+There is nothing in REA about clean room, nothing stopping decompiled code ending up in your agent's context and then in your repo. I think their [disclaimer](https://github.com/morluto/rea#disclaimer) *"REA is for lawful research, education, interoperability, software preservation, and analysis of software you own or are authorized to examine"* is upfront about this.
+But it takes the shine off "all software is open source", and I imagine that the people saying this are skipping the clean room process entirely.
+
+To be fair, that's exactly what I did with Reunion.
+I'm comfortable publishing it because the developer and publisher are long gone and you need your own copy of the game to play it, but it's definitely not clean room.
+
+I'm also not totally comfortable with the clean room approach taken on my edutainment projects either.
+In those projects the spec writer and the implementer were separate sub agents with a written spec between them, which is close to the two team model, but it's still the same model driven by the same person.
+I think that's a reasonable middle ground for preserving dead software that nobody sells anymore, but I'm not sure it would hold up if anybody cared enough to argue about it.
+
+> **To be clear:** I'm not a lawyer.
+
+## Who actually loses?
+
+I don't think any real company is going to reverse engineer the Adobe suite and sell it.
+The legal exposure alone would kill it fast, and most of Adobe's value is in the cloud bits, the fonts, the stock library and everyone else already using their file formats, not in the binary.
+Plus a reversed snapshot of Photoshop is out of date the moment Adobe ships an update.
+
+Even before this recent wave of reverse engineering, we were already seeing software move up to the server and fall back harder on copyrightable content, community and online services.
+My hunch is that the ones that can't do that, and so can't defend against vibe coders, are the ones that lose.
+
+The sweet spot in my opinion for AI accelerated reverse engineering is the vast library of dead, but historically important software.
+Retro video games locked onto ancient platforms, obscure and mostly useless edutainment products eclipsed by Wikipedia: nobody sells them anymore and only a handful of nostalgic people like me still care about them.
+Without something like this they just get harder to run every year, so I reckon that's preservation, not piracy.
+
+## Software as a recipe
+
+I think we're headed to a world where people mostly stop buying expensive software and instead cook up their own.
+Vibe coding was taking us there already, and cheap reverse engineering is going to speed it up.
+Each person, or family, or community ends up with their own library of software built exactly how they want it.
+If every build is cheap and easy, there's not much point sharing the builds.
+So people share the recipe, i.e. the specs, the skills, the prompts and the policies, and everyone cooks their own build from it.
+
+The catch with a home-cooked meal is you're also the one doing the washing up.
+Personal software doesn't get security patches or updates unless you, or your agent, make them.
+
+## Final thoughts
+
+Yes, the new models are scarily good at reverse engineering, and no, the tools aren't new.
+So is all software open source now?
+Not really, but dead software kind of is, as long as you're careful about how you get there.
+Getting three nostalgic projects out of a free usage reset and a chunk of the following week's limit, with very little input from me, still feels slightly unreal.

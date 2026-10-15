@@ -60,11 +60,10 @@ categories: [ai]
   `Image`, `Badge` and `SimpleGrid`. See `src/components/mdx.tsx`.
 * Cross reference other posts with `<PostLink name="rust-games" />` rather than a raw URL.
 
-**Semantic line breaks.** Every post from 2020 onwards starts each new sentence on a new line,
-it keeps the diffs readable. The 2025 and earlier posts leave long sentences unwrapped on one
-line; the 2026 posts wrap them at roughly 110 to 120 characters, ideally at a clause boundary.
-Either is fine in a new draft, just never put two sentences on one line, and when editing an
-existing post match whichever style it already uses rather than rewrapping it.
+**Line breaks.** Prefer one long sentence per line, it keeps the diffs readable. Short sentences
+can happily share a line, and line breaks are useful to break up longer lines, ideally at a
+clause boundary. This is a preference, not a rule, so do not flag it in a review or rewrap
+existing text to fit it.
 
 Links are inline in the modern posts (`[rustris](https://github.com/axle-h/rustris)`). The
 reference style link block at the top of the 2017 and 2018 posts is legacy, do not copy it.
@@ -269,7 +268,6 @@ Generic anti-AI-writing guidance would flag some things he actually does. Keep t
 Run this check on the draft:
 
 * [ ] Zero `—` and zero `–` in the file.
-* [ ] Every sentence starts on a new line, never two sentences on one line.
 * [ ] Every factual claim, number, link and repo path came from Alex or from a source, not from
       you. Any gap is marked `TODO:` rather than filled with a guess.
 * [ ] Frontmatter valid, filename `YYYY-MM-DD-<name>.mdx`, asset folder flagged if missing.

@@ -1,0 +1,455 @@
+---
+title: Gotta prompt 'em all
+categories: [ai]
+---
+
+Do you remember "Choose Your Own Adventure" books?
+I read them as a child; they're the books where you had to make choices like:
+
+1. Your curiosity gets the better of you and you enter the deep, dark cave: go to page 300
+2. A bat flies out of the cave, you are literally shaking in your boots, you turn back the way you came: go to page 320
+
+Well, I turned Pokémon Red into a "Choose Your Own Adventure" to make it easier and cheaper for an LLM to play through.
+It should be playing right now at [gb.ax-h.com](https://gb.ax-h.com).
+
+This started before AI coding agents were any good, when I created a fast and accurate Game Boy emulator, [gbc](https://github.com/axle-h/gbc) (now on [crates.io](https://crates.io/crates/gbc)).
+I then ported the [pokered](https://github.com/pret/pokered) disassembly of Pokémon Red to Rust in [poke-agent](https://github.com/axle-h/poke-agent) to make it more reliable and faster to work with an agent.
+I made sure the port was faithful (but modernised) by using a deterministic agent that could play through the entire game on both versions.
+Finally, I hooked in an LLM through the same harness and got a UI running over HTTP.
+
+Over a few weeks, I got some Anthropic LLMs to play through it 2-3 times each to see how the different model tiers perform with a tight harness like this.
+I had some fun with this one. Watching the cheaper LLMs blame my broken game, harness or both, instead of admitting they'd tried the same thing 100 times was comedy.
+
+> TLDR; Opus 5.5 played Pokémon Red the best, Sonnet 5.5 was slightly faster on average and Haiku 5.5 was by far the cheapest; it could finish the game for less than a fiver.
+
+## The `gbc` emulator
+
+`gbc` isn't my first Game Boy emulator.
+I developed a dynamically recompiling Game Boy emulator in C# back in 2017 that got a brief moment of fame in the .NET community: <PostLink name="emulating-the-gameboy-cpu-on-dot-net" />.
+Unlike that attempt though, `gbc` is actually good.
+
+* It implements more of the hardware that I skipped back on .NET: Game Boy Color, Super Game Boy, cycle-accurate sound and timers etc.
+* It passes loads more accuracy tests like blargg, `dmg-acid2`, `cgb-acid2` and (27/28 of) mooneye but it does sacrifice some non-game-breaking accuracy for speed
+  e.g. the CPU core does not emulate sub-M-cycle timings and it does not emulate the [OAM corruption bug](https://gbdev.io/pandocs/OAM_Corruption_Bug.html).
+* It has been tuned to be fast for headless play e.g. supporting turning off the video and sound hardware.
+
+I have distributed it as a library on [crates.io](https://crates.io/crates/gbc). You can add it to your project with:
+
+```bash
+cargo add gbc
+```
+
+## The first agent
+
+The first version of the agent hooks into this emulator.
+The agent is a reasonably sized state machine that dips into the running game's memory, makes a decision and executes that decision by pressing buttons on the Game Boy controller.
+Having the [pokered](https://github.com/pret/pokered) disassembly helped massively here.
+I used its memory map to easily tell which byte in the Game Boy memory represented what state, like the party stats or the current map position.
+
+It did work and I did manage to develop an agent that could reliably finish the game.
+But since the agent could only observe side effects of the running game, decisions and actions were out of step with the native game loop and so they were overwhelmingly
+likely to be made halfway through one of the game's routines, resulting in weird state artefacts.
+This meant the agent had to be extremely defensive and tolerant of state glitches, making it quite slow and careful to act in the game.
+
+## Porting Pokémon Red to Rust
+
+Coding agents got ridiculously good around this stage of the project.
+During one or two quiet weeks, I had a load of spare tokens to use up, so I ported the whole game to Rust.
+Obviously this was more for fun and exploring the limits of AI capability than for a good reason, but it did get rid of all that defensiveness in the agent and make the game play way faster.
+
+The porting process was interesting because the disassembly that it's based on is so tied to the Game Boy hardware that it made no sense to do it function by function.
+If it had been done like that, it would basically have been a Game Boy emulator that can only run one game.
+Instead, I used the disassembly as the specification and the emulator as the oracle: the algorithms (damage, the AI, encounters, pacing) are exact,
+but the program structure, the memory layout and the hardware are not carried over.
+I also fixed some of the original game's famous mechanical bugs, with an option in the menu to switch back to the original Gen 1 behaviour.
+
+Having the emulator and the existing agent was a huge help in validating the correctness of the game, as I was able to easily port the agent over and use
+scripted runs through the entire game to catch a ton of bugs and differences.
+
+When playing through the native port, the agent is no longer out of step with the game, so the state glitches and resultant overly defensive slow play are both gone.
+The agent still plays as a human would, by pressing buttons; it's just much tidier and reliable.
+
+## Agent tooling
+
+The obvious way to build a game-playing agent is to give the model a tool for everything: `get_party`, `get_bag`, `walk_to`, `use_item`, `read_map` etc.
+This doesn't scale very well: every new kind of data is a new tool and a big tool list costs tokens on every request.
+Also, a Pokémon-playing agent has very distinct types of decisions to make with little crossover: choosing what move to use in a battle is a very different problem to choosing where on the map to move to.
+I actually implemented this and found that the different toolsets used between decision types meant that the agent was really bad at using the prompt cache, so it cost more to run than I'd like.
+
+Instead, I took inspiration from coding agents and provided a virtual filesystem with nodes like:
+
+* `map.png`: a picture of the current map.
+   The map rendering is based on [this work](https://blog.vjeux.com/2023/project/pokemon-red-blue-map.html),
+   but it also includes NPCs, labelled warps, unreachable ground dimmed and a coordinate ruler down the side.
+* `screen.png`: a screenshot of the game.
+* `party.md`, `bag.md`, `pc.md`: current stats on things like Pokémon, the bag etc.
+* `guide/<Chapter>.md`: a game walkthrough, distilled from the earlier scripted runs and from prior art on the internet.
+* `routes.md`, `routes/<Map>.md`: the agent maintains a memory of where the player has travelled, and the route from the current map to any other map.
+* `plan.md`: a read/write scratch space for the agent to use for long-term planning between compactions.
+* `battle-script.rhai`: since Pokémon battles are very mechanical, the agent has the option of scripting battles to save tokens.
+* `issues/<Name>.md`: I found that the stronger models were good at finding issues with the harness or the game itself, so I provided a mechanism for reporting them to me.
+   Each issue saves the screen, a save state and the conversation, so I can replay it. The cheaper/weaker models love filing these when they're stuck.
+
+This meant I could get away with just four tools, consistent between all decision types:
+
+| Tool            | What it does                                                         |
+|-----------------|----------------------------------------------------------------------|
+| `choose_action` | pick an action by id from this turn's menu, ends the turn            |
+| `read_file`     | read a file from the virtual filesystem                              |
+| `write_file`    | write a file                                                         |
+| `edit_file`     | replace a string in a file                                           |
+
+I have no evidence for this, but I think models are already good at understanding filesystems and reading & writing files,
+so this actually worked really well without much extra system prompt engineering.
+It also solved the caching issue, resulting in a 95% average hit rate over the runs.
+
+## Agent turns
+
+Each turn is like a decision in a "Choose Your Own Adventure" book.
+The agent works out what type of decision is next and hands the model the situation plus an indexed menu of everything it can do right now.
+Here's a simplified example in Oak's lab when choosing a starter Pokémon:
+
+- `OaksLab:Oak1` — talk to Oak 1
+- `OaksLab:Rival` — talk to Rival
+- `OaksLab:CharmanderPokeBall` — pick up the Charmander Poke Ball
+- `OaksLab:SquirtlePokeBall` — pick up the Squirtle Poke Ball
+- `OaksLab:BulbasaurPokeBall` — pick up the Bulbasaur Poke Ball
+- `OaksLab:4,11:Warp` — take the warp to PalletTown, arriving at (12, 12)
+
+The model responded to this with a `choose_action(OaksLab:SquirtlePokeBall)` tool call with the summary:
+
+> Choosing Squirtle as starter (good vs Brock); rival battle follows.
+
+The model literally just makes decisions, making it much more efficient than a lower-level approach where it presses buttons on the controller.
+Walking to a tile, talking to someone, taking a door or picking a battle move is one decision; the harness handles the dialogue, the menus and the pathfinding.
+
+### Battle scripts
+
+Battles are where turns get expensive: a trainer fight could be a dozen round trips to the API for "use the best move".
+So the model can write `battle-script.rhai`, a small [Rhai](https://rhai.rs) program that's run in a sandbox for every battle decision.
+It can hand any turn back to the model with `battle.ask()`.
+Here's the one Sonnet wrote for the Elite Four, where its Blastoise did all the fighting:
+
+```rust
+// Elite Four: Shellby fights solo; Full Restore under 35% HP, else best damaging move.
+if battle.me.hp_frac < 0.35 {
+    for want in ["FullRestore", "SuperPotion"] {
+        for item in battle.bag {
+            if item.name == want { battle.use_item(item.name); }
+        }
+    }
+}
+// Fainted/other mon out with no damaging move: let me decide.
+if battle.best_move == () { battle.ask(); }
+battle.fight(battle.best_move);
+```
+
+The sandbox has no file, process or network access and is capped on operations, time and depth.
+Every new script is put through a mini test suite of made-up battles before it's armed, and the model is told how each one went.
+
+If a script ever throws an error in a real battle, it's disarmed for the rest of the run.
+The model gets a report after every scripted battle so it knows what the script does on its behalf.
+
+## The runs
+
+I first experimented with [openrouter/free](https://openrouter.ai/openrouter/free), which selects free models at random from the models available on OpenRouter.
+It's really useful when the quality of the model doesn't matter much, and the usage limits are generous.
+In fact, if you add $10 of lifetime credits to OpenRouter, you also get [20x the standard daily rate limit for free models](https://openrouter.ai/docs/faq).
+
+I then discovered that my Claude Max subscription includes [$100 of API credits](https://platform.claude.com/docs/en/about-claude/api-credits-for-subscribers)!
+So I ran it on Opus 5.5 (medium effort), Sonnet 5.5 (medium effort) and Haiku 5.5 (high effort) a couple of times each.
+Here are the results:
+
+| Run      | Model           | Play time | Turns | Blackouts |
+|----------|-----------------|-----------|-------|-----------|
+| opus-2   | Opus            | 5:22:55   | 950   | 0         |
+| sonnet-3 | Sonnet          | 5:28:31   | 816   | 6         |
+| sonnet-2 | Sonnet          | 6:09:01   | 1,021 | 6         |
+| sonnet-1 | Sonnet          | 7:17:56   | 1,002 | 12        |
+| opus-1   | Opus            | 7:27:45   | 1,110 | 4         |
+| haiku-1  | Haiku           | 10:17:05  | 1,781 | 4         |
+| haiku-2  | Haiku           | 15:15:51  | 3,361 | 19        |
+| free-1   | openrouter/free | 42:55:50  | 4,906 | 65        |
+| free-2   | openrouter/free | 47:24:12  | 7,153 | 79        |
+
+Here's the average in-game hours to each badge for the Claude models, where 9 is entering the Hall of Fame:
+
+<LineChart
+  data={[
+    { "Badges": 0, "Opus": 0, "Sonnet": 0, "Haiku": 0 },
+    { "Badges": 1, "Opus": 0.52, "Sonnet": 0.32, "Haiku": 0.48 },
+    { "Badges": 2, "Opus": 1.58, "Sonnet": 0.92, "Haiku": 1.81 },
+    { "Badges": 3, "Opus": 2.17, "Sonnet": 1.45, "Haiku": 2.72 },
+    { "Badges": 4, "Opus": 3.29, "Sonnet": 2.28, "Haiku": 4.55 },
+    { "Badges": 5, "Opus": 4.45, "Sonnet": 3.06, "Haiku": 5.05 },
+    { "Badges": 6, "Opus": 4.95, "Sonnet": 3.78, "Haiku": 5.66 },
+    { "Badges": 7, "Opus": 5.29, "Sonnet": 4.14, "Haiku": 6.23 },
+    { "Badges": 8, "Opus": 5.38, "Sonnet": 4.22, "Haiku": 6.42 },
+    { "Badges": 9, "Opus": 6.42, "Sonnet": 6.31, "Haiku": 12.77 }
+  ]}
+  x="Badges"
+  y={['Opus', 'Sonnet', 'Haiku']}
+  yLabel="Hours"
+  numericX
+  xMax={9}
+  xTicks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+  yMax={13}
+  yTicks={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]}
+/>
+
+Sonnet is the fastest gym runner by a mile, all eight badges in just over 4 hours on average, more than an hour ahead of Opus.
+Haiku is not far behind Opus until the Elite Four.
+Then it all goes sideways at the end: the Elite Four is the real test and any shortcuts taken in training become apparent.
+
+Sonnet still got to the Hall of Fame first on average, but I think Opus played the game better.
+I never told any of the models to go as fast as possible, and Opus spent its extra time doing more of the game:
+
+| Model  | Pokémon owned | 8th badge to Hall of Fame | Blackouts after 8th badge | Boss battles lost |
+|--------|---------------|---------------------------|---------------------------|-------------------|
+| Opus   | 28-30         | 0:53-1:12                 | 0-1                       | 0-1               |
+| Sonnet | 17-24         | 1:26-2:56                 | 3-8                       | 4-11              |
+| Haiku  | 16-19         | 3:52-8:50                 | 2-16                      | 3-17              |
+
+* Opus is steady and well planned with no major surprises along the way.
+  It caught more Pokémon, including Zapdos in both runs, and turned up at the Elite Four with a team that only blacked out once there across both runs.
+* Sonnet progresses a bit faster but fails to plan well enough to train a Pokémon team strong enough to beat the Elite Four before it arrives.
+  Every Sonnet run leaned on a level 71-74 Blastoise, and sonnet-3 won with five other Pokémon between level 13 and 16.
+* Haiku scrapes along, following the guide instructions verbatim at the expense of its speed of progression.
+  It is often not optimally prepared for an encounter, and it gets lost or misdirected sometimes.
+
+## What it cost
+
+| Model  | Runs | Prompt tokens | Estimated cost  |
+|--------|------|---------------|-----------------|
+| Opus   | 2    | 56-65M        | $28.17-$34.45   |
+| Sonnet | 3    | 47-58M        | $11.66-$14.98   |
+| Haiku  | 2    | 118-209M      | $2.51-$4.41     |
+
+By the way, without the caching optimisation work I did earlier, the most expensive Opus run would have cost around $265.
+Haiku used two to three times the turns of Sonnet and still finished the game for less than a fiver. 😎
+
+The free runs cost nothing, but they used 386M and 339M prompt tokens and took two days each.
+
+## Highlights
+
+After each run, agents dug through its logs, plans, battle scripts and screenshots and wrote up the story of the run.
+These are my favourite moments from all of them.
+
+### PENNYBALL
+
+In opus-2, Opus picked up the Master Ball in Silph Co. and carried it all the way to the Power Plant to catch Zapdos:
+
+> Throwing the Master Ball at Zapdos for a guaranteed catch.
+
+![master-ball](master-ball.png)
+
+> Naming Zapdos BLACKOUT (caught with Master Ball in the Power Plant).
+
+Moltres was less cooperative.
+With it paralysed, two Ultra Balls and five Great Balls all missed, so it was down to the cheap ones:
+
+> Out of Great/Ultra; throwing Poké Balls (9) at paralyzed Moltres. Heal Zapdos if under ~30 HP.
+
+![pennyball](pennyball.png)
+
+The first Poké Ball caught it:
+
+> Caught Moltres with a plain Poké Ball after all Ultra/Great missed; naming it PENNYBALL.
+
+### Wasting the Master Ball
+
+You only get one Master Ball, and every Opus and Sonnet run saved theirs for a legendary bird.
+
+haiku-2 learned early on that you can't catch a trainer's Pokémon, when it threw a Poké Ball at a trainer's Slowpoke in Rock Tunnel and lost its Oddish while it was at it:
+
+> Snip fainted. Lesson: Poké Balls are blocked in trainer battles, so don't throw them there.
+
+Ten hours later it was in Agatha's room, down to a level 16 Spearow:
+
+> Dugtrio is down and Dart cannot beat Golbat. Throwing the Master Ball guarantees a catch of a Lv56 Golbat, which gives me a healthy strong fighter for the rest of Agatha's room.
+
+<SimpleGrid columns={2} gap={2}>
+  <Box>
+    <Image src="/gotta-prompt-em-all/master-ball-golbat-bag.png" alt="master-ball-golbat-bag" />
+  </Box>
+  <Box>
+    <Image src="/gotta-prompt-em-all/master-ball-golbat-blocked.png" alt="master-ball-golbat-blocked" />
+  </Box>
+</SimpleGrid>
+
+Haiku's next thought was:
+
+> Right, that trainer battle blocked the catch — Master Ball wasted, lesson learned.
+
+haiku-1 never got the chance to waste it, because its own battle script got to Moltres first:
+
+> Ugh, the script just attacked and KO'd Moltres with Hydro Pump instead of throwing a ball—it's a static legendary encounter, so it's gone for good now.
+
+The free models were worse.
+free-1 threw its Master Ball at Lorelei's Dewgong while describing the turn as:
+
+> Run away — Weed cannot win this fight and the rest of the party is fainted.
+
+<SimpleGrid columns={2} gap={2}>
+  <Box>
+    <Image src="/gotta-prompt-em-all/master-ball-dewgong-bag.png" alt="master-ball-dewgong-bag" />
+  </Box>
+  <Box>
+    <Image src="/gotta-prompt-em-all/master-ball-dewgong-blocked.png" alt="master-ball-dewgong-blocked" />
+  </Box>
+</SimpleGrid>
+
+free-2 had a Great Ball blocked by Agatha, so it tried something stronger:
+
+> Gengar is paralyzed and confused; trainer blocked Great Ball, so use the Master Ball to catch it safely.
+
+<SimpleGrid columns={2} gap={2}>
+  <Box>
+    <Image src="/gotta-prompt-em-all/master-ball-gengar-bag.png" alt="master-ball-gengar-bag" />
+  </Box>
+  <Box>
+    <Image src="/gotta-prompt-em-all/master-ball-gengar-blocked.png" alt="master-ball-gengar-blocked" />
+  </Box>
+</SimpleGrid>
+
+In total free-2 threw 39 balls at Elite Four Pokémon, 13 of them at Lance's Dragonite.
+
+### Persistence
+
+You pick up a Nugget early on, worth ¥5000 if you sell it.
+It turns out my harness never offered a way to sell anything: the shop menu only had rows for buying.
+Opus did not accept this.
+In opus-1 it planned to sell its Nuggets 21 times, at every mart from Cerulean to the Indigo Plateau, right before the Elite Four:
+
+> Healing at the Lobby Nurse, which also makes this my respawn point. Next I'll go to the Clerk to sell Nuggets and buy healing items.
+
+To be fair to Opus, it was right.
+Both Opus runs filed the same bug report, which is exactly what the `issues/` folder is for:
+
+> At Cerulean and Vermilion marts the clerk's screen shows BUY/SELL/QUIT, but the mart menu only offers buy: rows and leave — no way to sell items (I want to sell a Nugget for money). Expected sell:\<item\> rows.
+
+### Overthinking it
+
+The first question in the Cinnabar Gym quiz is "Caterpie evolves into Butterfree?", and the answer is yes.
+All three Sonnet runs got it right in one line:
+
+> Answer quiz correctly. Caterpie evolves into Butterfree: YES.
+
+All four Opus and Haiku runs answered no, because Caterpie evolves into Metapod first.
+
+<SimpleGrid columns={2} gap={2}>
+  <Box>
+    <Image src="/gotta-prompt-em-all/quiz-caterpie.png" alt="quiz-caterpie" />
+  </Box>
+  <Box>
+    <Image src="/gotta-prompt-em-all/quiz-bad-call.png" alt="quiz-bad-call" />
+  </Box>
+</SimpleGrid>
+
+Both Opus runs then suspected the harness had swapped yes and no, rather than that they'd got it wrong:
+
+> I'm uncertain whether the "Bad call" response means the labels are swapped—maybe QuizNo2 actually corresponds to YES.
+
+Haiku took a lesson from it instead:
+
+> Lesson learned: I need to trust the game's expected answer rather than overthink the actual evolution mechanics.
+
+Haiku overthinks everything.
+In haiku-2 it wrote over a million characters of reasoning, about three times as much per turn as Opus.
+Its longest single think was 11,735 characters in haiku-1, about why a door on Route 2 wasn't on the menu, and it ended up going to Pewter instead.
+It does notice, sometimes:
+
+> I'm going in circles here.
+
+### Fails
+
+In opus-2, Opus fished up a Magikarp, paralysed it with Thunder Wave and threw three Poké Balls at it:
+
+![splashy](splashy.png)
+
+> Named the Magikarp SPLASHY; a future Gyarados project.
+
+Seven minutes later SPLASHY went into the PC to make room for a Diglett, and never came out again.
+
+free-1 needed Surf to get to Cinnabar Island, and decided the answer was a Magikarp:
+
+> Fly to Vermilion City to catch a Water-type Pokémon (Magikarp via Old Rod) that can learn Surf.
+
+Magikarp can't learn Surf, and the Fishing Guru in Vermilion gives you an Old Rod, not a Magikarp.
+Over the next half an hour it talked to the Fishing Guru eleven times, waiting for its "gift", and released three Pokémon to make room for it:
+
+![release-bye](release-bye.png)
+
+Then it filed an issue about the HM menu, because it couldn't teach Surf to its Charizard:
+
+> HM03Surf and HM02Fly are in the bag (bag.md confirms both are present) but never appear as teachable options.
+
+Charizard can't learn Surf either.
+Two minutes later it took FROST, a Lapras that had been sitting in its PC for an hour and a half, out of the box and taught it Surf.
+
+### Naming things
+
+Every catch opens the naming screen, and the models are very different at it.
+Opus always explains itself:
+
+> Named the Oddish SIPPER for the Absorb crits it landed on TIDE.
+
+> Naming Machop CRITCHOP after its string of critical Karate Chops; goes to PC box since party full.
+
+> Caught Snorlax (woke in a grumpy rage); naming it GRUMPY. It goes to PC since party is full.
+
+> The script caught a second Machop, a waste of a Great Ball; I named it SPAREFIST.
+
+Sonnet starts off keen ("Nickname starter.", "Name the Paras.", "Name it."), but four hours into sonnet-1 it gives up:
+
+> Skip naming.
+
+Haiku gives a reason every time, even when it has given it before.
+In haiku-2 it caught three Zubats in Rock Tunnel and named them Echo, Sonar and Radar.
+Forty-five minutes later it caught three more Zubats in Rock Tunnel and named them Echo, Sonar and Radar:
+
+> Naming this third Zubat "Radar" (it hears its way through the dark tunnel). It goes to the PC too.
+
+The free models have the best ones.
+free-1 named a Gastly HAUNTER "to prepare for evolution into Haunter", and gave a Weedle this much thought:
+
+> Name the caught Weedle with a meaningful nickname reflecting its origin in tall grass and the battle context.
+
+It named it WEEDLE.
+
+### Blaming the game
+
+Haiku is quick to suspect the game.
+In haiku-1, the menu said Hydro Pump was "not very effective" against Venusaur:
+
+> I'm puzzled that the menu lists Hydro Pump as "not very effective" against Venusaur, since Water should be super effective against a Grass-type — this suggests the effectiveness data in the report might be buggy or using different typing logic than expected.
+
+Both Haiku runs also filed an issue that the west of Route 4 was unreachable from Cerulean.
+It's a one-way ledge, which haiku-1 even guessed, but it filed an issue anyway:
+
+> Possibly a one-way ledge that I crossed going east earlier, which would make the way back impossible without Cut or Surf. Please check whether the west half is reachable from this corridor
+
+The free models were brutal. In free-2, Lance's Dragonite left it with a Gloom that had run out of PP on every damaging move.
+It threw 13 balls at the Dragonite, eight of them Ultra Balls, and filed eight issues in about an hour with titles like:
+
+> Issue: Stuck in Lance's Dragonite battle - softlock
+
+> Missing POKEMON switch option in battle menu
+
+There was nothing to switch to: every other Pokémon had fainted.
+It actually went on to beat the Dragonite with Struggle!
+
+## Final thoughts
+
+I'll be honest, this project used up a lot of my time, burnt a lot of electricity and wasted a lot of water, getting LLMs to play a 30-year-old game for no productive reason at all.
+I did learn a lot though, particularly how efficient filesystem-based agent tooling is and how to optimise for the prompt cache, which in this case was the difference between a ~$34 Opus run and a ~$265 one.
+Oh, and I've now got a Rust port of Pokémon Red!
+
+I think the project worked because the agent does the heavy lifting.
+Pre-computing the deterministic stuff, like routing between maps and calculating move statistics, left the LLM's context
+free for what it's actually good at: making reasoned decisions.
+
+My daughters and I have had fun watching the agent play Pokémon; the per-turn narration makes it feel a lot like watching a person play, and the weaker models make some hilariously bad decisions.
+
+Go and watch the current run at [gb.ax-h.com](https://gb.ax-h.com), and if you want to run your own, the whole thing is one container in [poke-agent](https://github.com/axle-h/poke-agent).
+Give it a star ⭐ if you like it!

@@ -22,6 +22,10 @@ export function LineChart({
   yLabel,
   numericX,
   yMillions,
+  xMax,
+  xTicks,
+  yMax,
+  yTicks,
   trend,
 }: Pick<UseChartProps<any>, 'data'> & {
   /** one series name, or several to plot as separately coloured lines with a legend */
@@ -33,6 +37,14 @@ export function LineChart({
   numericX?: boolean
   /** label the y axis ticks in millions, e.g. 8000000 -> 8M */
   yMillions?: boolean
+  /** fix the top of a numericX axis instead of letting recharts round it up */
+  xMax?: number
+  /** exact x axis ticks, every one drawn even when crowded */
+  xTicks?: number[]
+  /** fix the top of the y axis instead of letting recharts round it up */
+  yMax?: number
+  /** exact y axis ticks, every one drawn even when crowded */
+  yTicks?: number[]
   trend?: string
 }) {
   const colors = useColorModeValue(
@@ -56,11 +68,17 @@ export function LineChart({
               dataKey={x}
               label={{ value: x, dy: 20 }}
               {...(numericX
-                ? { type: 'number' as const, domain: [0, 'auto' as const] }
+                ? {
+                    type: 'number' as const,
+                    domain: [0, xMax ?? ('auto' as const)],
+                  }
                 : {})}
+              {...(xTicks ? { ticks: xTicks, interval: 0 } : {})}
             />
             <YAxis
               {...(names.length === 1 ? { dataKey: names[0] } : {})}
+              {...(yMax != null ? { domain: [0, yMax] } : {})}
+              {...(yTicks ? { ticks: yTicks, interval: 0 } : {})}
               {...(yMillions
                 ? {
                     tickFormatter: (v: number) =>

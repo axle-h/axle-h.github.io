@@ -264,7 +264,8 @@ const components: MDXComponents = {
   PintoraDiagramSvg,
   Latex,
   LatexHtml,
-  SimpleGrid,
+  // matches the bottom margin a markdown image gets from its paragraph
+  SimpleGrid: (props: any) => <SimpleGrid mb={4} {...props} />,
   Box,
   Image,
   BarChart,

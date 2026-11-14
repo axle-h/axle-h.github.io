@@ -15,7 +15,12 @@ import { useColorModeValue } from '@/components/ui/color-mode'
 export function BarChart({
   data,
   series,
-}: Pick<UseChartProps<any>, 'data'> & { series: string }) {
+  x = 'feature',
+}: Pick<UseChartProps<any>, 'data'> & {
+  series: string
+  /** the category key on each row */
+  x?: string
+}) {
   const color = useColorModeValue('blue.300', 'blue.600')
   const chart = useChart({
     data,
@@ -30,13 +35,13 @@ export function BarChart({
         <ResponsiveContainer width="100%" height="100%">
           <ReBarChart data={chart.data}>
             <XAxis
-              dataKey="feature"
+              dataKey={x}
               interval={0}
               angle={-15}
               textAnchor="end"
               dy={10}
             />
-            <YAxis dataKey="coefficient" />
+            <YAxis dataKey={series} />
             <Tooltip />
             <ReferenceLine y={0} />
             {chart.series.map((item) => (

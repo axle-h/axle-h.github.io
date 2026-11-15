@@ -42,12 +42,12 @@ cargo add gbc
 ## The first agent
 
 The first version of the agent hooks into this emulator.
-The agent is a reasonably sized state machine that dips into the running game's memory, makes a decision and executes that decision by pressing buttons on the Game Boy controller.
+It is a reasonably sized state machine that dips into the running game's memory, makes a decision and executes that decision by pressing buttons on the Game Boy controller.
 Having the [pokered](https://github.com/pret/pokered) disassembly helped massively here.
 I used its memory map to easily tell which byte in the Game Boy memory represented what state, like the party stats or the current map position.
 
 It did work and I did manage to develop an agent that could reliably finish the game.
-But since the agent could only observe side effects of the running game, decisions and actions were out of step with the native game loop and so they were overwhelmingly
+But since it could only observe side effects of the running game, decisions and actions were out of step with the native game loop and so they were overwhelmingly
 likely to be made halfway through one of the game's routines, resulting in weird state artefacts.
 This meant the agent had to be extremely defensive and tolerant of state glitches, making it quite slow and careful to act in the game.
 
@@ -61,7 +61,7 @@ The porting process was interesting because the disassembly that it's based on i
 If it had been done like that, it would basically have been a Game Boy emulator that can only run one game.
 Instead, I used the disassembly as the specification and the emulator as the oracle: the algorithms (damage, the AI, encounters, pacing) are exact,
 but the program structure, the memory layout and the hardware are not carried over.
-I also fixed some of the original game's famous mechanical bugs, with an option in the menu to switch back to the original Gen 1 behaviour.
+I also fixed some of the original game's famous mechanical bugs (remember MISSINGNO?), with an option in the menu to switch back to the original Gen 1 behaviour.
 
 Having the emulator and the existing agent was a huge help in validating the correctness of the game, as I was able to easily port the agent over and use
 scripted runs through the entire game to catch a ton of bugs and differences.
@@ -152,9 +152,9 @@ The model gets a report after every scripted battle so it knows what the script 
 
 ## The runs
 
-I first experimented with [openrouter/free](https://openrouter.ai/openrouter/free), which selects free models at random from the models available on OpenRouter.
+I first experimented with [openrouter/free](https://openrouter.ai/openrouter/free), which selects free models at random.
 It's really useful when the quality of the model doesn't matter much, and the usage limits are generous.
-In fact, if you add $10 of lifetime credits to OpenRouter, you also get [20x the standard daily rate limit for free models](https://openrouter.ai/docs/faq).
+In fact, if you add $10 of lifetime credits to OpenRouter, you also get 20x the standard daily rate limit for free models: [see here](https://openrouter.ai/docs/faq).
 
 I then discovered that my Claude Max subscription includes [$100 of API credits](https://platform.claude.com/docs/en/about-claude/api-credits-for-subscribers)!
 So I ran it on Opus 5.5 (medium effort), Sonnet 5.5 (medium effort) and Haiku 5.5 (high effort) a couple of times each.
@@ -213,7 +213,7 @@ I never told any of the models to go as fast as possible, and Opus spent its ext
 * Opus is steady and well planned with no major surprises along the way.
   It caught more Pokémon, including Zapdos in both runs, and turned up at the Elite Four with a team that only blacked out once there across both runs.
 * Sonnet progresses a bit faster but fails to plan well enough to train a Pokémon team strong enough to beat the Elite Four before it arrives.
-  Every Sonnet run leaned on a level 71-74 Blastoise, and sonnet-3 won with five other Pokémon between level 13 and 16.
+  Every Sonnet run leaned on a single level 71-74 Blastoise, no other Pokémon trained up on any Sonnet run.
 * Haiku scrapes along, following the guide instructions verbatim at the expense of its speed of progression.
   It is often not optimally prepared for an encounter, and it gets lost or misdirected sometimes.
 
@@ -256,6 +256,8 @@ The first Poké Ball caught it:
 
 > Caught Moltres with a plain Poké Ball after all Ultra/Great missed; naming it PENNYBALL.
 
+I think Opus might actually have a slight sense of humour!
+
 ### Wasting the Master Ball
 
 You only get one Master Ball, and every Opus and Sonnet run saved theirs for a legendary bird.
@@ -280,10 +282,6 @@ Ten hours later it was in Agatha's room, down to a level 16 Spearow:
 Haiku's next thought was:
 
 > Right, that trainer battle blocked the catch — Master Ball wasted, lesson learned.
-
-haiku-1 never got the chance to waste it, because its own battle script got to Moltres first:
-
-> Ugh, the script just attacked and KO'd Moltres with Hydro Pump instead of throwing a ball—it's a static legendary encounter, so it's gone for good now.
 
 The free models were worse.
 free-1 threw its Master Ball at Lorelei's Dewgong while describing the turn as:
@@ -317,7 +315,7 @@ In total free-2 threw 39 balls at Elite Four Pokémon, 13 of them at Lance's Dra
 ### Persistence
 
 You pick up a Nugget early on, worth ¥5000 if you sell it.
-It turns out my harness never offered a way to sell anything: the shop menu only had rows for buying.
+It turns out I forgot to implement item selling in the harness: the shop menu only had rows for buying.
 Opus did not accept this.
 In opus-1 it planned to sell its Nuggets 21 times, at every mart from Cerulean to the Indigo Plateau, right before the Elite Four:
 
@@ -387,9 +385,13 @@ Then it filed an issue about the HM menu, because it couldn't teach Surf to its 
 Charizard can't learn Surf either.
 Two minutes later it took FROST, a Lapras that had been sitting in its PC for an hour and a half, out of the box and taught it Surf.
 
+There were a few instances of badly written battle scripts surprising the model, haiku-1 forgot to update it's script for the one and only chance to catch Moltres in the game:
+
+> Ugh, the script just attacked and KO'd Moltres with Hydro Pump instead of throwing a ball—it's a static legendary encounter, so it's gone for good now.
+
 ### Naming things
 
-Every catch opens the naming screen, and the models are very different at it.
+The models approach naming Pokémon differently.
 Opus always explains itself:
 
 > Named the Oddish SIPPER for the Absorb crits it landed on TIDE.
@@ -400,7 +402,7 @@ Opus always explains itself:
 
 > The script caught a second Machop, a waste of a Great Ball; I named it SPAREFIST.
 
-Sonnet starts off keen ("Nickname starter.", "Name the Paras.", "Name it."), but four hours into sonnet-1 it gives up:
+Sonnet starts off keen opting to name all of it's Pokémon, but it eventually gives up:
 
 > Skip naming.
 
@@ -441,11 +443,11 @@ It actually went on to beat the Dragonite with Struggle!
 
 ## Final thoughts
 
-I'll be honest, this project used up a lot of my time, burnt a lot of electricity and wasted a lot of water, getting LLMs to play a 30-year-old game for no productive reason at all.
+I'll be honest, this project used up a lot of my time, burnt a lot of electricity and wasted a lot of water, for no actual productive outcome.
 I did learn a lot though, particularly how efficient filesystem-based agent tooling is and how to optimise for the prompt cache, which in this case was the difference between a ~$34 Opus run and a ~$265 one.
 Oh, and I've now got a Rust port of Pokémon Red!
 
-I think the project worked because the agent does the heavy lifting.
+I think the project worked because the agent does most of the hard work.
 Pre-computing the deterministic stuff, like routing between maps and calculating move statistics, left the LLM's context
 free for what it's actually good at: making reasoned decisions.
 
